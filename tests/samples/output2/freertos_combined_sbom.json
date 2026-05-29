@@ -1,0 +1,213 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:f8656580-5fe3-4d8f-895e-40b9729994bf",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T06:51:49.285009+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "tests\\samples\\freertos_combined.bin",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "cedd357246d740aa406c438365f3fffe65de514189afd2c1cb842393697aed2f"
+        },
+        {
+          "alg": "MD5",
+          "content": "2310431d94e0e823887781839fc8ccea"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "FreeRTOS"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "operating-system",
+      "name": "FreeRTOS",
+      "version": "10.4.0",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos@10.4.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "rtos_plugin,string_pattern,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "FreeRTOS V10.4.0 | FreeRTOS V10.4.0 | FreeRTOS V10.4.0"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mbedTLS",
+      "version": "detected (version unknown)",
+      "publisher": "ARM",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'MBEDTLS_' at offset 0x41ef7 (5 occurrences) | Matched: MBEDTLS_ | Hits: 10 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "CMSIS",
+      "version": "detected (version unknown)",
+      "publisher": "ARM",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.80"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: SystemCoreClock, CMSIS | Hits: 4 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FreeRTOS+TCP",
+      "version": "4.2.2",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos+tcp@4.2.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "rtos_plugin,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: FreeRTOS_Socket, FreeRTOS+TCP | Hits: 8 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "printf",
+      "version": "detected (version unknown)",
+      "publisher": "mpaland",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: printf | Hits: 18 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Newlib",
+      "version": "detected (version unknown)",
+      "publisher": "Red Hat",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: newlib | Hits: 2 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "picolibc",
+      "version": "detected (version unknown)",
+      "publisher": "picolibc",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: picolibc | Hits: 2 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Ethernet",
+      "version": "detected (version unknown)",
+      "publisher": "Generic",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Ethernet | Hits: 10 across 2 sections"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

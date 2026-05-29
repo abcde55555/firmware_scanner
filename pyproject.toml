@@ -1,0 +1,70 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "firmware-scanner"
+version = "0.2.0"
+description = "Firmware security analysis, recursive unpacking, component extraction, and SBOM generation"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Firmware Security Team" }]
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    "capstone>=5.0.0",
+    "lief>=0.14.0",
+    "intelhex>=2.3.0",
+    "packageurl-python>=0.11.0",
+]
+
+[project.optional-dependencies]
+radare2 = ["r2pipe>=1.8.0"]
+ghidra = ["pyhidra>=1.0.0"]
+full = ["r2pipe>=1.8.0", "pyhidra>=1.0.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "mypy>=1.5",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+firmware-scanner = "firmware_scanner.cli.app:main"
+
+[project.entry-points."firmware_scanner.rtos_plugins"]
+freertos = "firmware_scanner.rtos.plugins.freertos:FreeRTOSPlugin"
+zephyr = "firmware_scanner.rtos.plugins.zephyr:ZephyrPlugin"
+rt_thread = "firmware_scanner.rtos.plugins.rt_thread:RTThreadPlugin"
+esp_idf = "firmware_scanner.rtos.plugins.esp_idf:ESPIDFPlugin"
+vxworks = "firmware_scanner.rtos.plugins.vxworks:VxWorksPlugin"
+threadx = "firmware_scanner.rtos.plugins.threadx:ThreadXPlugin"
+nuttx = "firmware_scanner.rtos.plugins.nuttx:NuttXPlugin"
+liteos = "firmware_scanner.rtos.plugins.liteos:LiteOSPlugin"
+ucos = "firmware_scanner.rtos.plugins.ucos:UCOSPlugin"
+
+[project.entry-points."firmware_scanner.extractors"]
+string_patterns = "firmware_scanner.extraction.extractors.string_patterns:StringPatternExtractor"
+symbol_table = "firmware_scanner.extraction.extractors.symbol_table:SymbolTableExtractor"
+disassembly = "firmware_scanner.extraction.extractors.disassembly:DisassemblyExtractor"
+radare2 = "firmware_scanner.extraction.extractors.radare2_ext:Radare2Extractor"
+ghidra = "firmware_scanner.extraction.extractors.ghidra_ext:GhidraExtractor"
+binary_signatures = "firmware_scanner.extraction.extractors.binary_signatures:BinarySignatureExtractor"
+manifest_scanner = "firmware_scanner.extraction.extractors.manifest_scanner:ManifestScannerExtractor"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/firmware_scanner"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

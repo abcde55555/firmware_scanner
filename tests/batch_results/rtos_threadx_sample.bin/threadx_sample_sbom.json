@@ -1,0 +1,71 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:92c1bdf0-97c8-4de0-a7ba-c5c75677f119",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T07:45:53.253390+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\rtos\\threadx_sample.bin",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "6abb4c1229e02db73c77892d0b5c0ab9a94bb68d2141dfc9ff6e45a328713f73"
+        },
+        {
+          "alg": "MD5",
+          "content": "872ad2bbfc787852e3ee06f8c9b42f09"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "ThreadX"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "operating-system",
+      "name": "ThreadX",
+      "version": "detected (version unknown)",
+      "publisher": "Microsoft",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.64"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,rtos_plugin"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'ThreadX' at offset 0xde (1 occurrences) | Signature 'THREADX' at offset 0x0 (1 occurrences)"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

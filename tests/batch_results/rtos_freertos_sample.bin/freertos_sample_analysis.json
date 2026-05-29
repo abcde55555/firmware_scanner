@@ -1,0 +1,52 @@
+{
+  "firmware": {
+    "path": "D:\\work\\Code\\traeCode\\\u8c03\u7814\\\u56fa\u4ef6\u626b\u63cf\u8c03\u7814\\samples\\rtos\\freertos_sample.bin",
+    "sha256": "be05b2136dfea86d7401e2da9ad90eab743c758f34ba9a9808e0fa88fb7f3626",
+    "md5": "fe3528b260a5f2b960c8c4a6f63bab8f",
+    "size": 311,
+    "format": "Raw Binary"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "FreeRTOS",
+    "confidence": 0.4
+  },
+  "components": [
+    {
+      "name": "FreeRTOS",
+      "vendor": "Amazon",
+      "versions": [
+        {
+          "version": "10.4.3",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: FreeRTOS | Hits: 4 across 2 sections"
+        },
+        {
+          "version": "10.4.3",
+          "confidence": 0.85,
+          "method": "rtos_plugin",
+          "evidence": "Version string: 10.4.3"
+        }
+      ],
+      "resolved_version": "10.4.3",
+      "component_type": "operating-system",
+      "purl": "pkg:generic/freertos@10.4.3",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

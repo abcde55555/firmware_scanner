@@ -1,0 +1,79 @@
+{
+  "version_patterns": {
+    "FreeRTOS": [
+      "FreeRTOS\\s+[Vv](\\d+\\.\\d+\\.\\d+)",
+      "FreeRTOS\\s+[Vv](\\d{6}\\.\\d{2})",
+      "tskKERNEL_VERSION_NUMBER\\s+\"([^\"]+)\"",
+      "FreeRTOS\\s+Kernel\\s+[Vv](\\d+\\.\\d+\\.\\d+)"
+    ],
+    "Zephyr": [
+      "Zephyr\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+      "zephyr-v(\\d+\\.\\d+\\.\\d+)",
+      "KERNELVERSION\\s*=\\s*(\\d+\\.\\d+\\.\\d+)",
+      "BUILD_VERSION\\s+(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "RT-Thread": [
+      "RT-Thread\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+      "rtthread.*?(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "ESP-IDF": [
+      "ESP-IDF\\s+[Vv]?(\\d+\\.\\d+(?:\\.\\d+)?)",
+      "esp-idf/v(\\d+\\.\\d+(?:\\.\\d+)?)",
+      "IDF_VER\\s*[=:]\\s*\"?[Vv]?(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "VxWorks": [
+      "VxWorks\\s+(\\d+\\.\\d+(?:\\.\\d+)?)",
+      "WIND_RIVER_VER\\s+\"(\\d+\\.\\d+)\""
+    ],
+    "ThreadX": [
+      "ThreadX\\s+[Vv]?(\\d+\\.\\d+(?:\\.\\d+)?)",
+      "Azure\\s+RTOS\\s+ThreadX\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+      "_tx_version_id.*?(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "NuttX": [
+      "NuttX\\s+(\\d+\\.\\d+\\.\\d+)",
+      "nuttx-(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "LiteOS": [
+      "Huawei\\s+LiteOS\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+      "LiteOS\\s+[Vv](\\d+\\.\\d+(?:\\.\\d+)?)"
+    ],
+    "uC/OS": [
+      "uC/OS-I{1,3}\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+      "Micrium.*?[Vv](\\d+\\.\\d+\\.\\d+)"
+    ],
+    "mbedTLS": [
+      "mbed\\s*TLS\\s+(\\d+\\.\\d+\\.\\d+)",
+      "mbedtls[/-](\\d+\\.\\d+\\.\\d+)",
+      "MBEDTLS_VERSION_STRING\\s+\"(\\d+\\.\\d+\\.\\d+)\""
+    ],
+    "wolfSSL": [
+      "wolfSSL\\s+(\\d+\\.\\d+\\.\\d+)",
+      "LIBWOLFSSL_VERSION_STRING\\s+\"(\\d+\\.\\d+\\.\\d+)\""
+    ],
+    "lwIP": [
+      "lwIP\\s+(\\d+\\.\\d+\\.\\d+)",
+      "LWIP_VERSION_STRING\\s+\"(\\d+\\.\\d+\\.\\d+)\"",
+      "lwip-(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "FatFs": [
+      "FatFs\\s+[Rr]?(\\d+\\.\\d+\\w?)",
+      "FF_DEFINED\\s+(\\d+)"
+    ],
+    "U-Boot": [
+      "U-Boot\\s+(\\d{4}\\.\\d{2})",
+      "U-Boot\\s+SPL\\s+(\\d{4}\\.\\d{2})"
+    ],
+    "cJSON": [
+      "cJSON\\s+(\\d+\\.\\d+\\.\\d+)"
+    ],
+    "nanopb": [
+      "nanopb\\s+(\\d+\\.\\d+\\.\\d+)"
+    ]
+  },
+  "generic_patterns": [
+    "(?:version|ver|v)\\s*[=:]\\s*[\"']?(\\d+\\.\\d+(?:\\.\\d+)?(?:[-_.][\\w]+)?)",
+    "Version:\\s*(\\d+\\.\\d+\\.\\d+)",
+    "BUILD_VERSION\\s+(\\d+\\.\\d+\\.\\d+)"
+  ]
+}

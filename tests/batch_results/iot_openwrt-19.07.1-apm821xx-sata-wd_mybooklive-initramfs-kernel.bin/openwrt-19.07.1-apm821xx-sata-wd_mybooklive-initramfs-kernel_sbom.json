@@ -1,0 +1,46 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:6f7ccba4-5cf7-402f-8440-6a33f89ce56d",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T07:45:51.572500+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\iot\\openwrt-19.07.1-apm821xx-sata-wd_mybooklive-initramfs-kernel.bin",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1ab892478f359ff6b7dcf7d0895ec28a283b52479582c8f94a7b2e41eef7c846"
+        },
+        {
+          "alg": "MD5",
+          "content": "f90418024b28b3863f16c2de199eb45f"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      }
+    ]
+  },
+  "components": [],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

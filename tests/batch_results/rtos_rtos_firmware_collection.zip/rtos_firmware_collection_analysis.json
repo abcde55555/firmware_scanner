@@ -1,0 +1,118 @@
+{
+  "firmware": {
+    "path": "D:\\work\\Code\\traeCode\\\u8c03\u7814\\\u56fa\u4ef6\u626b\u63cf\u8c03\u7814\\samples\\rtos\\rtos_firmware_collection.zip",
+    "sha256": "c0eac911b265316e2fa4e866442da05fe7c27051eb276ecf6dc2c0759f8dc53d",
+    "md5": "806b4defe8327b390530660795832f41",
+    "size": 1210,
+    "format": "ZIP Archive (SDK/Package)"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "FreeRTOS",
+    "confidence": 0.4
+  },
+  "components": [
+    {
+      "name": "FreeRTOS",
+      "vendor": "Amazon",
+      "versions": [
+        {
+          "version": "10.4.3",
+          "confidence": 0.54,
+          "method": "string_pattern",
+          "evidence": "package.json in raw_firmware: FreeRTOS@10.4.3"
+        },
+        {
+          "version": "10.4.3",
+          "confidence": 0.54,
+          "method": "string_pattern",
+          "evidence": "package.json in manifest.json: FreeRTOS@10.4.3"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.8,
+          "method": "string_pattern",
+          "evidence": "Matched: FreeRTOS | Hits: 4 across 2 sections"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.5,
+          "method": "rtos_plugin",
+          "evidence": "Detected via signatures"
+        }
+      ],
+      "resolved_version": "10.4.3",
+      "component_type": "operating-system",
+      "purl": "pkg:generic/freertos@10.4.3",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "ThreadX",
+      "vendor": "Microsoft",
+      "versions": [
+        {
+          "version": "6.2.1",
+          "confidence": 0.54,
+          "method": "string_pattern",
+          "evidence": "package.json in raw_firmware: ThreadX@6.2.1"
+        },
+        {
+          "version": "6.2.1",
+          "confidence": 0.54,
+          "method": "string_pattern",
+          "evidence": "package.json in manifest.json: ThreadX@6.2.1"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.7200000000000001,
+          "method": "binary_signature",
+          "evidence": "Signature 'ThreadX' at offset 0x12e (3 occurrences)"
+        }
+      ],
+      "resolved_version": "6.2.1",
+      "component_type": "operating-system",
+      "purl": "pkg:generic/threadx@6.2.1",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Zephyr",
+      "vendor": "Zephyr Project",
+      "versions": [
+        {
+          "version": "3.4.0",
+          "confidence": 0.54,
+          "method": "string_pattern",
+          "evidence": "package.json in raw_firmware: Zephyr@3.4.0"
+        },
+        {
+          "version": "3.4.0",
+          "confidence": 0.54,
+          "method": "string_pattern",
+          "evidence": "package.json in manifest.json: Zephyr@3.4.0"
+        }
+      ],
+      "resolved_version": "3.4.0",
+      "component_type": "operating-system",
+      "purl": "pkg:generic/zephyr@3.4.0",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

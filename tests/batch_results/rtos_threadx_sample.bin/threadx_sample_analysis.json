@@ -1,0 +1,58 @@
+{
+  "firmware": {
+    "path": "D:\\work\\Code\\traeCode\\\u8c03\u7814\\\u56fa\u4ef6\u626b\u63cf\u8c03\u7814\\samples\\rtos\\threadx_sample.bin",
+    "sha256": "6abb4c1229e02db73c77892d0b5c0ab9a94bb68d2141dfc9ff6e45a328713f73",
+    "md5": "872ad2bbfc787852e3ee06f8c9b42f09",
+    "size": 324,
+    "format": "Raw Binary"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "ThreadX",
+    "confidence": 0.4
+  },
+  "components": [
+    {
+      "name": "ThreadX",
+      "vendor": "Microsoft",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.6400000000000001,
+          "method": "binary_signature",
+          "evidence": "Signature 'ThreadX' at offset 0xde (1 occurrences)"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.5599999999999999,
+          "method": "binary_signature",
+          "evidence": "Signature 'THREADX' at offset 0x0 (1 occurrences)"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.5,
+          "method": "rtos_plugin",
+          "evidence": ""
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "operating-system",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

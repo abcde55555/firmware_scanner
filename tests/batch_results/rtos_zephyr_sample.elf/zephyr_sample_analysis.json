@@ -1,0 +1,48 @@
+{
+  "firmware": {
+    "path": "D:\\work\\Code\\traeCode\\\u8c03\u7814\\\u56fa\u4ef6\u626b\u63cf\u8c03\u7814\\samples\\rtos\\zephyr_sample.elf",
+    "sha256": "cc90c6dfe77db108cd4bdbd9b8760b8dee01654f833c6509469873c9ca7d5fdc",
+    "md5": "f74730e78fe417e1501fd90e416f85f9",
+    "size": 213,
+    "format": "ELF"
+  },
+  "architecture": {
+    "cpu_family": "unknown",
+    "endianness": "little",
+    "file_type": "elf",
+    "word_size": 64,
+    "specific_model": "",
+    "confidence": 0.95
+  },
+  "rtos": {
+    "name": "Zephyr RTOS",
+    "confidence": 0.3
+  },
+  "components": [
+    {
+      "name": "Zephyr RTOS",
+      "vendor": "Zephyr Project",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.5,
+          "method": "rtos_plugin",
+          "evidence": ""
+        }
+      ],
+      "resolved_version": "",
+      "component_type": "operating-system",
+      "purl": "",
+      "cpe": "",
+      "licenses": [
+        "Apache-2.0"
+      ],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

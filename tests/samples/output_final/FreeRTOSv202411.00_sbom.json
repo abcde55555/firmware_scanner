@@ -1,0 +1,477 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:64ab0620-eda6-4e14-b6c0-34007cae7082",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T07:07:20.837259+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\rtos\\FreeRTOSv202411.00.zip",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "00402c15c77286858708fcbbc06e01dcabfdf573e7474ac7862c8dbd9f117fd9"
+        },
+        {
+          "alg": "MD5",
+          "content": "d01906e5ce4f1a2ddefafa08bfe83981"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "FreeRTOS"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "coreJSON",
+      "version": "3.2.0",
+      "purl": "pkg:generic/corejson@3.2.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.54"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "manifest.yml dependency in FreeRTOSv202411.00/FreeRTOS-Plus/Source/AWS/ota/manifest.yml: coreJSON v3.2.0"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "FreeRTOS",
+      "version": "3.1.0",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos@3.1.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "rtos_plugin,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "CMakeLists.txt in FreeRTOSv202411.00/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/CMakeLists.txt: project(FreeRTOS VERSION 3.1.0) | Matched: FreeRTOS V7.0.0, vTaskDelay, FreeRTOS V10.4.1 | Hits: 6229 across 82 sections | Detected via signatures"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "FreeRTOS-Kernel",
+      "version": "11.1.0",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos-kernel@11.1.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.54"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "manifest.yml dependency in FreeRTOSv202411.00/manifest.yml: FreeRTOS-Kernel V11.1.0 | manifest.yml dependency in FreeRTOSv202411.00/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/manifest.yml: FreeRTOS-Kernel V11.1.0"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lwIP",
+      "version": "detected (version unknown)",
+      "publisher": "lwIP",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'lwIP' at offset 0x3fa1d77 (1074 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mbedTLS",
+      "version": "detected (version unknown)",
+      "publisher": "ARM",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'mbedTLS' at offset 0xa44f9d (28 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "RT-Thread",
+      "version": "detected (version unknown)",
+      "publisher": "RT-Thread",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.24"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature '####' at offset 0x1859f53 (1 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "SEGGER RTT",
+      "version": "detected (version unknown)",
+      "publisher": "SEGGER",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'SEGGER' at offset 0x5d647e (12 occurrences) | Matched: SEGGER_RTT, SEGGER | Hits: 144 across 3 sections"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "ThreadX",
+      "version": "detected (version unknown)",
+      "publisher": "Microsoft",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'ThreadX' at offset 0x5cb24d (24 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wolfSSL",
+      "version": "detected (version unknown)",
+      "publisher": "wolfSSL",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'wolfSSL' at offset 0x81f0f7 (5490 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "STM32 HAL",
+      "version": "7.5.2",
+      "publisher": "STMicroelectronics",
+      "purl": "pkg:generic/stm32-hal@7.5.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: STM32 | Hits: 53 across 7 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FreeRTOS+TCP",
+      "version": "4.2.2",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos+tcp@4.2.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "rtos_plugin,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: FreeRTOS+TCP, FreeRTOS_Socket | Hits: 317 across 63 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FreeRTOS+FAT",
+      "version": "detected (version unknown)",
+      "publisher": "Amazon",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: FreeRTOS+FAT | Hits: 12 across 6 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "printf",
+      "version": "detected (version unknown)",
+      "publisher": "mpaland",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: printf | Hits: 108 across 28 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Ethernet",
+      "version": "detected (version unknown)",
+      "publisher": "Generic",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Ethernet | Hits: 245 across 47 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "CMSIS",
+      "version": "detected (version unknown)",
+      "publisher": "ARM",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: NVIC_SetPriority, CMSIS, __CMSIS_ | Hits: 42 across 7 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FreeRTOS+CLI",
+      "version": "7.5.2",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos+cli@7.5.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: FreeRTOS+CLI | Hits: 7 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Microchip Harmony",
+      "version": "detected (version unknown)",
+      "publisher": "Microchip",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.65"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Microchip | Hits: 3 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "MPLAB Harmony",
+      "version": "3.0.0",
+      "publisher": "Microchip",
+      "purl": "pkg:generic/mplab-harmony@3.0.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: MPLAB | Hits: 10 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "picolibc",
+      "version": "detected (version unknown)",
+      "publisher": "picolibc",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.55"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: picolibc | Hits: 1 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "OpenSSL",
+      "version": "detected (version unknown)",
+      "publisher": "OpenSSL",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.60"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: OpenSSL | Hits: 2 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Unity Test",
+      "version": "detected (version unknown)",
+      "publisher": "ThrowTheSwitch",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Unity | Hits: 18 across 2 sections"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

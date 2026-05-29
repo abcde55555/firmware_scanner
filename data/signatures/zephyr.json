@@ -1,0 +1,21 @@
+{
+  "name": "Zephyr",
+  "vendor": "Zephyr Project",
+  "signatures": [
+    {"ascii": "Zephyr", "confidence": 0.7, "name": "Zephyr RTOS"},
+    {"ascii": "zephyr", "confidence": 0.6, "name": "Zephyr RTOS"},
+    {"ascii": "__device_dts_ord_", "confidence": 0.8, "name": "Zephyr RTOS"},
+    {"ascii": "ZEPHYR_BASE", "confidence": 0.8, "name": "Zephyr RTOS"},
+    {"ascii": "zephyr/kernel", "confidence": 0.8, "name": "Zephyr RTOS"}
+  ],
+  "version_patterns": [
+    "Zephyr\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "zephyr-v(\\d+\\.\\d+\\.\\d+)",
+    "KERNELVERSION\\s*=\\s*(\\d+\\.\\d+\\.\\d+)"
+  ],
+  "known_symbols": [
+    "k_thread_create", "k_sem_init", "k_mutex_init",
+    "k_msgq_init", "k_work_submit", "k_timer_start",
+    "z_swap", "z_reschedule", "z_impl_k_sleep"
+  ]
+}

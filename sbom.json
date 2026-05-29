@@ -1,0 +1,965 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:5ea0fb4b-c843-4a28-8846-0f0c11e03292",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T10:07:40.124359+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "firmware-scanner",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\apk\\signed_Xiaomi_EnterpriseScreen.apk",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0df7412798fba711e4792c1f13ed71ee9c2e8b88e2a78c19ca9ab7e42c241457"
+        },
+        {
+          "alg": "MD5",
+          "content": "0d82127d3c6f56b7d2faaefbeeded43b"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "operating-system",
+      "name": "RT-Thread",
+      "version": "detected (version unknown)",
+      "publisher": "RT-Thread",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.24"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature '####' at offset 0x26e405b (1 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zlib",
+      "version": "1.2.3",
+      "publisher": "zlib",
+      "purl": "pkg:generic/zlib@1.2.3",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: deflate, inflate | Hits: 105 across 11 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cJSON",
+      "version": "detected (version unknown)",
+      "publisher": "DaveGamble",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: cJSON_Parse, cJSON, cJSON_CreateObject | Hits: 128 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "OpenSSL",
+      "version": "1.0.2",
+      "publisher": "OpenSSL",
+      "purl": "pkg:generic/openssl@1.0.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: OpenSSL 1.1.1, OpenSSL 1.0.2, SSL_CTX_new | Hits: 208 across 6 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Kotlin Stdlib",
+      "version": "detected (version unknown)",
+      "publisher": "JetBrains",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: ()Landroidx/room/compiler/processing/javac/kotlin/KmClassTypeInfo;, ()Landroidx/room/compiler/processing/javac/kotlin/KmConstructor;, ()Landroidx/room/compiler/processing/javac/kotlin/KmExecutable; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes.dex: Lkotlin/Comparator;, Lkotlin/Deprecated;, Lkotlin/DeprecationLevel; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lkotlin/ExtensionFunctionType;, Lkotlin/Function0;, Lkotlin/Function1;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "AndroidX",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Landroidx/activity/ComponentActivity;, Landroidx/annotation/NonNull;, Landroidx/annotation/Nullable; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes.dex: Landroidx/activity/ActivityViewModelLazyKt$viewModels$1;, Landroidx/activity/ActivityViewModelLazyKt$viewModels$factoryPromise$1;, Landroidx/activity/ActivityViewModelLazyKt; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Landroidx/activity/result/ActivityResultLauncher;, Landroidx/activity/result/ActivityResultLauncher<, Landroidx/appcompat/R$attr;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Glide",
+      "version": "detected (version unknown)",
+      "publisher": "Bump Technologies",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Lcom/bumptech/glide/GeneratedAppGlideModule;, Lcom/bumptech/glide/GeneratedAppGlideModuleImpl;, Lcom/bumptech/glide/GeneratedRequestManagerFactory; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lcom/bumptech/glide/Glide;, Lcom/bumptech/glide/RequestBuilder;, Lcom/bumptech/glide/RequestManager; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lcom/bumptech/glide/Glide;, Lcom/bumptech/glide/GlideBuilder;, Lcom/bumptech/glide/Priority;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Material Components",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Lcom/google/android/material/appbar/AppBarLayout;, Lcom/google/android/material/snackbar/Snackbar$SnackbarLayout;, Lcom/google/android/material/snackbar/Snackbar; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lcom/google/android/material/R$anim;, Lcom/google/android/material/R$animator;, Lcom/google/android/material/R$attr; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lcom/google/android/material/snackbar/Snackbar;, Lcom/google/android/material/textfield/TextInputEditText;, Lcom/google/android/material/textfield/TextInputLayout;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Firebase",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Lcom/google/firebase/encoders/DataEncoder;, Lcom/google/firebase/encoders/EncodingException;, Lcom/google/firebase/encoders/FieldDescriptor; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lcom/google/firebase/FirebaseApiNotAvailableException;, Lcom/google/firebase/FirebaseException;, Lcom/google/firebase/FirebaseExceptionMapper;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Gson",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "purl": "pkg:maven/gson@2.8.6",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Lcom/google/gson/Gson;, Lcom/google/gson/GsonBuilder;, Lcom/google/gson/JsonElement; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lcom/google/gson/DefaultDateTypeAdapter;, Lcom/google/gson/ExclusionStrategy;, Lcom/google/gson/FieldAttributes; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lcom/google/gson/Gson;, Lcom/google/gson/JsonElement;, Lcom/google/gson/JsonObject;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Kotlin Coroutines",
+      "version": "detected (version unknown)",
+      "publisher": "JetBrains",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Lkotlinx/coroutines/BuildersKt;, Lkotlinx/coroutines/CancellableContinuation;, Lkotlinx/coroutines/CancellableContinuation< | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes.dex: Lkotlinx/coroutines/BuildersKt;, Lkotlinx/coroutines/CancellableContinuation$DefaultImpls;, Lkotlinx/coroutines/CancellableContinuation; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes6.dex: Lkotlinx/coroutines/AbstractCoroutine;, Lkotlinx/coroutines/AbstractCoroutine<, Lkotlinx/coroutines/AbstractTimeSource;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Apache HttpClient",
+      "version": "detected (version unknown)",
+      "publisher": "Apache",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Lorg/apache/http/Header;, Lorg/apache/http/HttpEntity;, Lorg/apache/http/HttpResponse; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lorg/apache/http/NameValuePair;, Lorg/apache/http/client/utils/URLEncodedUtils;, Lorg/apache/http/conn/ConnectTimeoutException;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "org.json",
+      "version": "detected (version unknown)",
+      "publisher": "JSON.org",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.65"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes2.dex: Lorg/json/JSONArray;, Lorg/json/JSONException;, Lorg/json/JSONObject; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lorg/json/JSONArray;, Lorg/json/JSONException;, Lorg/json/JSONObject; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lorg/json/JSONArray;, Lorg/json/JSONException;, Lorg/json/JSONObject;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Protocol Buffers",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes.dex: Lcom/google/protobuf/AbstractMessageLite;, Lcom/google/protobuf/ByteString;, Lcom/google/protobuf/CodedInputStream; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lcom/google/protobuf/AbstractMessageLite$Builder$LimitedInputStream;, Lcom/google/protobuf/AbstractMessageLite$Builder;, Lcom/google/protobuf/AbstractMessageLite$Builder< | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lcom/google/protobuf/ExtensionRegistry;, Lcom/google/protobuf/ExtensionRegistryLite;, Lcom/google/protobuf/MessageLite$Builder;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Jake Wharton Libraries",
+      "version": "detected (version unknown)",
+      "publisher": "Jake Wharton",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lcom/jakewharton/rxbinding4/InitialValueObservable$Skipped;, Lcom/jakewharton/rxbinding4/InitialValueObservable;, Lcom/jakewharton/rxbinding4/InitialValueObservable< | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lcom/jakewharton/rxbinding4/view/RxView;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "RxJava",
+      "version": "3.x",
+      "publisher": "ReactiveX",
+      "purl": "pkg:maven/rxjava@2.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes3.dex: Lio/reactivex/rxjava3/android/MainThreadDisposable;, Lio/reactivex/rxjava3/core/Observable;, Lio/reactivex/rxjava3/core/Observable< | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lio/reactivex/rxjava3/android/MainThreadDisposable$$ExternalSyntheticLambda0;, Lio/reactivex/rxjava3/android/MainThreadDisposable;, Lio/reactivex/rxjava3/android/R; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lio/reactivex/rxjava3/core/Observable;, Lio/reactivex/rxjava3/core/Observer;, Lio/reactivex/rxjava3/core/Observer<"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Netty",
+      "version": "detected (version unknown)",
+      "publisher": "Netty Project",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lio/netty/bootstrap/AbstractBootstrap$1;, Lio/netty/bootstrap/AbstractBootstrap$2;, Lio/netty/bootstrap/AbstractBootstrap$PendingRegistrationPromise; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lio/netty/bootstrap/AbstractBootstrap;, Lio/netty/bootstrap/Bootstrap;, Lio/netty/buffer/ByteBuf;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Bouncy Castle",
+      "version": "detected (version unknown)",
+      "publisher": "Legion of the Bouncy Castle",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.90"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lorg/bouncycastle/asn1/x500/X500Name;, Lorg/bouncycastle/cert/X509CertificateHolder;, Lorg/bouncycastle/cert/X509v3CertificateBuilder; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes6.dex: Lorg/bouncycastle/jsse/BCSSLParameters;, Lorg/bouncycastle/jsse/BCSSLSocket;, Lorg/bouncycastle/jsse/provider/BouncyCastleJsseProvider;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Conscrypt",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lorg/conscrypt/AllocatedBuffer;, Lorg/conscrypt/BufferAllocator;, Lorg/conscrypt/Conscrypt; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes6.dex: Lorg/conscrypt/Conscrypt$Version;, Lorg/conscrypt/Conscrypt;, Lorg/conscrypt/ConscryptHostnameVerifier;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "SLF4J",
+      "version": "detected (version unknown)",
+      "publisher": "QOS.ch",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.90"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes5.dex: Lorg/slf4j/ILoggerFactory;, Lorg/slf4j/Logger;, Lorg/slf4j/LoggerFactory; | DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lorg/slf4j/ILoggerFactory;, Lorg/slf4j/Logger;, Lorg/slf4j/LoggerFactory;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Logback",
+      "version": "detected (version unknown)",
+      "publisher": "QOS.ch",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in signed_Xiaomi_EnterpriseScreen.apk/classes4.dex: Lch/qos/logback/classic/Level;, Lch/qos/logback/classic/Logger;, Lch/qos/logback/classic/LoggerContext;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-mqtt",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties | Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-redis",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-buffer",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-common",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-transport-native-epoll",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties | Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties | Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-transport-native-kqueue",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-transport-udt",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-transport-rxtx",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-resolver-dns",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-http",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-handler",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-dns",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-smtp",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-stomp",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-memcache",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-socks",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-transport-native-unix-common",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-resolver",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-transport-sctp",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-resolver-dns-native-macos",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-transport",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-haproxy",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-handler-proxy",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-http2",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "netty-codec-xml",
+      "version": "4.1.65",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in signed_Xiaomi_EnterpriseScreen.apk/META-INF/io.netty.versions.properties"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping"
+    }
+  ]
+}

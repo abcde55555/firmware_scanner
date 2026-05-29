@@ -1,0 +1,108 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:a7c97ea4-0716-4aee-a21b-344a56aed274",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T09:52:09.997471+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "firmware-scanner",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\iot\\openwrt-19.07.1-apm821xx-sata-wd_mybooklive-initramfs-kernel.bin",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1ab892478f359ff6b7dcf7d0895ec28a283b52479582c8f94a7b2e41eef7c846"
+        },
+        {
+          "alg": "MD5",
+          "content": "f90418024b28b3863f16c2de199eb45f"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "zlib",
+      "version": "detected (version unknown)",
+      "publisher": "zlib",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.80"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: deflate | Hits: 6 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "Linux Kernel",
+      "version": "detected (version unknown)",
+      "publisher": "Linux",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.65"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Linux version, Linux version 4.14.167, init_task | Hits: 3 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "OpenWrt",
+      "version": "7.5.0",
+      "publisher": "OpenWrt",
+      "purl": "pkg:generic/openwrt@7.5.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.80"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: OpenWrt, openwrt | Hits: 3 across 1 sections"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

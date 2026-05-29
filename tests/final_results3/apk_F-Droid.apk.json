@@ -1,0 +1,327 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:67eabdd3-0063-4897-a886-b7dcbbe16a56",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T08:56:53.578147+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\apk\\F-Droid.apk",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "985f5181d48bb6bafd54083a048b391271e0ab28385881cc41294fb01a222762"
+        },
+        {
+          "alg": "MD5",
+          "content": "ec6a9a8560924bb833942a7c3256847a"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "zlib",
+      "version": "detected (version unknown)",
+      "publisher": "zlib",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: inflate, deflate | Hits: 29 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "AndroidX",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Landroidx/activity/Api34Impl;, Landroidx/activity/BackEventCompat$Companion;, Landroidx/activity/BackEventCompat; | DEX packages in classes2.dex: Landroidx/activity/ComponentActivity;, Landroidx/activity/EdgeToEdge;, Landroidx/activity/OnBackPressedDispatcher;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Logback",
+      "version": "detected (version unknown)",
+      "publisher": "QOS.ch",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lch/qos/logback/classic/ClassicConstants;, Lch/qos/logback/classic/Level;, Lch/qos/logback/classic/Logger; | DEX packages in classes2.dex: Lch/qos/logback/classic/LoggerContext;, Lch/qos/logback/classic/util/ContextInitializer;, Lch/qos/logback/classic/util/LogbackMDCAdapter;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Glide",
+      "version": "detected (version unknown)",
+      "publisher": "Bump Technologies",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lcom/bumptech/glide/GeneratedAppGlideModule;, Lcom/bumptech/glide/GeneratedAppGlideModuleImpl;, Lcom/bumptech/glide/GeneratedRequestManagerFactory; | DEX packages in classes2.dex: Lcom/bumptech/glide/Glide;, Lcom/bumptech/glide/GlideBuilder;, Lcom/bumptech/glide/Priority;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Material Components",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lcom/google/android/material/R$anim;, Lcom/google/android/material/R$animator;, Lcom/google/android/material/R$attr; | DEX packages in classes2.dex: Lcom/google/android/material/R$attr;, Lcom/google/android/material/appbar/MaterialToolbar;, Lcom/google/android/material/badge/BadgeDrawable;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Ktor",
+      "version": "detected (version unknown)",
+      "publisher": "JetBrains",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lio/ktor/client/HttpClient$1;, Lio/ktor/client/HttpClient$2;, Lio/ktor/client/HttpClient$3$1; | DEX packages in classes2.dex: Lio/ktor/client/HttpClient;, Lio/ktor/client/HttpClientConfig;, Lio/ktor/client/HttpClientKt;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "RxJava",
+      "version": "2.0",
+      "publisher": "ReactiveX",
+      "purl": "pkg:maven/rxjava@2.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lio/reactivex/rxjava3/android/plugins/RxAndroidPlugins;, Lio/reactivex/rxjava3/android/schedulers/AndroidSchedulers$$ExternalSyntheticLam, Lio/reactivex/rxjava3/android/schedulers/AndroidSchedulers$MainHolder; | DEX packages in classes2.dex: Lio/reactivex/rxjava3/android/schedulers/AndroidSchedulers;, Lio/reactivex/rxjava3/core/Completable;, Lio/reactivex/rxjava3/core/Scheduler;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Kotlin Stdlib",
+      "version": "detected (version unknown)",
+      "publisher": "JetBrains",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lkotlin/DeepRecursiveFunction;, Lkotlin/DeepRecursiveKt;, Lkotlin/DeepRecursiveScope; | DEX packages in classes2.dex: <init>(Lorg/jetbrains/kotlin/serialization/deserialization/descriptors/Deseriali, Lkotlin/Comparator;, Lkotlin/DeepRecursiveFunction;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Kotlin Coroutines",
+      "version": "detected (version unknown)",
+      "publisher": "JetBrains",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lkotlinx/coroutines/BuildersKt;, Lkotlinx/coroutines/CancellableContinuation$DefaultImpls;, Lkotlinx/coroutines/CancellableContinuation; | DEX packages in classes2.dex: Lkotlinx/coroutines/AbstractCoroutine;, Lkotlinx/coroutines/AbstractTimeSource;, Lkotlinx/coroutines/AbstractTimeSourceKt;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Bouncy Castle",
+      "version": "detected (version unknown)",
+      "publisher": "Legion of the Bouncy Castle",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lorg/bouncycastle/asn1/ASN1Object;, Lorg/bouncycastle/asn1/cms/ContentInfo;, Lorg/bouncycastle/cert/jcajce/JcaCertStore; | DEX packages in classes2.dex: Lorg/bouncycastle/LICENSE;, Lorg/bouncycastle/asn1/ASN1Absent;, Lorg/bouncycastle/asn1/ASN1ApplicationSpecific;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "SLF4J",
+      "version": "detected (version unknown)",
+      "publisher": "QOS.ch",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes.dex: Lorg/slf4j/ILoggerFactory;, Lorg/slf4j/Logger$-CC;, Lorg/slf4j/Logger; | DEX packages in classes2.dex: Lorg/slf4j/ILoggerFactory;, Lorg/slf4j/IMarkerFactory;, Lorg/slf4j/Logger$-CC;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Conscrypt",
+      "version": "detected (version unknown)",
+      "publisher": "Google",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.65"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes2.dex: Lorg/conscrypt/Conscrypt$Version;, Lorg/conscrypt/Conscrypt;, Lorg/conscrypt/ConscryptHostnameVerifier;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "org.json",
+      "version": "detected (version unknown)",
+      "publisher": "JSON.org",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "DEX packages in classes2.dex: Lorg/json/JSONArray;, Lorg/json/JSONException;, Lorg/json/JSONObject;"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "jmdns",
+      "version": "3.5.5",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Properties version in version.properties"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

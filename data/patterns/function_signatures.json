@@ -1,0 +1,69 @@
+{
+  "rtos_functions": {
+    "FreeRTOS": [
+      "xTaskCreate", "vTaskDelete", "vTaskDelay", "vTaskStartScheduler",
+      "xQueueCreate", "xQueueSend", "xQueueReceive",
+      "xSemaphoreCreateMutex", "xSemaphoreCreateBinary",
+      "pvPortMalloc", "vPortFree", "xPortGetFreeHeapSize",
+      "xTimerCreate", "xEventGroupCreate", "xStreamBufferCreate",
+      "vTaskSwitchContext", "xPortPendSVHandler"
+    ],
+    "Zephyr": [
+      "k_thread_create", "k_sem_init", "k_mutex_init",
+      "k_msgq_init", "k_work_submit", "k_timer_start",
+      "z_swap", "z_reschedule", "z_impl_k_sleep",
+      "k_heap_alloc", "sys_slist_append"
+    ],
+    "RT-Thread": [
+      "rt_thread_create", "rt_sem_create", "rt_mutex_create",
+      "rt_mq_create", "rt_device_register", "rt_system_scheduler_start",
+      "rt_object_init", "rt_timer_create", "rt_malloc"
+    ],
+    "ThreadX": [
+      "tx_thread_create", "tx_semaphore_create", "tx_mutex_create",
+      "tx_queue_create", "tx_kernel_enter", "tx_timer_create",
+      "_tx_thread_schedule", "_tx_thread_system_suspend"
+    ],
+    "VxWorks": [
+      "taskSpawn", "taskDelay", "semBCreate", "semMCreate",
+      "msgQCreate", "sysClkRateGet", "intConnect",
+      "taskSafe", "taskUnsafe", "taskIdSelf"
+    ],
+    "NuttX": [
+      "nxsched_add_readytorun", "nxtask_create", "nxsem_post",
+      "nx_start", "nxmutex_init", "nxsig_dispatch"
+    ],
+    "uC/OS": [
+      "OSTaskCreate", "OSSemCreate", "OSMutexCreate",
+      "OSStart", "OSInit", "OSTimeDly", "OSQCreate",
+      "OSTaskDel", "OSSemPost"
+    ],
+    "LiteOS": [
+      "LOS_TaskCreate", "LOS_SemCreate", "LOS_MuxCreate",
+      "LOS_QueueCreate", "LOS_KernelInit", "LOS_Start"
+    ]
+  },
+  "library_functions": {
+    "mbedTLS": [
+      "mbedtls_ssl_init", "mbedtls_x509_crt_parse",
+      "mbedtls_aes_init", "mbedtls_sha256_init",
+      "mbedtls_ssl_handshake", "mbedtls_entropy_init"
+    ],
+    "wolfSSL": [
+      "wolfSSL_Init", "wolfSSL_CTX_new", "wolfSSL_new",
+      "wolfSSL_connect", "wolfCrypt_Init"
+    ],
+    "lwIP": [
+      "tcp_new", "tcp_bind", "tcp_listen", "tcp_connect",
+      "udp_new", "netconn_new", "pbuf_alloc", "etharp_output"
+    ],
+    "FatFs": [
+      "f_open", "f_read", "f_write", "f_close",
+      "f_mount", "f_mkdir", "f_unlink"
+    ],
+    "cJSON": [
+      "cJSON_Parse", "cJSON_CreateObject", "cJSON_AddStringToObject",
+      "cJSON_Print", "cJSON_Delete"
+    ]
+  }
+}

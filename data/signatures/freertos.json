@@ -1,0 +1,28 @@
+{
+  "name": "FreeRTOS",
+  "vendor": "Amazon",
+  "signatures": [
+    {"ascii": "FreeRTOS", "confidence": 0.8, "name": "FreeRTOS"},
+    {"ascii": "xTaskCreate", "confidence": 0.7, "name": "FreeRTOS"},
+    {"ascii": "vTaskStartScheduler", "confidence": 0.7, "name": "FreeRTOS"},
+    {"ascii": "pvPortMalloc", "confidence": 0.6, "name": "FreeRTOS"},
+    {"ascii": "Tmr Svc", "confidence": 0.7, "name": "FreeRTOS"},
+    {"ascii": "IDLE", "confidence": 0.3, "name": "FreeRTOS"},
+    {"ascii": "FreeRTOS+TCP", "confidence": 0.8, "name": "FreeRTOS+TCP"},
+    {"ascii": "FreeRTOS+FAT", "confidence": 0.8, "name": "FreeRTOS+FAT"}
+  ],
+  "version_patterns": [
+    "FreeRTOS\\s+[Vv](\\d+\\.\\d+\\.\\d+)",
+    "FreeRTOS\\s+[Vv](\\d{6}\\.\\d{2})",
+    "tskKERNEL_VERSION_NUMBER\\s+\"([^\"]+)\""
+  ],
+  "known_symbols": [
+    "xTaskCreate", "vTaskDelete", "vTaskDelay", "vTaskStartScheduler",
+    "xQueueCreate", "xQueueSend", "xQueueReceive",
+    "xSemaphoreCreateMutex", "xSemaphoreCreateBinary",
+    "pvPortMalloc", "vPortFree", "xPortGetFreeHeapSize",
+    "xTimerCreate", "xEventGroupCreate", "xStreamBufferCreate",
+    "ulTaskNotifyTake", "xTaskNotifyGive",
+    "vTaskSwitchContext", "xPortPendSVHandler", "xPortSysTickHandler"
+  ]
+}

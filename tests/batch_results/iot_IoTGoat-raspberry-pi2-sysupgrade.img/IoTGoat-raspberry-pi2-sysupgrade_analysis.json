@@ -1,0 +1,250 @@
+{
+  "firmware": {
+    "path": "D:\\work\\Code\\traeCode\\\u8c03\u7814\\\u56fa\u4ef6\u626b\u63cf\u8c03\u7814\\samples\\iot\\IoTGoat-raspberry-pi2-sysupgrade.img",
+    "sha256": "4d8d4b3edc4ad98b59965ca011b77cf9074b7756eccb8045d49a7501cca4be97",
+    "md5": "b8772535226d66419307041bd5dfd5de",
+    "size": 33306530,
+    "format": "Generic Image"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "ThreadX",
+    "confidence": 0.65
+  },
+  "components": [
+    {
+      "name": "FatFs",
+      "vendor": "ChaN",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.595,
+          "method": "symbol_table",
+          "evidence": "Symbols: f_open, f_read, f_write, f_mount"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "lwIP",
+      "vendor": "lwIP",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.34,
+          "method": "symbol_table",
+          "evidence": "Symbols: tcp_new"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.6,
+          "method": "string_pattern",
+          "evidence": "Matched: tcp_new | Hits: 2 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "RT-Thread",
+      "vendor": "RT-Thread",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.76,
+          "method": "binary_signature",
+          "evidence": "Signature '####' at offset 0x786000 (520 occurrences)"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "operating-system",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "ThreadX",
+      "vendor": "Microsoft",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.34,
+          "method": "symbol_table",
+          "evidence": "Symbols: tx_thread_create"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.6800000000000002,
+          "method": "binary_signature",
+          "evidence": "Signature 'ThreadX' at offset 0x6bcc39 (2 occurrences)"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.65,
+          "method": "string_pattern",
+          "evidence": "Matched: tx_thread_create | Hits: 3 across 1 sections"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.5,
+          "method": "rtos_plugin",
+          "evidence": ""
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "operating-system",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Microchip Harmony",
+      "vendor": "Microchip",
+      "versions": [
+        {
+          "version": "1.0.4",
+          "confidence": 0.9,
+          "method": "string_pattern",
+          "evidence": "Matched: Microchip | Hits: 3 across 2 sections"
+        }
+      ],
+      "resolved_version": "1.0.4",
+      "component_type": "library",
+      "purl": "pkg:generic/microchip-harmony@1.0.4",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Ethernet",
+      "vendor": "Generic",
+      "versions": [
+        {
+          "version": "2.0",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: Ethernet | Hits: 9 across 3 sections"
+        }
+      ],
+      "resolved_version": "2.0",
+      "component_type": "library",
+      "purl": "pkg:generic/ethernet@2.0",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "TinyUSB",
+      "vendor": "hathach",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.55,
+          "method": "string_pattern",
+          "evidence": "Matched: tusb_init | Hits: 1 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Broadcom BSP",
+      "vendor": "Broadcom",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: Broadcom | Hits: 11 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "firmware",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Marvell BSP",
+      "vendor": "Marvell",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.55,
+          "method": "string_pattern",
+          "evidence": "Matched: Marvell | Hits: 1 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "firmware",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Atmel ASF",
+      "vendor": "Microchip",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.55,
+          "method": "string_pattern",
+          "evidence": "Matched: ATMEL | Hits: 1 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "FileX",
+      "vendor": "Microsoft",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.7000000000000001,
+          "method": "string_pattern",
+          "evidence": "Matched: FileX | Hits: 4 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

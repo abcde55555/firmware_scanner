@@ -1,0 +1,154 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:e9042779-354e-485c-a059-295240a25c6f",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T01:56:25.571804+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "tests\\fixtures\\test_freertos.bin",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1b43cd7f9b2f3e790494641f3b9221cd136fc4dea47455713e57c3e7ebbf73fc"
+        },
+        {
+          "alg": "MD5",
+          "content": "ddd038bcdde4b626fc61f34cdc293d10"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "FreeRTOS"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "operating-system",
+      "name": "FreeRTOS",
+      "version": "10.5.1",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos@10.5.1",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,rtos_plugin,string_pattern,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "FreeRTOS V10.5.1 | Symbols: xTaskCreate, vTaskStartScheduler, xQueueCreate, xSemaphoreCreateMutex, pvPortMalloc | Signature 'IDLE\u0000\u0000\u0000\u0000' at offset 0x1b3 (1 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "IP",
+      "version": "2.1.3",
+      "purl": "pkg:generic/ip@2.1.3",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.24"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "2.1.3"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lwIP",
+      "version": "2.1.3",
+      "publisher": "lwIP",
+      "purl": "pkg:generic/lwip@2.1.3",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.56"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,string_pattern,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "lwIP 2.1.3 | LWIP_VERSION_STRING \"2.1.3\" | Symbols: tcp_new, netconn_new, pbuf_alloc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mbedTLS",
+      "version": "3.4.0",
+      "publisher": "ARM",
+      "purl": "pkg:generic/mbedtls@3.4.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.56"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,string_pattern,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "mbed TLS 3.4.0 | Symbols: mbedtls_ssl_init, mbedtls_x509_crt_parse, mbedtls_aes_init | Signature 'MBEDTLS_' at offset 0x243 (1 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "TLS",
+      "version": "3.4.0",
+      "purl": "pkg:generic/tls@3.4.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.24"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "3.4.0"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

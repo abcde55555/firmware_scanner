@@ -1,0 +1,292 @@
+{
+  "firmware": {
+    "path": "tests\\samples\\freertos_combined.bin",
+    "sha256": "cedd357246d740aa406c438365f3fffe65de514189afd2c1cb842393697aed2f",
+    "md5": "2310431d94e0e823887781839fc8ccea",
+    "size": 359272,
+    "format": "Raw Binary"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "FreeRTOS",
+    "confidence": 1.0
+  },
+  "components": [
+    {
+      "name": "FreeRTOS",
+      "vendor": "Amazon",
+      "versions": [
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.42,
+          "method": "string_pattern",
+          "evidence": "FreeRTOS V10.4.0"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.765,
+          "method": "symbol_table",
+          "evidence": "Symbols: xTaskCreate, vTaskStartScheduler, xQueueCreate, pvPortMalloc, vPortFree"
+        },
+        {
+          "version": "11.1.0",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: pvPortMalloc, vTaskStartScheduler, xQueueCreate | Hits: 844 across 2 sections"
+        },
+        {
+          "version": "10.4.0",
+          "confidence": 0.85,
+          "method": "rtos_plugin",
+          "evidence": "Version string: 10.4.0"
+        }
+      ],
+      "resolved_version": "10.4.0",
+      "component_type": "operating-system",
+      "purl": "pkg:generic/freertos@10.4.0",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "mbedTLS",
+      "vendor": "ARM",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.72,
+          "method": "binary_signature",
+          "evidence": "Signature 'MBEDTLS_' at offset 0x41ef7 (5 occurrences)"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: MBEDTLS_ | Hits: 10 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "CMSIS",
+      "vendor": "ARM",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.8,
+          "method": "string_pattern",
+          "evidence": "Matched: SystemCoreClock, CMSIS | Hits: 4 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "FreeRTOS+TCP",
+      "vendor": "Amazon",
+      "versions": [
+        {
+          "version": "4.2.2",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: FreeRTOS_Socket, FreeRTOS+TCP | Hits: 8 across 2 sections"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.7,
+          "method": "rtos_plugin",
+          "evidence": ""
+        }
+      ],
+      "resolved_version": "4.2.2",
+      "component_type": "library",
+      "purl": "pkg:generic/freertos+tcp@4.2.2",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "printf",
+      "vendor": "mpaland",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: printf | Hits: 18 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Newlib",
+      "vendor": "Red Hat",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.7,
+          "method": "string_pattern",
+          "evidence": "Matched: newlib | Hits: 2 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "picolibc",
+      "vendor": "picolibc",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.7,
+          "method": "string_pattern",
+          "evidence": "Matched: picolibc | Hits: 2 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Ethernet",
+      "vendor": "Generic",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: Ethernet | Hits: 10 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

@@ -1,0 +1,50 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:1265392e-9219-4a48-b6d7-3b15044d1953",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T08:04:00.238280+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\rtos\\freertos_sample.bin",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "be05b2136dfea86d7401e2da9ad90eab743c758f34ba9a9808e0fa88fb7f3626"
+        },
+        {
+          "alg": "MD5",
+          "content": "fe3528b260a5f2b960c8c4a6f63bab8f"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "FreeRTOS"
+      }
+    ]
+  },
+  "components": [],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

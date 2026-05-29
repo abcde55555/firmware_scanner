@@ -1,0 +1,430 @@
+{
+  "firmware": {
+    "path": "D:\\work\\Code\\traeCode\\\u8c03\u7814\\\u56fa\u4ef6\u626b\u63cf\u8c03\u7814\\samples\\rtos\\FreeRTOSv202411.00.zip",
+    "sha256": "00402c15c77286858708fcbbc06e01dcabfdf573e7474ac7862c8dbd9f117fd9",
+    "md5": "d01906e5ce4f1a2ddefafa08bfe83981",
+    "size": 128879211,
+    "format": "Raw Binary"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "FreeRTOS",
+    "confidence": 0.4
+  },
+  "components": [
+    {
+      "name": "lwIP",
+      "vendor": "lwIP",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.76,
+          "method": "binary_signature",
+          "evidence": "Signature 'lwIP' at offset 0x3fa1d77 (1074 occurrences)"
+        },
+        {
+          "version": "1.4.0",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: lwip-1.4.0, lwip-1.1.0 | Hits: 382 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "pkg:generic/lwip@1.4.0",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "mbedTLS",
+      "vendor": "ARM",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.76,
+          "method": "binary_signature",
+          "evidence": "Signature 'mbedTLS' at offset 0xa44f9d (28 occurrences)"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "RT-Thread",
+      "vendor": "RT-Thread",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.24,
+          "method": "binary_signature",
+          "evidence": "Signature '####' at offset 0x1859f53 (1 occurrences)"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "operating-system",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "SEGGER RTT",
+      "vendor": "SEGGER",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.76,
+          "method": "binary_signature",
+          "evidence": "Signature 'SEGGER' at offset 0x5d647e (12 occurrences)"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: SEGGER, SEGGER_RTT | Hits: 10 across 3 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "ThreadX",
+      "vendor": "Microsoft",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.76,
+          "method": "binary_signature",
+          "evidence": "Signature 'ThreadX' at offset 0x5cb24d (24 occurrences)"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "operating-system",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "wolfSSL",
+      "vendor": "wolfSSL",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.76,
+          "method": "binary_signature",
+          "evidence": "Signature 'wolfSSL' at offset 0x81f0f7 (5490 occurrences)"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "FreeRTOS",
+      "vendor": "Amazon",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: FreeRTOS | Hits: 70631 across 32 sections"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.5,
+          "method": "rtos_plugin",
+          "evidence": "Detected via signatures"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "operating-system",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "CMSIS",
+      "vendor": "ARM",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: CMSIS | Hits: 571 across 8 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "printf",
+      "vendor": "mpaland",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: printf | Hits: 46 across 7 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "STM32 HAL",
+      "vendor": "STMicroelectronics",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: STM32 | Hits: 931 across 8 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "TI DriverLib",
+      "vendor": "Texas Instruments",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: driverlib | Hits: 385 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Ethernet",
+      "vendor": "Generic",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: Ethernet | Hits: 465 across 6 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "FreeRTOS+TCP",
+      "vendor": "Amazon",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: FreeRTOS_Socket, FreeRTOS+TCP | Hits: 134 across 7 sections"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.7,
+          "method": "rtos_plugin",
+          "evidence": ""
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "MPLAB Harmony",
+      "vendor": "Microchip",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: MPLAB | Hits: 42 across 4 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "MQTT",
+      "vendor": "Eclipse Paho",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.8,
+          "method": "string_pattern",
+          "evidence": "Matched: mqtt_connect | Hits: 4 across 2 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Unity Test",
+      "vendor": "ThrowTheSwitch",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: Unity | Hits: 21 across 3 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "AWS IoT SDK",
+      "vendor": "Amazon",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.55,
+          "method": "string_pattern",
+          "evidence": "Matched: aws_iot_ | Hits: 1 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Atmel ASF",
+      "vendor": "Microchip",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.55,
+          "method": "string_pattern",
+          "evidence": "Matched: ATMEL | Hits: 1 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Atmel START",
+      "vendor": "Microchip",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.7000000000000001,
+          "method": "string_pattern",
+          "evidence": "Matched: atmel_start | Hits: 4 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "Newlib",
+      "vendor": "Red Hat",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.75,
+          "method": "string_pattern",
+          "evidence": "Matched: newlib, _sbrk | Hits: 5 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "picolibc",
+      "vendor": "picolibc",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.55,
+          "method": "string_pattern",
+          "evidence": "Matched: picolibc | Hits: 1 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

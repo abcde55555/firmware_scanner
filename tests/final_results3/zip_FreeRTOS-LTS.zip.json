@@ -1,0 +1,364 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:38b4736a-4b90-49c9-89b5-38b7cdc118d5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T08:58:13.903666+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\zip\\FreeRTOSv202604.00-LTS.zip",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b889fe1179591efc3a94f42d9cf87238c6b35b717026fdc963ed986cf1088ac4"
+        },
+        {
+          "alg": "MD5",
+          "content": "ae46e2d2fe198840713039201b070141"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "FreeRTOS"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "operating-system",
+      "name": "FreeRTOS-Kernel",
+      "version": "11.1.0",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos-kernel@11.1.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.54"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "manifest.yml dependency in FreeRTOS-LTS/FreeRTOS/FreeRTOS-Plus-TCP/manifest.yml: FreeRTOS-Kernel V11.1.0 | manifest.yml dependency in FreeRTOS-LTS/manifest.yml: FreeRTOS-Kernel V11.3.0"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mbedTLS",
+      "version": "detected (version unknown)",
+      "publisher": "ARM",
+      "purl": "pkg:generic/mbedtls@0.5",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'mbedTLS' at offset 0xb9ff13 (28 occurrences) | Matched: mbedtls_sha256, MBEDTLS_ | Hits: 1013 across 1 sections | #include <mbedtls/check_config.h> in FreeRTOS-LTS/FreeRTOS/corePKCS11/test/cbmc/include/mbedtls_config.h"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "FreeRTOS",
+      "version": "11.3.0",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos@11.3.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "rtos_plugin,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: FreeRTOS V10.2.1, FreeRTOS V10.4.6, xTaskCreate | Hits: 15594 across 131 sections | #include <FreeRTOS.h> in FreeRTOS-LTS/FreeRTOS/FreeRTOS-Plus-TCP/test/cbmc/include/queue_init.h | Detected via signatures"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FreeRTOS+TCP",
+      "version": "10.0.0",
+      "publisher": "Amazon",
+      "purl": "pkg:generic/freertos+tcp@10.0.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "rtos_plugin,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: FreeRTOS+TCP, FreeRTOS_Socket | Hits: 308 across 61 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "CMSIS",
+      "version": "detected (version unknown)",
+      "publisher": "ARM",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: __CMSIS_, NVIC_SetPriority, CMSIS | Hits: 34 across 5 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "coreHTTP",
+      "version": "3.1.3",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/FreeRTOS/coreHTTP/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "coreJSON",
+      "version": "3.3.1",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/FreeRTOS/coreJSON/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "coreSNTP",
+      "version": "2.0.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/FreeRTOS/coreSNTP/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "coreMQTT",
+      "version": "5.0.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/FreeRTOS/coreMQTT/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "corePKCS11",
+      "version": "3.6.4",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/FreeRTOS/corePKCS11/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FreeRTOS-Cellular-Interface",
+      "version": "1.4.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/FreeRTOS/FreeRTOS-Cellular-Interface/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "backoffAlgorithm",
+      "version": "1.4.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/FreeRTOS/backoffAlgorithm/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "device-shadow-for-aws-iot-embedded-sdk",
+      "version": "1.4.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/aws/device-shadow-for-aws-iot-embedded-sdk/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "aws-iot-core-mqtt-file-streams-embedded-c",
+      "version": "1.2.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/aws/aws-iot-core-mqtt-file-streams-embedded-c/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sigv4-for-aws-iot-embedded-sdk",
+      "version": "1.3.1",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/aws/sigv4-for-aws-iot-embedded-sdk/CHANGELOG.md"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fleet-provisioning-for-aws-iot-embedded-sdk",
+      "version": "1.2.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Version in text file FreeRTOS-LTS/aws/fleet-provisioning-for-aws-iot-embedded-sdk/CHANGELOG.md"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

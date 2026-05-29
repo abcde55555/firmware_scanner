@@ -1,0 +1,273 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:66817313-a758-447e-bd9c-b2c5c80c1534",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-05-29T07:45:19.188937+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "rtos-firmware-analyzer",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "D:\\work\\Code\\traeCode\\调研\\固件扫描调研\\samples\\iot\\IoTGoat-raspberry-pi2-sysupgrade.img",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "4d8d4b3edc4ad98b59965ca011b77cf9074b7756eccb8045d49a7501cca4be97"
+        },
+        {
+          "alg": "MD5",
+          "content": "b8772535226d66419307041bd5dfd5de"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "ThreadX"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "FatFs",
+      "version": "detected (version unknown)",
+      "publisher": "ChaN",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.59"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Symbols: f_open, f_read, f_write, f_mount"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lwIP",
+      "version": "detected (version unknown)",
+      "publisher": "lwIP",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.60"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Symbols: tcp_new | Matched: tcp_new | Hits: 2 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "RT-Thread",
+      "version": "detected (version unknown)",
+      "publisher": "RT-Thread",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature '####' at offset 0x786000 (520 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "ThreadX",
+      "version": "detected (version unknown)",
+      "publisher": "Microsoft",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.68"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,rtos_plugin,string_pattern,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Symbols: tx_thread_create | Signature 'ThreadX' at offset 0x6bcc39 (2 occurrences) | Matched: tx_thread_create | Hits: 3 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Microchip Harmony",
+      "version": "1.0.4",
+      "publisher": "Microchip",
+      "purl": "pkg:generic/microchip-harmony@1.0.4",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.90"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Microchip | Hits: 3 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Ethernet",
+      "version": "2.0",
+      "publisher": "Generic",
+      "purl": "pkg:generic/ethernet@2.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Ethernet | Hits: 9 across 3 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "TinyUSB",
+      "version": "detected (version unknown)",
+      "publisher": "hathach",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.55"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: tusb_init | Hits: 1 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "firmware",
+      "name": "Broadcom BSP",
+      "version": "detected (version unknown)",
+      "publisher": "Broadcom",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Broadcom | Hits: 11 across 2 sections"
+        }
+      ]
+    },
+    {
+      "type": "firmware",
+      "name": "Marvell BSP",
+      "version": "detected (version unknown)",
+      "publisher": "Marvell",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.55"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: Marvell | Hits: 1 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "Atmel ASF",
+      "version": "detected (version unknown)",
+      "publisher": "Microchip",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.55"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: ATMEL | Hits: 1 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FileX",
+      "version": "detected (version unknown)",
+      "publisher": "Microsoft",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.70"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: FileX | Hits: 4 across 1 sections"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

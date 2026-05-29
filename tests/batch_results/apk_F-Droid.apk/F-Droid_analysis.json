@@ -1,0 +1,27 @@
+{
+  "firmware": {
+    "path": "D:\\work\\Code\\traeCode\\\u8c03\u7814\\\u56fa\u4ef6\u626b\u63cf\u8c03\u7814\\samples\\apk\\F-Droid.apk",
+    "sha256": "985f5181d48bb6bafd54083a048b391271e0ab28385881cc41294fb01a222762",
+    "md5": "ec6a9a8560924bb833942a7c3256847a",
+    "size": 12426276,
+    "format": "Android APK"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "",
+    "confidence": 0.0
+  },
+  "components": [],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}
