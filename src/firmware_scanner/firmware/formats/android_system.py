@@ -84,7 +84,54 @@ class AndroidSystemImageFormat(DiskImageFormat):
                 return 0.60
             return 0.40
 
+        # Content-based Android detection: look for Android-specific markers in raw data
+        # This handles images that are raw dumps without standard filesystem headers
+        if name_lower.endswith('.img') and cls._has_android_content_markers(data, name_lower):
+            return 0.85
+
         return 0.0
+
+    @classmethod
+    def _has_android_content_markers(cls, data: bytes, name_lower: str) -> bool:
+        """Check if raw image data contains Android-specific content patterns."""
+        # Filename strongly suggests Android
+        android_name = any(kw in name_lower for kw in (
+            'android', 'system', 'vendor', 'product', 'super',
+        ))
+
+        # Search for build.prop markers (sample first 50MB + last 50MB for speed)
+        sample_size = 50 * 1024 * 1024
+        search_regions = []
+        if len(data) <= sample_size * 2:
+            search_regions.append(data)
+        else:
+            search_regions.append(data[:sample_size])
+            search_regions.append(data[-sample_size:])
+
+        has_build_prop = False
+        for region in search_regions:
+            if (b'ro.build.version.release=' in region or
+                b'ro.build.fingerprint=' in region or
+                b'ro.build.display.id=' in region):
+                has_build_prop = True
+                break
+
+        # Android APK markers (AndroidManifest.xml inside ZIP)
+        has_apk_markers = False
+        for region in search_regions:
+            if b'AndroidManifest.xml' in region and b'classes.dex' in region:
+                has_apk_markers = True
+                break
+
+        # If filename suggests Android AND content confirms it
+        if android_name and (has_build_prop or has_apk_markers):
+            return True
+
+        # Strong content evidence alone (build.prop is definitive)
+        if has_build_prop:
+            return True
+
+        return False
 
     @classmethod
     def _is_ext4(cls, data: bytes) -> bool:
@@ -119,12 +166,9 @@ class AndroidSystemImageFormat(DiskImageFormat):
         """Unpack Android system image into analyzable sections."""
         # Handle sparse images first
         raw_data = data
-        is_sparse = False
         if len(data) >= 4 and struct.unpack_from('<I', data, 0)[0] == SPARSE_MAGIC:
-            is_sparse = True
             sparse_parser = SparseImageParser()
             raw_size = sparse_parser.get_raw_size(data)
-            # Only convert to raw if reasonable size (< 2GB for in-memory)
             if raw_size > 0 and raw_size < 2 * 1024 * 1024 * 1024:
                 converted = sparse_parser.to_raw(data, max_output_size=2 * 1024 * 1024 * 1024)
                 if converted:
@@ -140,8 +184,9 @@ class AndroidSystemImageFormat(DiskImageFormat):
         elif self._is_erofs(raw_data):
             return self._unpack_erofs(raw_data, path)
 
-        # Fallback: treat as raw partition
-        return self._unpack_fallback(raw_data, path)
+        # Scan for embedded filesystems within the image
+        # (handles raw dumps that contain SquashFS, CramFS, etc.)
+        return self._unpack_raw_android(raw_data, path)
 
     def _unpack_super(self, raw_data: bytes, original_data: bytes, path: Path) -> UnpackResult:
         """Unpack super.img by extracting all contained partitions."""
@@ -350,4 +395,75 @@ class AndroidSystemImageFormat(DiskImageFormat):
                 section_type="unknown",
             )],
             metadata={"format": "raw_partition"},
+        )
+
+    def _unpack_raw_android(self, data: bytes, path: Path) -> UnpackResult:
+        """Unpack a raw Android image by scanning for embedded filesystems and key files.
+
+        Used when the image doesn't have a standard filesystem header at offset 0
+        but contains Android content (detected via build.prop markers).
+        """
+        sections: list[FirmwareSection] = []
+        scan_limit = min(len(data), 256 * 1024 * 1024)
+
+        # Scan for embedded ext4 filesystems within the image
+        offset = 0
+        while offset < scan_limit - 0x440:
+            if data[offset + 0x438:offset + 0x43A] == b'\x53\xEF':
+                # Found ext4 superblock - try to determine size
+                try:
+                    block_count = struct.unpack_from('<I', data, offset + 0x404)[0]
+                    block_size_log = struct.unpack_from('<I', data, offset + 0x418)[0]
+                    block_size = 1024 << block_size_log
+                    fs_size = block_count * block_size
+                    if 1024 < fs_size < len(data) - offset:
+                        sections.append(FirmwareSection(
+                            name=f"{path.stem}_ext4_{offset:#x}",
+                            offset=offset,
+                            size=min(fs_size, len(data) - offset),
+                            data=data[offset:offset + min(fs_size, len(data) - offset)],
+                            section_type="filesystem",
+                        ))
+                except Exception:
+                    pass
+                offset += 4096
+            else:
+                offset += 4096
+
+        # Scan for SquashFS embedded partitions
+        sqfs_pos = 0
+        while sqfs_pos < scan_limit:
+            sqfs_pos = data.find(b'hsqs', sqfs_pos, scan_limit)
+            if sqfs_pos == -1:
+                break
+            # SquashFS size is at offset 40 (4 bytes LE)
+            if sqfs_pos + 96 < len(data):
+                try:
+                    sq_size = struct.unpack_from('<I', data, sqfs_pos + 40)[0]
+                    if 4096 < sq_size < len(data) - sqfs_pos:
+                        sections.append(FirmwareSection(
+                            name=f"{path.stem}_squashfs_{sqfs_pos:#x}",
+                            offset=sqfs_pos,
+                            size=sq_size,
+                            data=data[sqfs_pos:sqfs_pos + sq_size],
+                            section_type="filesystem",
+                        ))
+                        sqfs_pos += sq_size
+                        continue
+                except Exception:
+                    pass
+            sqfs_pos += 4
+
+        # Add the whole image as a raw section for raw binary scanning
+        sections.append(FirmwareSection(
+            name=path.stem,
+            offset=0,
+            size=len(data),
+            data=data,
+            section_type="raw_android",
+        ))
+
+        return UnpackResult(
+            sections=sections,
+            metadata={"format": "android_raw_dump", "partition_name": path.stem},
         )

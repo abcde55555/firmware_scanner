@@ -8,6 +8,13 @@ applying one-size-fits-all raw byte pattern matching.
 import gzip
 import json
 import lzma
+
+# Suppress lief's verbose warnings about malformed/truncated ELFs
+try:
+    import lief
+    lief.logging.disable()
+except ImportError:
+    pass
 import re
 import struct
 from pathlib import Path

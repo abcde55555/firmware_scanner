@@ -24,6 +24,13 @@ from ..extraction.deep_scanner import DeepScanner, ComponentDatabase
 from ..firmware.recursive_unpacker import RecursiveUnpacker
 from ..sbom.generator import SBOMGenerator
 
+# Suppress lief's verbose warnings about malformed/truncated ELFs
+try:
+    import lief as _lief
+    _lief.logging.disable()
+except ImportError:
+    pass
+
 app = typer.Typer(
     name="firmware-scanner",
     help="Firmware security analysis tool - recursive unpacking, component extraction, and SBOM generation.",
@@ -410,14 +417,22 @@ def _run_analysis(
     components: list = []
 
     if is_android_system:
-        console.print("[*] Running Android system scan...")
+        import time as _time
+        scan_start = _time.time()
+
+        console.print("[*] Running Android system image analysis...")
+        console.print(f"    Image size: {len(data)/1024/1024:.1f} MB")
+
+        # Strategy 1: Try filesystem-level scan (fast if reader works)
+        console.print("[*] Strategy 1: Filesystem-level scan...")
         android_components = _run_android_system_scan(data, result, config, context)
         components.extend(android_components)
-        console.print(f"    Android scan found: {len(android_components)} components")
+        if android_components:
+            console.print(f"    Filesystem scan found: {len(android_components)} components")
 
-        # Also scan each unpacked section individually
+        # Strategy 2: Scan each unpacked section individually
         if result.sections:
-            console.print(f"[*] Scanning {len(result.sections)} extracted sections individually...")
+            console.print(f"[*] Strategy 2: Scanning {len(result.sections)} extracted sections...")
             from ..extraction.smart_analyzer import SmartSectionAnalyzer
             smart = SmartSectionAnalyzer()
             section_components = []
@@ -428,21 +443,23 @@ def _run_analysis(
                         section_components.extend(found)
                     except Exception:
                         pass
-                    # For APK sections, also do APK-specific analysis
                     if section.section_type == "apk" or section.name.lower().endswith('.apk'):
                         apk_comps = _scan_apk_section(section.name, section.data)
                         section_components.extend(apk_comps)
-                if config.verbose and (i + 1) % 50 == 0:
-                    console.print(f"    ... scanned {i + 1}/{len(result.sections)} sections")
+                if (i + 1) % 20 == 0:
+                    console.print(f"    ... {i + 1}/{len(result.sections)} sections ({len(section_components)} components so far)")
             console.print(f"    Section scan found: {len(section_components)} components")
             components.extend(section_components)
 
-        # Raw binary scan: find APKs and build.prop in the raw image data
-        console.print("[*] Scanning raw image data for embedded files...")
+        # Strategy 3: Raw binary scan (slowest but most thorough)
+        console.print("[*] Strategy 3: Raw binary scan for embedded APKs and ELFs...")
         raw_components = _scan_raw_android_image(data, config)
         if raw_components:
             console.print(f"    Raw scan found: {len(raw_components)} components")
             components.extend(raw_components)
+
+        total_elapsed = _time.time() - scan_start
+        console.print(f"[*] Android scan complete ({total_elapsed:.1f}s total)")
 
     # =========================================================================
     # Standard firmware scanning path (also runs for Android as supplementary)
@@ -552,6 +569,11 @@ def _scan_apk_section(name: str, data: bytes) -> list:
         if 'AndroidManifest.xml' in zf.namelist():
             manifest_data = zf.read('AndroidManifest.xml')
             info = axml_parser.get_manifest_info(manifest_data)
+
+            # If binary AXML parse failed, try text XML fallback
+            if not info.package_name:
+                info = _parse_text_manifest(manifest_data)
+
             if info.package_name:
                 version = info.version_name or (str(info.version_code) if info.version_code else "")
                 confidence = 0.95 if version else 0.80
@@ -592,144 +614,220 @@ def _scan_apk_section(name: str, data: bytes) -> list:
     return components
 
 
+def _parse_text_manifest(data: bytes):
+    """Fallback: parse AndroidManifest.xml as plain text XML."""
+    from ..android.axml import AndroidManifestInfo
+    import re
+
+    info = AndroidManifestInfo()
+
+    try:
+        text = data.decode('utf-8', errors='ignore')
+    except Exception:
+        return info
+
+    # Not XML-like? Give up.
+    if '<manifest' not in text and '<Manifest' not in text:
+        return info
+
+    # Extract package name
+    m = re.search(r'package\s*=\s*"([^"]+)"', text)
+    if m:
+        info.package_name = m.group(1)
+
+    # Extract versionName
+    m = re.search(r'versionName\s*=\s*"([^"]+)"', text)
+    if m:
+        info.version_name = m.group(1)
+
+    # Extract versionCode
+    m = re.search(r'versionCode\s*=\s*"(\d+)"', text)
+    if m:
+        info.version_code = int(m.group(1))
+
+    # Extract targetSdkVersion
+    m = re.search(r'targetSdkVersion\s*=\s*"(\d+)"', text)
+    if m:
+        info.target_sdk_version = int(m.group(1))
+
+    return info
+
+
 def _scan_raw_android_image(data: bytes, config: AnalysisConfig) -> list:
     """Scan raw image binary data to find embedded APKs, build.prop, and ELFs.
 
     This is a fallback for when filesystem readers fail on the image.
     It searches for known magic bytes and file signatures directly in the raw data.
     """
-    from ..extraction.models import Component, VersionConfidence, ExtractionMethod
-    from ..android.build_prop import BuildPropParser
-    from ..android.axml import AXMLParser
+    import struct
+    import time
     import zipfile
     import io
+    from ..extraction.smart_analyzer import SmartSectionAnalyzer
 
     components: list = []
-    scanned_apks = 0
     max_apks = config.android_max_apks
+    max_elfs = config.android_max_libs
+    image_size_mb = len(data) / (1024 * 1024)
 
     # 1. Scan for build.prop content patterns in raw data
+    console.print("    [1/3] Searching for build.prop metadata...")
     build_prop_components = _find_build_prop_in_raw(data)
     components.extend(build_prop_components)
+    if build_prop_components:
+        console.print(f"          Found {len(build_prop_components)} OS-level components from build.prop")
 
-    # 2. Find all PK (ZIP/APK) signatures and try to extract APKs
-    console.print("    Searching for APK files in raw image...")
+    # 2. Find APKs by searching for PK local file headers
+    console.print(f"    [2/3] Scanning {image_size_mb:.0f} MB for APK files (max {max_apks})...")
+    scanned_apks = 0
     offset = 0
-    apk_offsets: list[int] = []
+    start_time = time.time()
 
-    while offset < len(data) - 4 and scanned_apks < max_apks:
-        # Find next PK signature
+    while offset < len(data) - 30 and scanned_apks < max_apks:
         pos = data.find(b'PK\x03\x04', offset)
         if pos == -1:
             break
 
-        # Try to open as ZIP
-        try:
-            # Find end of ZIP by looking for End of Central Directory
-            # Search within a reasonable window (up to 100MB from PK start)
-            search_end = min(pos + 100 * 1024 * 1024, len(data))
-            eocd_pos = data.rfind(b'PK\x05\x06', pos, search_end)
+        if scanned_apks > 0 and scanned_apks % 50 == 0:
+            elapsed = time.time() - start_time
+            pct = pos / len(data) * 100
+            console.print(
+                f"          ... {scanned_apks} APKs found at {pct:.0f}% of image ({elapsed:.1f}s)"
+            )
 
-            if eocd_pos != -1 and eocd_pos > pos:
-                # EOCD is at least 22 bytes, zip data is from pos to eocd_pos + 22
+        # Quick local file header sanity check
+        if pos + 30 > len(data):
+            break
+        fname_len = int.from_bytes(data[pos + 26:pos + 28], 'little')
+        if fname_len == 0 or fname_len > 512:
+            offset = pos + 4
+            continue
+
+        # Find the nearest EOCD (End of Central Directory)
+        # Most APKs are < 10MB; use a 10MB search window
+        eocd_search_end = min(pos + 10 * 1024 * 1024, len(data))
+        eocd_pos = data.find(b'PK\x05\x06', pos + 22, eocd_search_end)
+
+        if eocd_pos != -1 and eocd_pos + 22 <= len(data):
+            total_entries = int.from_bytes(data[eocd_pos + 10:eocd_pos + 12], 'little')
+            cd_offset = int.from_bytes(data[eocd_pos + 16:eocd_pos + 20], 'little')
+
+            # Basic validity: has entries and CD offset is within ZIP bounds
+            if total_entries > 0 and cd_offset < (eocd_pos - pos):
                 zip_end = eocd_pos + 22
-                # Check if there's a comment (last 2 bytes of EOCD = comment length)
-                if zip_end + 2 <= len(data):
-                    comment_len = int.from_bytes(data[eocd_pos + 20:eocd_pos + 22], 'little')
-                    zip_end += comment_len
+                comment_len = int.from_bytes(data[eocd_pos + 20:eocd_pos + 22], 'little')
+                zip_end = min(zip_end + comment_len, len(data))
+                zip_data = data[pos:zip_end]
 
-                zip_data = data[pos:min(zip_end, len(data))]
-
-                if len(zip_data) > 100:  # Minimum viable ZIP
+                if len(zip_data) > 200:
                     try:
                         zf = zipfile.ZipFile(io.BytesIO(zip_data))
                         names = zf.namelist()
 
-                        # Check if this is an APK (has AndroidManifest.xml)
                         if 'AndroidManifest.xml' in names:
                             apk_comps = _scan_apk_section(
                                 f"raw_offset_{pos:#x}.apk", zip_data
                             )
                             components.extend(apk_comps)
                             scanned_apks += 1
+                            # Jump past this APK entirely
                             offset = zip_end
+                            zf.close()
                             continue
 
                         zf.close()
                     except Exception:
                         pass
 
-        except Exception:
-            pass
+        offset = pos + 4
 
-        offset = pos + 4  # Move past this PK signature
-
+    elapsed = time.time() - start_time
     if scanned_apks > 0:
-        console.print(f"    Found and scanned {scanned_apks} APK files in raw image")
+        console.print(f"          Found {scanned_apks} APK files ({elapsed:.1f}s)")
+    else:
+        console.print(f"          No valid APK files found ({elapsed:.1f}s)")
 
     # 3. Find ELF binaries and scan them
+    console.print(f"    [3/3] Scanning for ELF binaries (max {max_elfs})...")
     elf_count = 0
-    max_elfs = config.android_max_libs
+    elf_with_components = 0
     offset = 0
+    start_time = time.time()
+    analyzer = SmartSectionAnalyzer()
+    consecutive_empty = 0
 
     while offset < len(data) - 16 and elf_count < max_elfs:
         pos = data.find(b'\x7fELF', offset)
         if pos == -1:
             break
 
-        # Try to determine ELF size from header
-        if pos + 64 <= len(data):
-            # Read e_shoff (section header offset) + e_shnum * e_shentsize for approximate size
-            ei_class = data[pos + 4]  # 1=32bit, 2=64bit
-            if ei_class == 2 and pos + 64 <= len(data):
-                import struct
-                try:
-                    e_shoff = struct.unpack_from('<Q', data, pos + 40)[0]
-                    e_shnum = struct.unpack_from('<H', data, pos + 60)[0]
-                    e_shentsize = struct.unpack_from('<H', data, pos + 58)[0]
-                    elf_size = e_shoff + e_shnum * e_shentsize
-                    if 100 < elf_size < 50 * 1024 * 1024:  # Reasonable ELF size
-                        elf_data = data[pos:pos + elf_size]
-                        from ..extraction.smart_analyzer import SmartSectionAnalyzer
-                        analyzer = SmartSectionAnalyzer()
-                        elf_comps = analyzer.analyze_section(
-                            f"elf_{pos:#x}.so", elf_data
-                        )
-                        if elf_comps:
-                            components.extend(elf_comps)
-                        elf_count += 1
-                        offset = pos + elf_size
-                        continue
-                except Exception:
-                    pass
-            elif ei_class == 1 and pos + 52 <= len(data):
-                import struct
-                try:
-                    e_shoff = struct.unpack_from('<I', data, pos + 32)[0]
-                    e_shnum = struct.unpack_from('<H', data, pos + 48)[0]
-                    e_shentsize = struct.unpack_from('<H', data, pos + 46)[0]
-                    elf_size = e_shoff + e_shnum * e_shentsize
-                    if 100 < elf_size < 50 * 1024 * 1024:
-                        elf_data = data[pos:pos + elf_size]
-                        from ..extraction.smart_analyzer import SmartSectionAnalyzer
-                        analyzer = SmartSectionAnalyzer()
-                        elf_comps = analyzer.analyze_section(
-                            f"elf_{pos:#x}.so", elf_data
-                        )
-                        if elf_comps:
-                            components.extend(elf_comps)
-                        elf_count += 1
-                        offset = pos + elf_size
-                        continue
-                except Exception:
-                    pass
+        if elf_count > 0 and elf_count % 50 == 0:
+            pct = pos / len(data) * 100
+            elapsed = time.time() - start_time
+            console.print(
+                f"          ... {elf_count} ELFs scanned, {elf_with_components} with components ({pct:.0f}%, {elapsed:.1f}s)"
+            )
+            # Early exit if scanning is fruitless (50+ consecutive ELFs with no components)
+            if consecutive_empty >= 50 and elf_with_components == 0:
+                console.print("          Stopping ELF scan (no components found in 50+ binaries)")
+                break
 
-        offset = pos + 4
+        elf_size = _get_elf_size(data, pos)
+        if elf_size and 256 < elf_size < 50 * 1024 * 1024:
+            elf_data = data[pos:pos + elf_size]
+            try:
+                elf_comps = analyzer.analyze_section(f"elf_{pos:#x}.so", elf_data)
+                if elf_comps:
+                    components.extend(elf_comps)
+                    elf_with_components += 1
+                    consecutive_empty = 0
+                else:
+                    consecutive_empty += 1
+            except Exception:
+                consecutive_empty += 1
+            elf_count += 1
+            offset = pos + elf_size
+        else:
+            offset = pos + 4
 
+    elapsed = time.time() - start_time
     if elf_count > 0:
-        console.print(f"    Found and scanned {elf_count} ELF binaries in raw image")
+        console.print(f"          Scanned {elf_count} ELF binaries, {elf_with_components} yielded components ({elapsed:.1f}s)")
 
     return components
+
+
+def _get_elf_size(data: bytes, pos: int) -> int | None:
+    """Calculate ELF file size from its header. Returns None if invalid."""
+    import struct
+
+    if pos + 64 > len(data):
+        return None
+
+    ei_class = data[pos + 4]  # 1=32bit, 2=64bit
+
+    try:
+        if ei_class == 2:  # 64-bit
+            e_shoff = struct.unpack_from('<Q', data, pos + 40)[0]
+            e_shnum = struct.unpack_from('<H', data, pos + 60)[0]
+            e_shentsize = struct.unpack_from('<H', data, pos + 58)[0]
+        elif ei_class == 1:  # 32-bit
+            if pos + 52 > len(data):
+                return None
+            e_shoff = struct.unpack_from('<I', data, pos + 32)[0]
+            e_shnum = struct.unpack_from('<H', data, pos + 48)[0]
+            e_shentsize = struct.unpack_from('<H', data, pos + 46)[0]
+        else:
+            return None
+
+        elf_size = e_shoff + e_shnum * e_shentsize
+        if elf_size < 64 or elf_size > 50 * 1024 * 1024:
+            return None
+        if pos + elf_size > len(data):
+            return None
+        return elf_size
+    except Exception:
+        return None
 
 
 def _find_build_prop_in_raw(data: bytes) -> list:
@@ -801,7 +899,7 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                 raw_data = converted
                 console.print(f"    Sparse -> raw: {len(raw_data):,} bytes")
 
-    # Try ext4 filesystem scan
+    # Try ext4 filesystem scan at offset 0
     if len(raw_data) > 0x43A and raw_data[0x438:0x43A] == b'\x53\xEF':
         console.print("    Attempting ext4 filesystem scan...")
         reader = Ext4Reader(raw_data)
@@ -818,13 +916,11 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     console.print(f"    ext4 scan: {result.apk_count} APKs, {result.lib_count} libs")
                     return result.components
                 else:
-                    console.print("    ext4 reader valid but no files found - will use raw scan fallback")
+                    console.print("    ext4 reader valid but no files found")
             except Exception as e:
-                console.print(f"    ext4 scan failed: {e} - will use raw scan fallback")
-        else:
-            console.print("    ext4 superblock found but reader validation failed - will use raw scan fallback")
+                console.print(f"    ext4 scan failed: {e}")
 
-    # Try EROFS filesystem scan
+    # Try EROFS filesystem scan at offset 0
     if len(raw_data) > 0x404 and struct.unpack_from('<I', raw_data, 0x400)[0] == 0xE0F5E1E2:
         console.print("    Attempting EROFS filesystem scan...")
         reader = ErofsReader(raw_data)
@@ -841,13 +937,35 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     console.print(f"    EROFS scan: {result.apk_count} APKs, {result.lib_count} libs")
                     return result.components
                 else:
-                    console.print("    EROFS reader valid but no files found - will use raw scan fallback")
+                    console.print("    EROFS reader valid but no files found")
             except Exception as e:
-                console.print(f"    EROFS scan failed: {e} - will use raw scan fallback")
-        else:
-            console.print("    EROFS magic found but reader validation failed - will use raw scan fallback")
+                console.print(f"    EROFS scan failed: {e}")
 
-    # Filesystem scan didn't work - components will come from raw binary scan
+    # Try embedded filesystem sections from the unpacker
+    components = []
+    for section in unpack_result.sections:
+        if section.section_type == "filesystem" and len(section.data) > 0x43A:
+            if section.data[0x438:0x43A] == b'\x53\xEF':
+                console.print(f"    Trying embedded ext4: {section.name}...")
+                reader = Ext4Reader(section.data)
+                if reader.is_valid():
+                    try:
+                        scanner = AndroidSystemScanner(
+                            reader,
+                            max_apks=config.android_max_apks,
+                            max_libs=config.android_max_libs,
+                        )
+                        result = scanner.scan()
+                        if result.components:
+                            _store_android_build_info(context, result)
+                            console.print(f"    Found {len(result.components)} components in {section.name}")
+                            components.extend(result.components)
+                    except Exception:
+                        pass
+
+    if components:
+        return components
+
     console.print("    Filesystem-level scan unavailable; raw binary scan will identify components")
     return []
 
