@@ -22,7 +22,8 @@ dependencies = [
 [project.optional-dependencies]
 radare2 = ["r2pipe>=1.8.0"]
 ghidra = ["pyhidra>=1.0.0"]
-full = ["r2pipe>=1.8.0", "pyhidra>=1.0.0"]
+android = ["lz4>=4.0.0"]
+full = ["r2pipe>=1.8.0", "pyhidra>=1.0.0", "lz4>=4.0.0"]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",

@@ -194,6 +194,10 @@ class SmartSectionAnalyzer:
         elif lower_name.endswith('.dex') or data[:4] == b'dex\n':
             components.extend(self._analyze_dex(name, data))
 
+        # Android build.prop / default.prop
+        elif 'build.prop' in lower_name or 'default.prop' in lower_name:
+            components.extend(self._analyze_build_prop(name, data))
+
         # Compressed data - decompress then recurse
         elif data[:2] == b'\x1f\x8b':  # gzip magic
             components.extend(self._analyze_compressed(name, data, 'gzip'))
@@ -447,6 +451,17 @@ class SmartSectionAnalyzer:
             components.append(comp)
 
         return components
+
+    # =========================================================================
+    # Android build.prop analysis
+    # =========================================================================
+
+    def _analyze_build_prop(self, name: str, data: bytes) -> list[Component]:
+        """Parse Android build.prop/default.prop for system metadata."""
+        from ..android.build_prop import BuildPropParser
+        parser = BuildPropParser()
+        info = parser.parse(data)
+        return parser.to_components(info)
 
     # =========================================================================
     # Compressed data analysis

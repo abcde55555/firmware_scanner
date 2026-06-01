@@ -25,13 +25,17 @@ class RecursiveUnpacker:
     """Recursively unpacks firmware containers (ZIP, SquashFS, gzip, etc.)
     and catalogs all files found at every depth level."""
 
-    def __init__(self, max_depth: int = MAX_RECURSION_DEPTH):
+    def __init__(self, max_depth: int = MAX_RECURSION_DEPTH,
+                 max_files: int = MAX_TOTAL_FILES,
+                 max_file_size: int = MAX_SINGLE_FILE_SIZE):
         self._max_depth = max_depth
+        self._max_files = max_files
+        self._max_file_size = max_file_size
         self._files: list[UnpackedFile] = []
 
     def unpack(self, data: bytes, name: str, depth: int = 0) -> list[UnpackedFile]:
         """Recursively unpack data and return all discovered files."""
-        if depth > self._max_depth or len(self._files) >= MAX_TOTAL_FILES:
+        if depth > self._max_depth or len(self._files) >= self._max_files:
             return self._files
 
         # Determine what this data is
@@ -51,12 +55,18 @@ class RecursiveUnpacker:
             self._unpack_cpio(data, name, depth)
         elif file_type == "uboot":
             self._unpack_uboot(data, name, depth)
+        elif file_type == "android_sparse":
+            self._unpack_android_sparse(data, name, depth)
+        elif file_type == "ext4":
+            self._unpack_ext4(data, name, depth)
+        elif file_type == "erofs":
+            self._unpack_erofs(data, name, depth)
         else:
             # It's a leaf file - add to catalog
             if len(data) > 16:
                 self._files.append(UnpackedFile(
                     name=name,
-                    data=data[:MAX_SINGLE_FILE_SIZE],
+                    data=data[:self._max_file_size],
                     file_type=file_type,
                     depth=depth,
                 ))
@@ -87,6 +97,15 @@ class RecursiveUnpacker:
             return "cpio"
         if len(data) >= 4 and struct.unpack('>I', data[:4])[0] == 0x27051956:
             return "uboot"
+        # Android sparse image
+        if len(data) >= 4 and struct.unpack('<I', data[:4])[0] == 0xED26FF3A:
+            return "android_sparse"
+        # ext4 filesystem
+        if len(data) >= 0x43A and data[0x438:0x43A] == b'\x53\xEF':
+            return "ext4"
+        # EROFS filesystem
+        if len(data) >= 0x404 and struct.unpack_from('<I', data, 0x400)[0] == 0xE0F5E1E2:
+            return "erofs"
 
         # Name-based detection
         lower = name.lower()
@@ -143,10 +162,10 @@ class RecursiveUnpacker:
                     continue
 
             # Process priority files first, then others up to limit
-            to_process = priority_files + other_files[:MAX_TOTAL_FILES - len(priority_files)]
+            to_process = priority_files + other_files[:self._max_files - len(priority_files)]
 
             for name in to_process[:200]:  # Cap at 200 files per ZIP
-                if len(self._files) >= MAX_TOTAL_FILES:
+                if len(self._files) >= self._max_files:
                     break
                 try:
                     file_data = zf.read(name)
@@ -195,7 +214,7 @@ class RecursiveUnpacker:
     def _unpack_cpio(self, data: bytes, parent_name: str, depth: int):
         """Parse CPIO archive (common in initramfs)."""
         offset = 0
-        while offset < len(data) - 110 and len(self._files) < MAX_TOTAL_FILES:
+        while offset < len(data) - 110 and len(self._files) < self._max_files:
             # newc format: "070701" header
             if data[offset:offset + 6] != b'070701' and data[offset:offset + 6] != b'070702':
                 break
@@ -220,7 +239,7 @@ class RecursiveUnpacker:
                     offset = data_padded
                     continue
 
-                if filesize > 0 and filesize < MAX_SINGLE_FILE_SIZE:
+                if filesize > 0 and filesize < self._max_file_size:
                     file_data = data[data_offset:data_end]
                     full_path = f"{parent_name}/{filename}"
                     self.unpack(file_data, full_path, depth + 1)
@@ -262,12 +281,127 @@ class RecursiveUnpacker:
             chunk = data[pos:end]
             self._files.append(UnpackedFile(
                 name=f"{parent_name}/elf_{pos:#x}",
-                data=chunk[:MAX_SINGLE_FILE_SIZE],
+                data=chunk[:self._max_file_size],
                 file_type="elf",
                 depth=depth + 1,
             ))
             found += 1
             offset = pos + len(chunk)
+
+    def _unpack_android_sparse(self, data: bytes, parent_name: str, depth: int):
+        """Convert Android sparse image to raw and recurse."""
+        from ..android.sparse import SparseImageParser
+
+        parser = SparseImageParser()
+        raw_size = parser.get_raw_size(data)
+
+        # Only convert if reasonable size
+        if raw_size > 2 * 1024 * 1024 * 1024:
+            return
+
+        raw_data = parser.to_raw(data, max_output_size=2 * 1024 * 1024 * 1024)
+        if raw_data:
+            inner_name = parent_name.replace('.simg', '').replace('.img', '') + '_raw'
+            self.unpack(raw_data, inner_name, depth + 1)
+
+    def _unpack_ext4(self, data: bytes, parent_name: str, depth: int):
+        """Extract key files from ext4 filesystem."""
+        from ..android.ext4_reader import Ext4Reader
+
+        reader = Ext4Reader(data)
+        if not reader.is_valid():
+            return
+
+        self._extract_from_filesystem(reader, parent_name, depth)
+
+    def _unpack_erofs(self, data: bytes, parent_name: str, depth: int):
+        """Extract key files from EROFS filesystem."""
+        from ..android.erofs_reader import ErofsReader
+
+        reader = ErofsReader(data)
+        if not reader.is_valid():
+            return
+
+        self._extract_from_filesystem(reader, parent_name, depth)
+
+    def _extract_from_filesystem(self, reader, parent_name: str, depth: int):
+        """Extract priority files from a filesystem reader (ext4 or erofs)."""
+        # Priority paths to extract
+        priority_files = [
+            "/build.prop", "/system/build.prop", "/vendor/build.prop",
+            "/default.prop", "/product/build.prop",
+        ]
+
+        for file_path in priority_files:
+            if len(self._files) >= self._max_files:
+                break
+            try:
+                file_data = reader.read_file(file_path, max_size=self._max_file_size)
+                if file_data:
+                    self._files.append(UnpackedFile(
+                        name=f"{parent_name}{file_path}",
+                        data=file_data,
+                        file_type="config",
+                        depth=depth + 1,
+                        parent=parent_name,
+                    ))
+            except Exception:
+                continue
+
+        # Scan for APKs and libraries
+        scan_dirs = [
+            "/system/app", "/system/priv-app", "/vendor/app",
+            "/app", "/priv-app",
+            "/system/lib64", "/system/lib", "/vendor/lib64", "/vendor/lib",
+            "/lib64", "/lib",
+        ]
+
+        for dir_path in scan_dirs:
+            if len(self._files) >= self._max_files:
+                break
+            try:
+                entries = reader.list_directory(dir_path)
+            except Exception:
+                continue
+
+            for entry in entries:
+                if len(self._files) >= self._max_files:
+                    break
+
+                full_path = f"{dir_path.rstrip('/')}/{entry.name}"
+                name_lower = entry.name.lower()
+
+                if entry.is_dir and ("app" in dir_path):
+                    # Look for APK inside app directory
+                    try:
+                        sub_entries = reader.list_directory(full_path)
+                        for sub in sub_entries:
+                            if sub.name.lower().endswith('.apk'):
+                                apk_path = f"{full_path}/{sub.name}"
+                                apk_data = reader.read_file(apk_path, max_size=self._max_file_size)
+                                if apk_data:
+                                    self._files.append(UnpackedFile(
+                                        name=f"{parent_name}{apk_path}",
+                                        data=apk_data,
+                                        file_type="zip",
+                                        depth=depth + 1,
+                                        parent=parent_name,
+                                    ))
+                                break
+                    except Exception:
+                        continue
+
+                elif entry.is_file and (name_lower.endswith('.so') or name_lower.endswith('.apk')):
+                    file_data = reader.read_file(full_path, max_size=self._max_file_size)
+                    if file_data:
+                        ftype = "zip" if name_lower.endswith('.apk') else "elf"
+                        self._files.append(UnpackedFile(
+                            name=f"{parent_name}{full_path}",
+                            data=file_data,
+                            file_type=ftype,
+                            depth=depth + 1,
+                            parent=parent_name,
+                        ))
 
     def get_all_files(self) -> list[UnpackedFile]:
         """Return all unpacked files."""

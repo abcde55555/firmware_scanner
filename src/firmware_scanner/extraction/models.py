@@ -12,6 +12,7 @@ class ExtractionMethod(str, Enum):
     GHIDRA = "ghidra"
     BINARY_SIGNATURE = "binary_signature"
     RTOS_PLUGIN = "rtos_plugin"
+    MANIFEST_BINARY = "manifest_binary"
 
 
 class VersionConfidence(BaseModel):
