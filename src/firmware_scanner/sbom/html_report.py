@@ -42,6 +42,7 @@ td {{ padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem
 tr:hover {{ background: #f7fafc; }}
 .badge {{ display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }}
 .badge-os {{ background: #bee3f8; color: #2a4365; }}
+.badge-app {{ background: #e9d8fd; color: #44337a; }}
 .badge-lib {{ background: #c6f6d5; color: #22543d; }}
 .badge-fw {{ background: #fed7d7; color: #742a2a; }}
 .confidence-bar {{ width: 60px; height: 8px; background: #e2e8f0; border-radius: 4px; display: inline-block; vertical-align: middle; }}
@@ -49,6 +50,7 @@ tr:hover {{ background: #f7fafc; }}
 .confidence-fill.medium {{ background: #ecc94b; }}
 .confidence-fill.low {{ background: #fc8181; }}
 .methods {{ font-size: 0.75rem; color: #718096; }}
+.source-path {{ font-size: 0.8rem; color: #4a5568; font-family: 'SFMono-Regular', Consolas, monospace; word-break: break-all; max-width: 300px; }}
 .warning {{ padding: 0.5rem 1rem; background: #fffbeb; border-left: 3px solid #f6ad55; margin-bottom: 0.5rem; border-radius: 4px; font-size: 0.85rem; }}
 .footer {{ text-align: center; color: #a0aec0; font-size: 0.8rem; margin-top: 2rem; }}
 .stats {{ display: flex; gap: 2rem; margin-bottom: 1rem; }}
@@ -84,7 +86,7 @@ tr:hover {{ background: #f7fafc; }}
                 <div class="value">{html.escape(arch_str) or 'Unknown'}</div>
             </div>
             <div class="info-item">
-                <div class="label">Detected RTOS</div>
+                <div class="label">Operating System</div>
                 <div class="value">{html.escape(context.detected_rtos) or 'Unknown'} ({context.rtos_confidence:.0%})</div>
             </div>
             <div class="info-item">
@@ -107,7 +109,7 @@ tr:hover {{ background: #f7fafc; }}
             </div>
             <div class="stat">
                 <div class="number">{sum(1 for c in context.components if c.component_type == 'operating-system')}</div>
-                <div class="label">RTOS/OS</div>
+                <div class="label">OS</div>
             </div>
             <div class="stat">
                 <div class="number">{sum(1 for c in context.components if c.component_type == 'library')}</div>
@@ -138,7 +140,8 @@ def _render_components_table(context: AnalysisContext) -> str:
     rows = ""
     for comp in sorted(context.components, key=lambda c: c.name.lower()):
         badge_class = "badge-os" if comp.component_type == "operating-system" else \
-                      "badge-fw" if comp.component_type == "firmware" else "badge-lib"
+                      "badge-fw" if comp.component_type == "firmware" else \
+                      "badge-app" if comp.component_type == "application" else "badge-lib"
         type_label = comp.component_type.replace("-", " ").title()
 
         max_conf = max((v.confidence for v in comp.versions), default=0)
@@ -149,11 +152,35 @@ def _render_components_table(context: AnalysisContext) -> str:
 
         version_display = html.escape(comp.resolved_version or "unknown")
 
+        # Extract source path from evidence
+        source_path = ""
+        for v in comp.versions:
+            if v.evidence:
+                evidence = v.evidence
+                for prefix in ("AndroidManifest.xml in ", "APK found at ", "APK at ",
+                               "Native library at ", "ELF executable at ", "Framework JAR at "):
+                    if prefix in evidence:
+                        source_path = evidence.split(prefix, 1)[-1].strip()
+                        # Remove trailing parenthetical notes
+                        if " (" in source_path:
+                            source_path = source_path.split(" (")[0]
+                        break
+                if not source_path and "build.prop" in evidence:
+                    source_path = "/system/build.prop"
+                if not source_path and ("/" in evidence):
+                    parts = evidence.split()
+                    for part in reversed(parts):
+                        if "/" in part and len(part) > 3:
+                            source_path = part.rstrip(")")
+                            break
+                if source_path:
+                    break
+
         rows += f"""<tr>
             <td><strong>{html.escape(comp.name)}</strong></td>
             <td>{version_display}</td>
-            <td>{html.escape(comp.vendor)}</td>
             <td><span class="badge {badge_class}">{type_label}</span></td>
+            <td class="source-path">{html.escape(source_path)}</td>
             <td>
                 <div class="confidence-bar"><div class="confidence-fill {conf_class}" style="width:{conf_width}%"></div></div>
                 {max_conf:.0%}
@@ -165,8 +192,8 @@ def _render_components_table(context: AnalysisContext) -> str:
         <thead><tr>
             <th>Component</th>
             <th>Version</th>
-            <th>Vendor</th>
             <th>Type</th>
+            <th>Source Path</th>
             <th>Confidence</th>
             <th>Methods</th>
         </tr></thead>

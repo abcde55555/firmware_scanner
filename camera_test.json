@@ -1,0 +1,157 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:5436bba5-03ce-4ae7-8d65-bbbf440c3c3d",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-06-02T08:15:37.675584+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "firmware-scanner",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "fmdemo\\camera.zip",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8d422376d3931a4c6014099701b2275a78adf6208fffd5b62bc0c8bca30ea274"
+        },
+        {
+          "alg": "MD5",
+          "content": "ce8864075438b5457639f2ffe42d4fa2"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "mbedTLS",
+      "version": "2.8.0",
+      "publisher": "ARM",
+      "purl": "pkg:generic/arm/mbedtls@2.8.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "static_rule,string_pattern,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: mbedtls_aes_init, mbedtls_x509_crt_parse, mbedtls_ssl_init | Hits: 27 across 1 sections | ELF symbols in camera.zip/camera/ipc: mbedtls_x509_crt_parse, mbedtls_aes_init, mbedtls_ssl_init, mbedtls_sha256_init, mbedtls_x509_crt_parse | pattern: mbedtls-2.8.0"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cJSON",
+      "version": "detected (version unknown)",
+      "publisher": "DaveGamble",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Matched: cJSON_CreateObject, cJSON_Parse, cJSON | Hits: 40 across 1 sections"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uclibc",
+      "version": "0.9.33.2",
+      "purl": "pkg:generic/uclibc@0.9.33.2",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "static_rule"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "pattern: libuClibc-0.9.33.2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "gsoap",
+      "version": "2.8",
+      "publisher": "genivia",
+      "purl": "pkg:generic/genivia/gsoap@2.8",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.80"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "static_rule"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "EMBA rule 'gsoap': gSOAP/2.8"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "curl",
+      "version": "7.35.0",
+      "publisher": "haxx",
+      "purl": "pkg:generic/haxx/curl@7.35.0",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.85"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "static_rule"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "pattern: User-Agent: curl/7.35.0"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

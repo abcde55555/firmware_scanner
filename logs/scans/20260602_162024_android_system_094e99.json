@@ -1,0 +1,3268 @@
+{
+  "meta": {
+    "scanner_version": "0.1.0",
+    "timestamp": "2026-06-02T16:20:24",
+    "firmware_path": "D:\\work\\Code\\cctest\\firmware_scanner\\fmdemo\\android_system.img",
+    "firmware_name": "android_system.img",
+    "firmware_size": 197496832,
+    "sha256": "094e997cd2110e7fabe07bbb3112a672ad147ebe453f6a41d1b834b0a177f0ed",
+    "md5": "05a310af4d17d3da2ce1ddde26fb380f"
+  },
+  "config": {
+    "max_file_size_mb": 512,
+    "deep_scan": true,
+    "extractors": [],
+    "skip_extractors": [],
+    "plugin_dir": null,
+    "rtos_hint": null,
+    "arch_hint": null
+  },
+  "pipeline": {
+    "format_detection": {
+      "duration_ms": 88,
+      "format": "Android System Image",
+      "sections": 326
+    },
+    "rtos_detection": {
+      "duration_ms": 0,
+      "detected": "Android",
+      "confidence": 0.98
+    }
+  },
+  "results": {
+    "total_before_dedup": 336,
+    "total_after_dedup": 329,
+    "components": [
+      {
+        "name": "Android",
+        "version": "4.0.3",
+        "vendor": "MBX",
+        "methods": [
+          "string_pattern"
+        ],
+        "confidence": 0.98
+      },
+      {
+        "name": "com.android.noisefield",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.neldtv.apkstore",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.providers.downloads.ui",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.farcore.videoplayer",
+        "version": "1.73",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.defcontainer",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.certinstaller",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.wallpaper.holospiral",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.mainscreentheme",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.soundrecorder",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.providers.drm",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.wallpaper.livepicker",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.exchange",
+        "version": "4.1",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.vpndialogs",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "Phone",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.packageinstaller",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "Browser",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.providers.calendar",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.gsoft.appinstall",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.htmlviewer",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.sharedstoragebackup",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "Settings",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.providers.media",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "MusicPlayer",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.systemui",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.galaxy4",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.music",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.calendar",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.calculator2",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.backupconfirm",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "Bluetooth",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.magicsmoke",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "RemoteIME",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "PicturePlayer",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.providers.downloads",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "org.neldtv.tpmsetting",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.providers.settings",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.keychain",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.svox.pico",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.providers.userdictionary",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.example.Upgrade",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.protips",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.phasebeam",
+        "version": "1.0",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.inputmethod.latin",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "Gallery2",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.launcher",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "Mms",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.musicvis",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.wallpaper",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.email",
+        "version": "4.1",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.providers.telephony",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "Contacts",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.quicksearchbox",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.camera",
+        "version": "1",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.providers.contacts",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.providers.applications",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "com.android.provision",
+        "version": "4.0.3-eng.xlyu.20160408.194630",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "FileBrowser",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "OOBE",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "com.android.deskclock",
+        "version": "2.0.3",
+        "vendor": null,
+        "methods": [
+          "manifest_binary"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "libstagefright_enc_common.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "liboutputswitchjni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libexif.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbluetooth.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libnetutils.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libamplayerjni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "liblog.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libreference-ril.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libandroid_servers.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_foundation.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libaudioeffect_jni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libjnigraphics.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_vorbisdec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libicuuc.so",
+        "version": "46",
+        "vendor": null,
+        "methods": [
+          "string_pattern"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "openssl",
+        "version": "1.0.0e",
+        "vendor": "openssl",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "libstagefright_amrnb_common.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libdiskconfig.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsystem_server.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libSR_AudioIn.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libGLESv1_CM.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libinput.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstlport.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbluedroid.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libwpa_client.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libpng",
+        "version": "1.2.46",
+        "vendor": "greg_roelofs",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "libGLESv2_dbg.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstdc++.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libctest.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libmediaplayerservice.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbtio.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libGLESv2.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libutils.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libOpenSLES.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsoundpool.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libgabi++.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "e2fsprogs",
+        "version": "1.41.11",
+        "vendor": "libext2fs",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "libstagefright_omx.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_vpxdec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libexfat.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbinder.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libdrmframework.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "zlib",
+        "version": "1.2.5",
+        "vendor": "zlib",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "libeffects.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_mp3dec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_aacdec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libmedia_jni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libEGL.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libharfbuzz.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libext2_blkid.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libamplayer.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libnfc_ndef.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_avc_common.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libwilhelm.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libtspi.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsqlite_jni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libFFTEm.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsysutils.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libicui18n.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "librtp_jni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libcameraservice.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libjni_remoteime.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libasound.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libext2_com_err.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libemoji.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "librs_jni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libandroid_runtime.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libc.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libusbhost.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libcamera_client.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libpower.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libext2_profile.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsensorservice.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libhwui.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libpowermanager.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libfuse_exfat.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libmedia.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libcutils.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libnetlink.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libvorbisidec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsubjni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libfilterpack_imageproc.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libexpat",
+        "version": "2.0.1",
+        "vendor": "libexpat_project",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "libext4_utils.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_amrdec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libjni_mosaic.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libdrm1.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libpixelflinger.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libdrm1_jni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_mpeg4dec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libgui.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsonivox.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libwebrtc_audio_preprocessing.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libiprouteutil.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libdvm.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libETC1.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libamavutils.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsurfaceflinger_client.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libjpeg.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libdl.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libamlpicjni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libmtp.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libaudioflinger.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libext2_e2p.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libandroid.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbcinfo.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libhostapd_client.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libfilterfw.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libdefcontainer_jni.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libttspico.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libm.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libhardware.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libUMP.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libext2_uuid.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_h264dec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libOpenMAXAL.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libui.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_soft_g711dec.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "dbus",
+        "version": "1.4.0",
+        "vendor": "freedesktop",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "libRS.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libthread_db.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libwebcore.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libglib.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbcc.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libstagefright_yuv.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libspeexresampler.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libttscompat.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsurfaceflinger.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libsqlite.so",
+        "version": "3.7.4",
+        "vendor": null,
+        "methods": [
+          "string_pattern"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "libvariablespeed.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libjni_latinime.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libhardware_legacy.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbluetoothd.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libMali.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libril.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libchromium_net.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "audio_policy.default.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "gralloc.default.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "audio.primary.amlogic.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "alsa.default.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "acoustics.default.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "audio.a2dp.default.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libGLES_android.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libGLESv2_mali.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libEGL_mali.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libGLESv1_CM_mali.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libvisualizer.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libaudiopreprocessing.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libreverbwrapper.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "libbundlewrapper.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "audio.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "input.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "network.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "bluetooth-health.so",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.45
+      },
+      {
+        "name": "gzip",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "system_server",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "run-as",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "bluetoothd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "hciattach",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "mtpd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "rild",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dumpsys",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_SetPermission_GetCredential",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_PermissionList",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_CheckPermission_Sign",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "vold",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "mediaserver",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "applypatch",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "remote_control",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_MakeAIK",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "mksh",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ssl_client_tpm",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "schedtest",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "tpmd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_MakeEUK",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "linker",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_CheckPermission_SetCredential",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ping",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "surfaceflinger",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_SetEKCredential",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_CheckPermission_DataEncrypt",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "logcat",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "alsa",
+        "version": "1.0.23",
+        "vendor": "alsa-project",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.82
+      },
+      {
+        "name": "sensorservice",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "pppd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "keystore",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "iptables",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "fsck.exfat",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ip",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_SetPermission_SetCredential",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ssltest",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "toolbox",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "pand",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_SetPermission_NULL",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ip6tables",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_Signing_and_Verify",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dbus-daemon",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "servicemanager",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "skia_gm",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "simg2img",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_SetPermission_Sign",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_CheckStatus",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "omx_tests",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dalvikvm",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "vdc",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "fsck_msdos",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dhcpcd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_SetPermission_DataEncrypt",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "netcfg",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "remotecfg",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "tc",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dexopt",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "tcsd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "bootanimation",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Tssi_EK",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ndc",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_Get_and_Set_Credential",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "adb",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "installd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "netd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_TakeOwnerShip",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "mount.exfat",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "sdptool",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "service",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "alsa_aplay",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "screencap",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "hostapd_wps",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_Data_Encrypt_and_Decrypt",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "app_process",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "bugreport",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "skia_test",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "racoon",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "Ssl_Swap_Tssi_CheckPermission_GetCredential",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dumpstate",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "sdcard",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ntfs-3g",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "hostapd",
+        "version": "0.6.9",
+        "vendor": "w1.fi",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.82
+      },
+      {
+        "name": "debuggerd",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "skia_bench",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "ssl_client_test",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dnsmasq",
+        "version": "2.51",
+        "vendor": "dnsmasq",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.82
+      },
+      {
+        "name": "logwrapper",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "wpa_supplicant",
+        "version": "0.8",
+        "vendor": "w1.fi",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.82
+      },
+      {
+        "name": "hciattach_usi",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "dexdump",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "binary_signature",
+          "build_metadata"
+        ],
+        "confidence": 0.5
+      },
+      {
+        "name": "sed",
+        "version": "4.0",
+        "vendor": "gnu",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.82
+      },
+      {
+        "name": "framework/framework",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/ext",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/bu",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/apache-xml",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/am",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/monkey",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/com.android.location.provider",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/android.test.runner",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/svc",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/javax.obex",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/Androiddex",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/filterfw",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/ime",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/pm",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/input",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/core",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/framework-res",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/dynamicdex",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/bouncycastle",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/bmgr",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/android.policy",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/services",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      },
+      {
+        "name": "framework/core-junit",
+        "version": "4.0.3",
+        "vendor": null,
+        "methods": [
+          "build_metadata",
+          "string_pattern"
+        ],
+        "confidence": 0.6
+      }
+    ]
+  },
+  "total_duration_s": 9.31
+}

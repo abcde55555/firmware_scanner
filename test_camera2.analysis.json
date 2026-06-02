@@ -1,0 +1,46 @@
+{
+  "firmware": {
+    "path": "fmdemo\\camera.zip",
+    "sha256": "8d422376d3931a4c6014099701b2275a78adf6208fffd5b62bc0c8bca30ea274",
+    "md5": "ce8864075438b5457639f2ffe42d4fa2",
+    "size": 3976864,
+    "format": "ZIP Archive (SDK/Package)"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "",
+    "confidence": 0.0
+  },
+  "components": [
+    {
+      "name": "mbedTLS",
+      "vendor": "ARM",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "symbol_table",
+          "evidence": "ELF symbols in camera.zip/camera/ipc: mbedtls_x509_crt_parse, mbedtls_aes_init, mbedtls_ssl_init, mbedtls_sha256_init, mbedtls_x509_crt_parse"
+        }
+      ],
+      "resolved_version": "",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

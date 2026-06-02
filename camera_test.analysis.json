@@ -1,0 +1,132 @@
+{
+  "firmware": {
+    "path": "fmdemo\\camera.zip",
+    "sha256": "8d422376d3931a4c6014099701b2275a78adf6208fffd5b62bc0c8bca30ea274",
+    "md5": "ce8864075438b5457639f2ffe42d4fa2",
+    "size": 3976864,
+    "format": "ZIP Archive (SDK/Package)"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "",
+    "confidence": 0.0
+  },
+  "components": [
+    {
+      "name": "mbedTLS",
+      "vendor": "ARM",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: mbedtls_aes_init, mbedtls_x509_crt_parse, mbedtls_ssl_init | Hits: 27 across 1 sections"
+        },
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "symbol_table",
+          "evidence": "ELF symbols in camera.zip/camera/ipc: mbedtls_x509_crt_parse, mbedtls_aes_init, mbedtls_ssl_init, mbedtls_sha256_init, mbedtls_x509_crt_parse"
+        },
+        {
+          "version": "2.8.0",
+          "confidence": 0.85,
+          "method": "static_rule",
+          "evidence": "pattern: mbedtls-2.8.0"
+        }
+      ],
+      "resolved_version": "2.8.0",
+      "component_type": "library",
+      "purl": "pkg:generic/arm/mbedtls@2.8.0",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "cJSON",
+      "vendor": "DaveGamble",
+      "versions": [
+        {
+          "version": "detected",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "Matched: cJSON_CreateObject, cJSON_Parse, cJSON | Hits: 40 across 1 sections"
+        }
+      ],
+      "resolved_version": "detected (version unknown)",
+      "component_type": "library",
+      "purl": "",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "uclibc",
+      "vendor": "",
+      "versions": [
+        {
+          "version": "0.9.33.2",
+          "confidence": 0.85,
+          "method": "static_rule",
+          "evidence": "pattern: libuClibc-0.9.33.2"
+        }
+      ],
+      "resolved_version": "0.9.33.2",
+      "component_type": "library",
+      "purl": "pkg:generic/uclibc@0.9.33.2",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "gsoap",
+      "vendor": "genivia",
+      "versions": [
+        {
+          "version": "2.8",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'gsoap': gSOAP/2.8"
+        }
+      ],
+      "resolved_version": "2.8",
+      "component_type": "library",
+      "purl": "pkg:generic/genivia/gsoap@2.8",
+      "cpe": "",
+      "licenses": [
+        "GPL-2.0-only"
+      ],
+      "description": ""
+    },
+    {
+      "name": "curl",
+      "vendor": "haxx",
+      "versions": [
+        {
+          "version": "7.35.0",
+          "confidence": 0.85,
+          "method": "static_rule",
+          "evidence": "pattern: User-Agent: curl/7.35.0"
+        }
+      ],
+      "resolved_version": "7.35.0",
+      "component_type": "library",
+      "purl": "pkg:generic/haxx/curl@7.35.0",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

@@ -1,0 +1,272 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:15248306-550a-46ba-a21e-63e76ef2c2d7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-06-02T04:42:10.921309+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "firmware-scanner",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "fmdemo\\smdt_3288A_userdebug_20250305_235357.img",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "11393d0feb2cf4b9fa03bc92d3b9df8019e6e490e216e3059f5ecf1f7710d971"
+        },
+        {
+          "alg": "MD5",
+          "content": "57eed00268de04db7a53401c893561a8"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      },
+      {
+        "name": "firmware:rtos",
+        "value": "FreeRTOS"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "cJSON",
+      "version": "detected (version unknown)",
+      "publisher": "DaveGamble",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.56"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'cJSON' at offset 0x41baf5b6 (1 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "FatFs",
+      "version": "detected (version unknown)",
+      "publisher": "ChaN",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.59"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Symbols: f_open, f_read, f_write, f_mount"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "FreeRTOS",
+      "version": "detected (version unknown)",
+      "publisher": "Amazon",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,rtos_plugin,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Symbols: vTaskStartScheduler, xQueueCreate, xTimerCreate | Signature 'IdleTask\u0000' at offset 0x237595f1 (8 occurrences) | Signature 'IDLE\u0000\u0000\u0000\u0000' at offset 0x1e9ca780 (24 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "firmware",
+      "name": "MediaTek BSP",
+      "version": "detected (version unknown)",
+      "publisher": "MediaTek",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'MediaTek' at offset 0x1342342 (7 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "protobuf-c",
+      "version": "detected (version unknown)",
+      "publisher": "protobuf-c",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'protobuf-c' at offset 0x144e3557 (45 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "firmware",
+      "name": "Qualcomm BSP",
+      "version": "detected (version unknown)",
+      "publisher": "Qualcomm",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'QUALCOMM' at offset 0x4b3b4c8f (7 occurrences) | Signature 'QCOM' at offset 0x32f6916 (193 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "RT-Thread",
+      "version": "detected (version unknown)",
+      "publisher": "RT-Thread",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature '####' at offset 0xa1858 (2476 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "ThreadX",
+      "version": "detected (version unknown)",
+      "publisher": "Microsoft",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Signature 'ThreadX' at offset 0x67c3439f (4 occurrences) | Signature 'THREADX' at offset 0x67c3481c (4 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "U-Boot",
+      "version": "2017.09",
+      "publisher": "DENX",
+      "purl": "pkg:generic/u-boot@2017.09",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.95"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,string_pattern"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "U-Boot 2017.09 | U-Boot 2017.09 | U-Boot 2017.09"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "VxWorks",
+      "version": "detected (version unknown)",
+      "publisher": "Wind River",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.76"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "binary_signature,symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Symbols: msgQCreate, taskDelay | Signature 'VxWorks' at offset 0x4ec036 (4 occurrences)"
+        }
+      ]
+    },
+    {
+      "type": "operating-system",
+      "name": "Zephyr RTOS",
+      "version": "detected (version unknown)",
+      "publisher": "Zephyr Project",
+      "properties": [
+        {
+          "name": "analysis:confidence",
+          "value": "0.34"
+        },
+        {
+          "name": "analysis:methods",
+          "value": "symbol_table"
+        },
+        {
+          "name": "analysis:evidence",
+          "value": "Symbols: k_thread_create"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

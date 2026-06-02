@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "scanner_version": "0.1.0",
+    "timestamp": "2026-06-02T16:15:32",
+    "firmware_path": "fmdemo\\camera.zip",
+    "firmware_name": "camera.zip",
+    "firmware_size": 3976864,
+    "sha256": "8d422376d3931a4c6014099701b2275a78adf6208fffd5b62bc0c8bca30ea274",
+    "md5": "ce8864075438b5457639f2ffe42d4fa2"
+  },
+  "config": {
+    "max_file_size_mb": 512,
+    "deep_scan": true,
+    "extractors": [],
+    "skip_extractors": [],
+    "plugin_dir": null,
+    "rtos_hint": null,
+    "arch_hint": null
+  },
+  "pipeline": {
+    "format_detection": {
+      "duration_ms": 26,
+      "format": "ZIP Archive (SDK/Package)",
+      "sections": 7
+    },
+    "architecture": {
+      "duration_ms": 176,
+      "cpu_family": "arm",
+      "endianness": "little"
+    },
+    "rtos_detection": {
+      "duration_ms": 111,
+      "detected": "Unknown",
+      "confidence": 0.0
+    },
+    "extraction_engines": {
+      "duration_ms": 606,
+      "components_found": 1,
+      "engines_run": [
+        "manifest_scanner",
+        "string_patterns",
+        "symbol_table",
+        "binary_signatures",
+        "disassembly",
+        "radare2",
+        "ghidra"
+      ]
+    },
+    "deep_scan": {
+      "duration_ms": 2805,
+      "sections_scanned": 7,
+      "components_found": 5
+    },
+    "recursive_unpack": {
+      "duration_ms": 53,
+      "total_files": 195,
+      "max_depth": 1,
+      "file_types": {
+        "text": 74,
+        "elf": 17,
+        "binary": 104
+      }
+    },
+    "smart_analyzer": {
+      "duration_ms": 133,
+      "files_analyzed": 195,
+      "components_found": 1
+    },
+    "emba_rules": {
+      "duration_ms": 883,
+      "files_scanned": 121,
+      "components_found": 0,
+      "upgraded_versions": 1
+    },
+    "config_files": {
+      "duration_ms": 0,
+      "components_found": 0
+    }
+  },
+  "results": {
+    "total_before_dedup": 7,
+    "total_after_dedup": 5,
+    "components": [
+      {
+        "name": "mbedTLS",
+        "version": "2.8.0",
+        "vendor": "ARM",
+        "methods": [
+          "string_pattern",
+          "symbol_table",
+          "static_rule"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "cJSON",
+        "version": "detected (version unknown)",
+        "vendor": "DaveGamble",
+        "methods": [
+          "string_pattern"
+        ],
+        "confidence": 0.95
+      },
+      {
+        "name": "uclibc",
+        "version": "0.9.33.2",
+        "vendor": null,
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      },
+      {
+        "name": "gsoap",
+        "version": "2.8",
+        "vendor": "genivia",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.8
+      },
+      {
+        "name": "curl",
+        "version": "7.35.0",
+        "vendor": "haxx",
+        "methods": [
+          "static_rule"
+        ],
+        "confidence": 0.85
+      }
+    ]
+  },
+  "total_duration_s": 4.83
+}

@@ -13,6 +13,8 @@ class ExtractionMethod(str, Enum):
     BINARY_SIGNATURE = "binary_signature"
     RTOS_PLUGIN = "rtos_plugin"
     MANIFEST_BINARY = "manifest_binary"
+    BUILD_METADATA = "build_metadata"
+    STATIC_RULE = "static_rule"
 
 
 class VersionConfidence(BaseModel):

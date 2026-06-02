@@ -1,0 +1,374 @@
+{
+  "firmware": {
+    "path": "fmdemo\\miwifi_r1cl_firmware_82b5c_2.7.81.bin",
+    "sha256": "043b2987295a2f15db8afdb0abcdc54e78ee6e9e7dffce95a5c6bcf210127231",
+    "md5": "a77f679fa07f3ae7a1153fdb60082b5c",
+    "size": 9438132,
+    "format": "Raw Binary"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "Linux",
+    "confidence": 0.4
+  },
+  "components": [
+    {
+      "name": "linux_kernel",
+      "vendor": "linux",
+      "versions": [
+        {
+          "version": "3.10.14",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'linux_kernel': MIPS OpenWrt Linux-3.10.14"
+        }
+      ],
+      "resolved_version": "3.10.14",
+      "component_type": "library",
+      "purl": "pkg:generic/linux/linux_kernel@3.10.14",
+      "cpe": "",
+      "licenses": [
+        "GPL-2.0-only"
+      ],
+      "description": ""
+    },
+    {
+      "name": "busybox",
+      "vendor": "busybox",
+      "versions": [
+        {
+          "version": "1.19.4",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'busybox': BusyBox v1.19.4 (2017-05-12 10:32:30 CST)"
+        },
+        {
+          "version": "1.19.4",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'udhcp': udhcp 1.19.4"
+        }
+      ],
+      "resolved_version": "1.19.4",
+      "component_type": "library",
+      "purl": "pkg:generic/busybox/busybox@1.19.4",
+      "cpe": "",
+      "licenses": [
+        "GPL-2.0-only"
+      ],
+      "description": ""
+    },
+    {
+      "name": "sed",
+      "vendor": "gnu",
+      "versions": [
+        {
+          "version": "4.0",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'sed': This is not GNU sed version 4.0"
+        }
+      ],
+      "resolved_version": "4.0",
+      "component_type": "library",
+      "purl": "pkg:generic/gnu/sed@4.0",
+      "cpe": "",
+      "licenses": [
+        "GPL-3.0-only"
+      ],
+      "description": ""
+    },
+    {
+      "name": "arp",
+      "vendor": "arp",
+      "versions": [
+        {
+          "version": "1.88",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'arp': arp 1.88 (2001-04-04)"
+        }
+      ],
+      "resolved_version": "1.88",
+      "component_type": "library",
+      "purl": "pkg:generic/arp/arp@1.88",
+      "cpe": "",
+      "licenses": [
+        "GPL-3.0-only"
+      ],
+      "description": ""
+    },
+    {
+      "name": "net-tools",
+      "vendor": "net-tools",
+      "versions": [
+        {
+          "version": "1.60",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'net-tools': net-tools 1.60"
+        }
+      ],
+      "resolved_version": "1.60",
+      "component_type": "library",
+      "purl": "pkg:generic/net-tools/net-tools@1.60",
+      "cpe": "",
+      "licenses": [
+        "unknown"
+      ],
+      "description": ""
+    },
+    {
+      "name": "curl",
+      "vendor": "curl",
+      "versions": [
+        {
+          "version": "7.33.0",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'curl': curl 7.33.0 (mipsel-openwrt-linux-uclibc) %s"
+        },
+        {
+          "version": "7.33.0",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'libcurl': libcurl/7.33.0"
+        }
+      ],
+      "resolved_version": "7.33.0",
+      "component_type": "library",
+      "purl": "pkg:generic/curl/curl@7.33.0",
+      "cpe": "",
+      "licenses": [
+        "curl"
+      ],
+      "description": ""
+    },
+    {
+      "name": "iperf",
+      "vendor": "iperf",
+      "versions": [
+        {
+          "version": "2.0.5",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'iperf': iperf version 2.0.5 (08 Jul 2010) single threaded"
+        }
+      ],
+      "resolved_version": "2.0.5",
+      "component_type": "library",
+      "purl": "pkg:generic/iperf/iperf@2.0.5",
+      "cpe": "",
+      "licenses": [
+        "unknown"
+      ],
+      "description": ""
+    },
+    {
+      "name": "lua",
+      "vendor": "lua",
+      "versions": [
+        {
+          "version": "5.1.5",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'lua': Lua 5.1.5  Copyright (C) 1994-2012 Lua.org, PUC-Rio (double int32)"
+        }
+      ],
+      "resolved_version": "5.1.5",
+      "component_type": "library",
+      "purl": "pkg:generic/lua/lua@5.1.5",
+      "cpe": "",
+      "licenses": [
+        "MIT"
+      ],
+      "description": ""
+    },
+    {
+      "name": "dnsmasq",
+      "vendor": "dnsmasq",
+      "versions": [
+        {
+          "version": "2.71",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'dnsmasq': dnsmasq-2.71"
+        }
+      ],
+      "resolved_version": "2.71",
+      "component_type": "library",
+      "purl": "pkg:generic/dnsmasq/dnsmasq@2.71",
+      "cpe": "",
+      "licenses": [
+        "GPL-3.0-only"
+      ],
+      "description": ""
+    },
+    {
+      "name": "dropbear",
+      "vendor": "",
+      "versions": [
+        {
+          "version": "2011.54",
+          "confidence": 0.85,
+          "method": "static_rule",
+          "evidence": "pattern: dropbear_2011.54"
+        }
+      ],
+      "resolved_version": "2011.54",
+      "component_type": "application",
+      "purl": "pkg:generic/dropbear@2011.54",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "miniupnpd",
+      "vendor": "miniupnp_project",
+      "versions": [
+        {
+          "version": "1.1",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'miniupnpd': SERVER: MiWiFi/x UPnP/1.1 MiniUPnPd/1.9"
+        }
+      ],
+      "resolved_version": "1.1",
+      "component_type": "library",
+      "purl": "pkg:generic/miniupnp_project/miniupnpd@1.1",
+      "cpe": "",
+      "licenses": [
+        "unknown"
+      ],
+      "description": ""
+    },
+    {
+      "name": "pppoe-discovery",
+      "vendor": "pppoe-discovery",
+      "versions": [
+        {
+          "version": "3.10p",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'pppoe-discovery': Version 3.10p"
+        }
+      ],
+      "resolved_version": "3.10p",
+      "component_type": "library",
+      "purl": "pkg:generic/pppoe-discovery/pppoe-discovery@3.10p",
+      "cpe": "",
+      "licenses": [
+        "unknown"
+      ],
+      "description": ""
+    },
+    {
+      "name": "xl2tpd",
+      "vendor": "xl2tpd",
+      "versions": [
+        {
+          "version": "1.3.1",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'xl2tpd': xl2tpd version xl2tpd-1.3.1 started on %s PID:%d"
+        }
+      ],
+      "resolved_version": "1.3.1",
+      "component_type": "library",
+      "purl": "pkg:generic/xl2tpd/xl2tpd@1.3.1",
+      "cpe": "",
+      "licenses": [
+        "unknown"
+      ],
+      "description": ""
+    },
+    {
+      "name": "openssl",
+      "vendor": "openssl",
+      "versions": [
+        {
+          "version": "1.0.1j",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'openssl': OpenSSL 1.0.1j 15 Oct 2014"
+        }
+      ],
+      "resolved_version": "1.0.1j",
+      "component_type": "library",
+      "purl": "pkg:generic/openssl/openssl@1.0.1j",
+      "cpe": "",
+      "licenses": [
+        "OpenSSL OR Apache-2.0"
+      ],
+      "description": ""
+    },
+    {
+      "name": "procps",
+      "vendor": "procps_project",
+      "versions": [
+        {
+          "version": "3.2.8",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'procps': procps version 3.2.8"
+        }
+      ],
+      "resolved_version": "3.2.8",
+      "component_type": "library",
+      "purl": "pkg:generic/procps_project/procps@3.2.8",
+      "cpe": "",
+      "licenses": [
+        "unknown"
+      ],
+      "description": ""
+    },
+    {
+      "name": "uclibc",
+      "vendor": "",
+      "versions": [
+        {
+          "version": "0.9.33.2",
+          "confidence": 0.85,
+          "method": "static_rule",
+          "evidence": "pattern: uClibc-0.9.33.2"
+        }
+      ],
+      "resolved_version": "0.9.33.2",
+      "component_type": "library",
+      "purl": "pkg:generic/uclibc@0.9.33.2",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    },
+    {
+      "name": "openwrt",
+      "vendor": "openwrt",
+      "versions": [
+        {
+          "version": "12.09.1",
+          "confidence": 0.95,
+          "method": "string_pattern",
+          "evidence": "openwrt_release: 12.09.1"
+        }
+      ],
+      "resolved_version": "12.09.1",
+      "component_type": "operating-system",
+      "purl": "pkg:generic/openwrt/openwrt@12.09.1",
+      "cpe": "",
+      "licenses": [],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

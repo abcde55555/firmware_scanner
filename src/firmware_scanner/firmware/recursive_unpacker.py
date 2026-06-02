@@ -62,8 +62,10 @@ class RecursiveUnpacker:
         elif file_type == "erofs":
             self._unpack_erofs(data, name, depth)
         else:
-            # It's a leaf file - add to catalog
-            if len(data) > 16:
+            # For large binary blobs, scan for embedded containers
+            if file_type == "binary" and len(data) > 65536:
+                self._scan_for_embedded_containers(data, name, depth)
+            elif len(data) > 16:
                 self._files.append(UnpackedFile(
                     name=name,
                     data=data[:self._max_file_size],
@@ -205,11 +207,172 @@ class RecursiveUnpacker:
             pass
 
     def _unpack_squashfs(self, data: bytes, parent_name: str, depth: int):
-        """Handle SquashFS - note: full extraction needs unsquashfs tool.
-        Fallback: scan for embedded files by magic bytes."""
-        # Without unsquashfs, we can still scan for embedded ELF/text content
-        # by searching for magic bytes within the SquashFS data
-        self._scan_for_embedded_files(data, parent_name, depth)
+        """Extract files from SquashFS v4 filesystem using pure-Python reader."""
+        from .squashfs_reader import SquashFSReader
+
+        reader = SquashFSReader(data)
+        if not reader.is_valid():
+            self._scan_for_embedded_files(data, parent_name, depth)
+            return
+
+        root_entries = reader.list_directory('/')
+        if not root_entries:
+            # Can't read metadata (e.g. unsupported compression filters)
+            # Try external unsquashfs tool as fallback
+            if not self._try_external_unsquashfs(data, parent_name, depth):
+                self._scan_for_embedded_files(data, parent_name, depth)
+            return
+
+        self._extract_from_squashfs(reader, parent_name, depth)
+
+    def _try_external_unsquashfs(self, data: bytes, parent_name: str, depth: int) -> bool:
+        """Try to extract SquashFS using external unsquashfs/sasquatch tool."""
+        import shutil
+        import tempfile
+        import os
+
+        tool = shutil.which("sasquatch") or shutil.which("unsquashfs")
+        if not tool:
+            return False
+
+        try:
+            tmp_dir = tempfile.mkdtemp(prefix="fwscan_sqfs_")
+            sqfs_file = os.path.join(tmp_dir, "squashfs.img")
+            out_dir = os.path.join(tmp_dir, "out")
+
+            with open(sqfs_file, 'wb') as f:
+                f.write(data)
+
+            import subprocess
+            result = subprocess.run(
+                [tool, "-d", out_dir, "-f", "-n", sqfs_file],
+                capture_output=True, timeout=60,
+            )
+
+            if result.returncode != 0 or not os.path.isdir(out_dir):
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+                return False
+
+            # Walk extracted files and add interesting ones
+            priority_dirs = {'bin', 'sbin', 'lib', 'etc', 'usr'}
+            for root, dirs, files in os.walk(out_dir):
+                if len(self._files) >= self._max_files:
+                    break
+                rel_root = os.path.relpath(root, out_dir).replace("\\", "/")
+                top_dir = rel_root.split("/")[0] if rel_root != "." else ""
+
+                # Skip low-value directories
+                if top_dir and top_dir not in priority_dirs and top_dir != "usr":
+                    continue
+
+                for fname in files:
+                    if len(self._files) >= self._max_files:
+                        break
+                    fpath = os.path.join(root, fname)
+                    lower = fname.lower()
+
+                    is_interesting = (
+                        lower.endswith(('.so', '.elf', '.bin', '.conf', '.cfg',
+                                        '.json', '.sh', '.lua', '.py'))
+                        or '.so.' in lower
+                        or 'version' in lower
+                        or '.' not in fname
+                        or '/bin/' in rel_root or '/sbin/' in rel_root
+                    )
+                    if not is_interesting:
+                        continue
+
+                    try:
+                        stat = os.stat(fpath)
+                        if stat.st_size < 16 or stat.st_size > self._max_file_size:
+                            continue
+                        file_data = open(fpath, 'rb').read(self._max_file_size)
+                    except (OSError, IOError):
+                        continue
+
+                    file_type = self._detect_type(file_data, fname)
+                    full_name = f"{parent_name}/{rel_root}/{fname}" if rel_root != "." else f"{parent_name}/{fname}"
+                    self._files.append(UnpackedFile(
+                        name=full_name,
+                        data=file_data,
+                        file_type=file_type,
+                        depth=depth + 1,
+                        parent=parent_name,
+                    ))
+
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            return len(self._files) > 0
+        except Exception:
+            return False
+
+    def _extract_from_squashfs(self, reader, parent_name: str, depth: int):
+        """Walk a SquashFS filesystem reader and extract interesting files."""
+        # Prioritize high-value directories for firmware analysis
+        priority_dirs = ['/bin', '/sbin', '/usr/bin', '/usr/sbin', '/usr/lib', '/lib', '/etc']
+        visited = set()
+
+        for pdir in priority_dirs:
+            if len(self._files) >= self._max_files:
+                break
+            entries = reader.list_directory(pdir)
+            if not entries:
+                continue
+            visited.add(pdir)
+            self._extract_matching_entries(reader, pdir, entries, parent_name, depth)
+
+        # Then walk the rest
+        for dir_path, entries in reader.walk("/", max_depth=4):
+            if len(self._files) >= self._max_files:
+                break
+            if dir_path in visited:
+                continue
+            # Skip web assets and other low-value directories
+            if any(seg in dir_path for seg in ('/img', '/css', '/js', '/font', '/icons')):
+                continue
+            visited.add(dir_path)
+            self._extract_matching_entries(reader, dir_path, entries, parent_name, depth)
+
+    def _extract_matching_entries(self, reader, dir_path: str, entries, parent_name: str, depth: int):
+        """Extract files matching firmware analysis criteria from a directory."""
+        for entry in entries:
+            if len(self._files) >= self._max_files:
+                break
+            if not entry.is_file:
+                continue
+
+            file_path = f"{dir_path.rstrip('/')}/{entry.name}"
+            full_name = f"{parent_name}{file_path}"
+            lower = entry.name.lower()
+
+            is_elf_candidate = (
+                lower.endswith(('.so', '.elf', '.bin'))
+                or any(lower.endswith(f'.so.{v}') for v in ('0', '1', '2'))
+                or '.' not in entry.name
+            )
+            is_lib = '.so.' in lower
+            is_config = lower.endswith(('.conf', '.cfg', '.ini', '.json', '.yaml', '.yml'))
+            is_script = lower.endswith(('.sh', '.lua', '.py'))
+            is_version_file = 'version' in lower or lower in (
+                'openwrt_release', 'openwrt_version', 'banner',
+            )
+            in_bin_dir = any(seg in file_path for seg in ('/bin/', '/sbin/'))
+
+            if not (is_elf_candidate or is_lib or is_config or is_script
+                    or is_version_file or in_bin_dir):
+                continue
+
+            file_data = reader.read_file(file_path)
+            if not file_data or len(file_data) < 16:
+                continue
+
+            file_type = self._detect_type(file_data, entry.name)
+            self._files.append(UnpackedFile(
+                name=full_name,
+                data=file_data[:self._max_file_size],
+                file_type=file_type,
+                depth=depth + 1,
+                parent=parent_name,
+            ))
 
     def _unpack_cpio(self, data: bytes, parent_name: str, depth: int):
         """Parse CPIO archive (common in initramfs)."""
@@ -265,6 +428,43 @@ class RecursiveUnpacker:
                 self.unpack(payload, f"{parent_name}/payload", depth + 1)
         except Exception:
             pass
+
+    def _scan_for_embedded_containers(self, data: bytes, parent_name: str, depth: int):
+        """Scan a raw firmware blob for embedded filesystems/containers."""
+        files_before = len(self._files)
+        scan_limit = min(len(data), 32 * 1024 * 1024)
+
+        # Scan for SquashFS magic
+        offset = 0
+        while offset < scan_limit - 4:
+            pos = data.find(b'hsqs', offset)
+            if pos == -1:
+                pos = data.find(b'sqsh', offset)
+            if pos == -1 or pos >= scan_limit:
+                break
+            # Verify it's a real superblock (check version)
+            if pos + 30 <= len(data):
+                ver_major = struct.unpack_from('<H', data, pos + 28)[0]
+                if ver_major == 4:
+                    sqfs_data = data[pos:]
+                    self._unpack_squashfs(sqfs_data, f"{parent_name}/squashfs@{pos:#x}", depth + 1)
+                    break
+            offset = pos + 4
+
+        # If SquashFS didn't yield results, try compressed streams
+        if len(self._files) == files_before:
+            pos = data.find(b'\x1f\x8b\x08', 0, scan_limit)
+            if pos > 0 and pos < scan_limit:
+                self._unpack_gzip(data[pos:], f"{parent_name}/gzip@{pos:#x}", depth + 1)
+
+        if len(self._files) == files_before:
+            pos = data.find(b'\xfd7zXZ\x00', 0, scan_limit)
+            if pos > 0 and pos < scan_limit:
+                self._unpack_lzma(data[pos:], f"{parent_name}/xz@{pos:#x}", depth + 1)
+
+        # Fallback: scan for embedded ELF files
+        if len(self._files) == files_before:
+            self._scan_for_embedded_files(data, parent_name, depth)
 
     def _scan_for_embedded_files(self, data: bytes, parent_name: str, depth: int):
         """Scan container data for embedded files by magic bytes."""

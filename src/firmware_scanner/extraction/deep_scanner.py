@@ -7,6 +7,7 @@ from typing import Iterator, Callable
 
 from ..core.context import AnalysisContext
 from ..extraction.models import Component, VersionConfidence, ExtractionMethod
+from ..extraction.emba_rules import scan_binary_with_rules
 from ..utils.binary import find_strings
 
 
@@ -79,6 +80,20 @@ class DeepScanner:
             self._progress_callback(total_sections, total_sections, "Resolving versions...")
 
         components = self._resolve_components(all_hits, context)
+
+        # Phase 5: Run EMBA static rules on all sections for additional detections
+        if self._progress_callback:
+            self._progress_callback(total_sections, total_sections, "Running EMBA rules...")
+        existing_names = {c.name.lower() for c in components}
+        for section_name, section_data in sections_to_scan:
+            if len(section_data) < 64:
+                continue
+            emba_components = scan_binary_with_rules(section_data, section_name)
+            for ec in emba_components:
+                if ec.name.lower() not in existing_names:
+                    components.append(ec)
+                    existing_names.add(ec.name.lower())
+
         return components
 
     def _scan_one_section(self, section_data: bytes, section_name: str) -> list[ComponentHit]:

@@ -58,6 +58,9 @@ def analyze(
     android_max_apks: int = typer.Option(200, "--android-max-apks", help="Max APKs to scan in Android images"),
     android_max_libs: int = typer.Option(300, "--android-max-libs", help="Max native libs to scan in Android images"),
     android_tools_dir: Optional[Path] = typer.Option(None, "--android-tools", help="Dir with Android image tools (simg2img, lpunpack)"),
+    max_size: int = typer.Option(512, "--max-size", help="Max firmware file size in MB (default 512)"),
+    log_dir: Optional[Path] = typer.Option("./logs", "--log-dir", help="Scan telemetry log directory"),
+    no_log: bool = typer.Option(False, "--no-log", help="Disable scan telemetry logging"),
 ):
     """Perform full firmware analysis and generate reports.
 
@@ -82,9 +85,13 @@ def analyze(
         android_max_apks=android_max_apks,
         android_max_libs=android_max_libs,
         android_external_tools_dir=str(android_tools_dir) if android_tools_dir else "",
+        max_file_size=max_size * 1024 * 1024,
     )
 
-    context = _run_analysis(firmware, config, plugin_dir=plugin_dir, deep_scan=deep)
+    from ..core.scan_log import ScanLog
+    scan_log = ScanLog() if not no_log else None
+
+    context = _run_analysis(firmware, config, plugin_dir=plugin_dir, deep_scan=deep, scan_log=scan_log)
 
     # Determine output formats
     formats = _resolve_formats(format, output)
@@ -94,6 +101,11 @@ def analyze(
 
     if verbose:
         _print_summary(context)
+
+    # Save scan telemetry
+    if scan_log:
+        log_path = scan_log.save(log_dir or Path("./logs"))
+        console.print(f"[dim]Scan log: {log_path}[/dim]")
 
 
 @app.command()
@@ -334,6 +346,7 @@ def _run_analysis(
     config: AnalysisConfig,
     plugin_dir: Path | None = None,
     deep_scan: bool = True,
+    scan_log=None,
 ) -> AnalysisContext:
     """Run the full analysis pipeline."""
     loader = FirmwareLoader(config)
@@ -354,6 +367,10 @@ def _run_analysis(
     data, sha256, md5 = loader.load(firmware)
     console.print(f"    Size: {len(data):,} bytes")
 
+    if scan_log:
+        scan_log.set_meta(str(firmware), len(data), sha256, md5)
+        scan_log.set_config(config, deep_scan=deep_scan, plugin_dir=plugin_dir)
+
     context = AnalysisContext(
         firmware_path=firmware,
         raw_data=data,
@@ -363,9 +380,13 @@ def _run_analysis(
 
     # Unpack
     console.print("[*] Unpacking firmware...")
+    if scan_log:
+        scan_log.start_stage("format_detection")
     result, format_name = unpacker.unpack(data, firmware)
     context.unpack_result = result
     context.metadata["format"] = format_name
+    if scan_log:
+        scan_log.end_stage("format_detection", format=format_name, sections=len(result.sections))
     console.print(f"    Format: {format_name}")
     if result.sections:
         console.print(f"    Sections: {len(result.sections)}")
@@ -382,11 +403,19 @@ def _run_analysis(
         context.detected_rtos = "Android"
         context.rtos_confidence = 0.98
         context.metadata["os_type"] = "android"
+        if scan_log:
+            scan_log.end_stage("rtos_detection", detected="Android", confidence=0.98)
     else:
         # Arch detection
         console.print("[*] Detecting architecture...")
+        if scan_log:
+            scan_log.start_stage("architecture")
         arch_info = arch_detector.detect(data)
         context.arch_info = arch_info
+        if scan_log:
+            scan_log.end_stage("architecture",
+                              cpu_family=arch_info.cpu_family.value,
+                              endianness=arch_info.endianness.value)
         console.print(f"    Arch: {arch_info.cpu_family.value} {arch_info.endianness.value}-endian")
 
         # Symbol extraction for ELF
@@ -402,14 +431,24 @@ def _run_analysis(
 
         # RTOS detection (only for non-Android images)
         console.print("[*] Detecting RTOS...")
+        if scan_log:
+            scan_log.start_stage("rtos_detection")
         rtos_results = RTOSRegistry.detect(context)
         if rtos_results:
             best_plugin, best_confidence = rtos_results[0]
             context.detected_rtos = best_plugin.rtos_name
             context.rtos_confidence = best_confidence
             console.print(f"    RTOS: {best_plugin.rtos_name} ({best_confidence:.0%})")
+            if scan_log:
+                all_scores = [{"name": p.rtos_name, "score": round(s, 3)} for p, s in rtos_results]
+                scan_log.end_stage("rtos_detection",
+                                   detected=best_plugin.rtos_name,
+                                   confidence=round(best_confidence, 3),
+                                   all_scores=all_scores)
         else:
             console.print("    RTOS: Unknown")
+            if scan_log:
+                scan_log.end_stage("rtos_detection", detected="Unknown", confidence=0.0)
 
     # =========================================================================
     # Android-specific scanning path
@@ -430,8 +469,8 @@ def _run_analysis(
         if android_components:
             console.print(f"    Filesystem scan found: {len(android_components)} components")
 
-        # Strategy 2: Scan each unpacked section individually
-        if result.sections:
+        # Strategy 2: Scan each unpacked section individually (skip if filesystem scan worked)
+        if result.sections and len(android_components) < 10:
             console.print(f"[*] Strategy 2: Scanning {len(result.sections)} extracted sections...")
             from ..extraction.smart_analyzer import SmartSectionAnalyzer
             smart = SmartSectionAnalyzer()
@@ -450,13 +489,18 @@ def _run_analysis(
                     console.print(f"    ... {i + 1}/{len(result.sections)} sections ({len(section_components)} components so far)")
             console.print(f"    Section scan found: {len(section_components)} components")
             components.extend(section_components)
+        elif len(android_components) >= 10:
+            console.print("[*] Strategy 2: Skipped (filesystem scan was successful)")
 
-        # Strategy 3: Raw binary scan (slowest but most thorough)
-        console.print("[*] Strategy 3: Raw binary scan for embedded APKs and ELFs...")
-        raw_components = _scan_raw_android_image(data, config)
-        if raw_components:
-            console.print(f"    Raw scan found: {len(raw_components)} components")
-            components.extend(raw_components)
+        # Strategy 3: Raw binary scan (slowest but most thorough - skip if filesystem scan worked well)
+        if len(android_components) < 10:
+            console.print("[*] Strategy 3: Raw binary scan for embedded APKs and ELFs...")
+            raw_components = _scan_raw_android_image(data, config)
+            if raw_components:
+                console.print(f"    Raw scan found: {len(raw_components)} components")
+                components.extend(raw_components)
+        else:
+            console.print("[*] Strategy 3: Skipped (filesystem scan was successful)")
 
         total_elapsed = _time.time() - scan_start
         console.print(f"[*] Android scan complete ({total_elapsed:.1f}s total)")
@@ -467,6 +511,8 @@ def _run_analysis(
     else:
         # Component extraction (original extractors)
         console.print("[*] Running extraction engines...")
+        if scan_log:
+            scan_log.start_stage("extraction_engines")
         orchestrator = ExtractionOrchestrator(
             r2_path=config.radare2_path,
             ghidra_path=config.ghidra_path,
@@ -476,10 +522,17 @@ def _run_analysis(
         ext_components = asyncio.run(orchestrator.run_all(context))
         console.print(f"    Extractors found: {len(ext_components)} hits")
         components.extend(ext_components)
+        if scan_log:
+            engines_run = [e.name for e in orchestrator._extractors]
+            scan_log.end_stage("extraction_engines",
+                              components_found=len(ext_components),
+                              engines_run=engines_run)
 
         # Deep scanning (new exhaustive per-section scanner)
         if deep_scan:
             console.print("[*] Deep scanning all sections...")
+            if scan_log:
+                scan_log.start_stage("deep_scan")
             comp_db = ComponentDatabase()
             plugin_mgr.enrich_database(comp_db)
 
@@ -503,16 +556,32 @@ def _run_analysis(
             deep_components = deep_scanner.scan(context)
             console.print(f"    Deep scan found: {len(deep_components)} components")
             components.extend(deep_components)
+            if scan_log:
+                scan_log.end_stage("deep_scan",
+                                   sections_scanned=len(result.sections),
+                                   components_found=len(deep_components))
 
         # Recursive unpacking + smart analysis
         console.print("[*] Recursive unpacking & smart analysis...")
+        if scan_log:
+            scan_log.start_stage("recursive_unpack")
         from ..extraction.smart_analyzer import SmartSectionAnalyzer
         recursive = RecursiveUnpacker(max_depth=3)
         recursive.unpack(data, firmware.name)
         all_files = recursive.get_all_files()
         summary = recursive.get_summary()
         console.print(f"    Recursively unpacked: {summary['total_files']} files (max depth {summary['max_depth']})")
+        if scan_log:
+            type_counts = {}
+            for uf in all_files:
+                type_counts[uf.file_type] = type_counts.get(uf.file_type, 0) + 1
+            scan_log.end_stage("recursive_unpack",
+                               total_files=summary['total_files'],
+                               max_depth=summary['max_depth'],
+                               file_types=type_counts)
 
+        if scan_log:
+            scan_log.start_stage("smart_analyzer")
         smart = SmartSectionAnalyzer()
         smart_components = []
         for uf in all_files:
@@ -524,6 +593,56 @@ def _run_analysis(
         if smart_components:
             console.print(f"    Smart analyzer found: {len(smart_components)} components")
             components.extend(smart_components)
+        if scan_log:
+            scan_log.end_stage("smart_analyzer",
+                               files_analyzed=len(all_files),
+                               components_found=len(smart_components))
+
+        # Run EMBA rules on extracted binary files (catches versions in decompressed content)
+        from ..extraction.emba_rules import scan_binary_with_rules
+        if scan_log:
+            scan_log.start_stage("emba_rules")
+        emba_extra = []
+        emba_files_scanned = 0
+        emba_upgraded = 0
+        existing_names = {c.name.lower(): c for c in components}
+        for uf in all_files:
+            if uf.file_type in ("elf", "binary") and len(uf.data) > 64:
+                emba_files_scanned += 1
+                for ec in scan_binary_with_rules(uf.data, uf.name):
+                    key = ec.name.lower()
+                    if key not in existing_names:
+                        emba_extra.append(ec)
+                        existing_names[key] = ec
+                    elif ec.resolved_version and not existing_names[key].resolved_version:
+                        # Upgrade existing component with actual version
+                        existing_names[key].resolved_version = ec.resolved_version
+                        existing_names[key].versions.extend(ec.versions)
+                        if ec.purl:
+                            existing_names[key].purl = ec.purl
+                        emba_upgraded += 1
+        if emba_extra:
+            console.print(f"    EMBA rules (on extracted files): {len(emba_extra)} components")
+            components.extend(emba_extra)
+        if scan_log:
+            scan_log.end_stage("emba_rules",
+                               files_scanned=emba_files_scanned,
+                               components_found=len(emba_extra),
+                               upgraded_versions=emba_upgraded)
+
+        # Extract versions from config/text files (opkg lists, version files, etc.)
+        if scan_log:
+            scan_log.start_stage("config_files")
+        config_components = _extract_from_config_files(all_files)
+        new_config = []
+        if config_components:
+            existing_names = {c.name.lower() for c in components}
+            new_config = [c for c in config_components if c.name.lower() not in existing_names]
+            if new_config:
+                console.print(f"    Config file versions: {len(new_config)} components")
+                components.extend(new_config)
+        if scan_log:
+            scan_log.end_stage("config_files", components_found=len(new_config))
 
         # RTOS plugin analysis
         if not is_android_system and rtos_results:
@@ -537,13 +656,111 @@ def _run_analysis(
     # Plugin analysis
     if plugin_mgr.get_loaded_plugins():
         console.print("[*] Running plugin analysis...")
+        if scan_log:
+            scan_log.start_stage("plugins")
         plugin_components = asyncio.run(plugin_mgr.run_all_plugins(context))
         components.extend(plugin_components)
+        if scan_log:
+            scan_log.end_stage("plugins",
+                               plugins_loaded=[p.name for p in plugin_mgr.get_loaded_plugins()],
+                               components_found=len(plugin_components))
 
+    total_before_dedup = len(components)
     context.components = _deduplicate_components(components)
     console.print(f"[+] Total unique components: {len(context.components)}")
 
+    if scan_log:
+        scan_log.set_final_results(total_before_dedup, context.components)
+
     return context
+
+
+def _extract_from_config_files(all_files) -> list:
+    """Parse version info from config/text files extracted from firmware."""
+    import re
+    from ..extraction.models import Component, VersionConfidence, ExtractionMethod
+
+    components = []
+
+    # Patterns for opkg status/list files
+    opkg_re = re.compile(r"^Package:\s*(.+)", re.MULTILINE)
+    opkg_ver_re = re.compile(r"^Version:\s*(.+)", re.MULTILINE)
+
+    # OpenWrt release info
+    distrib_re = re.compile(r'^DISTRIB_RELEASE="([^"]+)"', re.MULTILINE)
+
+    for uf in all_files:
+        if uf.file_type not in ("text", "config"):
+            continue
+        name_lower = uf.name.lower()
+
+        try:
+            text = uf.data.decode("utf-8", errors="ignore")
+        except Exception:
+            continue
+
+        # Parse opkg status file (contains full package inventory)
+        if "opkg" in name_lower or "status" in name_lower.split("/")[-1:]:
+            packages = opkg_re.findall(text)
+            versions = opkg_ver_re.findall(text)
+            for pkg, ver in zip(packages, versions):
+                pkg = pkg.strip()
+                ver = ver.strip().split("-")[0]  # Strip build revision (e.g., "1.0.1j-1")
+                if pkg and ver and "." in ver:
+                    components.append(Component(
+                        name=pkg,
+                        vendor="",
+                        component_type="library",
+                        resolved_version=ver,
+                        versions=[VersionConfidence(
+                            version=ver,
+                            confidence=0.92,
+                            method=ExtractionMethod.STRING_PATTERN,
+                            evidence=f"opkg: {pkg} {ver}",
+                        )],
+                        purl=f"pkg:opkg/{pkg}@{ver}",
+                    ))
+
+        # OpenWrt release/version file
+        elif "openwrt_release" in name_lower:
+            # Prefer numeric version from DISTRIB_DESCRIPTION
+            desc_m = re.search(r'DISTRIB_DESCRIPTION="[^"]*?(\d+\.\d+[\.\d]*)"', text)
+            m = distrib_re.search(text)
+            ver = desc_m.group(1) if desc_m else (m.group(1) if m else None)
+            if ver:
+                components.append(Component(
+                    name="openwrt",
+                    vendor="openwrt",
+                    component_type="operating-system",
+                    resolved_version=ver,
+                    versions=[VersionConfidence(
+                        version=ver,
+                        confidence=0.95,
+                        method=ExtractionMethod.STRING_PATTERN,
+                        evidence=f"openwrt_release: {ver}",
+                    )],
+                    purl=f"pkg:generic/openwrt/openwrt@{ver}",
+                ))
+
+        # BusyBox version from banner or --help output captured in configs
+        elif "banner" in name_lower:
+            m = re.search(r"BusyBox v(\d+\.\d+\.\d+)", text)
+            if m:
+                components.append(Component(
+                    name="busybox",
+                    vendor="busybox",
+                    component_type="application",
+                    resolved_version=m.group(1),
+                    versions=[VersionConfidence(
+                        version=m.group(1),
+                        confidence=0.95,
+                        method=ExtractionMethod.STRING_PATTERN,
+                        evidence=f"banner: BusyBox v{m.group(1)}",
+                    )],
+                    purl=f"pkg:generic/busybox/busybox@{m.group(1)}",
+                ))
+
+    return components
 
 
 def _scan_apk_section(name: str, data: bytes) -> list:
@@ -767,9 +984,9 @@ def _scan_raw_android_image(data: bytes, config: AnalysisConfig) -> list:
             console.print(
                 f"          ... {elf_count} ELFs scanned, {elf_with_components} with components ({pct:.0f}%, {elapsed:.1f}s)"
             )
-            # Early exit if scanning is fruitless (50+ consecutive ELFs with no components)
-            if consecutive_empty >= 50 and elf_with_components == 0:
-                console.print("          Stopping ELF scan (no components found in 50+ binaries)")
+            # Early exit if scanning is fruitless (100+ consecutive ELFs with no components)
+            if consecutive_empty >= 100 and elf_with_components == 0:
+                console.print("          Stopping ELF scan (no components found in 100+ binaries)")
                 break
 
         elf_size = _get_elf_size(data, pos)
@@ -884,6 +1101,7 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
     from ..android.sparse import SparseImageParser
     from ..android.ext4_reader import Ext4Reader
     from ..android.erofs_reader import ErofsReader
+    from ..android.yaffs2_reader import is_yaffs2_image, Yaffs2Reader
     from ..android.system_scanner import AndroidSystemScanner
 
     raw_data = data
@@ -941,6 +1159,27 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
             except Exception as e:
                 console.print(f"    EROFS scan failed: {e}")
 
+    # Try YAFFS2 raw dump
+    if is_yaffs2_image(raw_data):
+        console.print("    Attempting YAFFS2 filesystem scan...")
+        reader = Yaffs2Reader(raw_data)
+        if reader.is_valid():
+            try:
+                scanner = AndroidSystemScanner(
+                    reader,
+                    max_apks=config.android_max_apks,
+                    max_libs=config.android_max_libs,
+                )
+                result = scanner.scan()
+                if result.components:
+                    _store_android_build_info(context, result)
+                    console.print(f"    YAFFS2 scan: {result.apk_count} APKs, {result.lib_count} libs")
+                    return result.components
+                else:
+                    console.print("    YAFFS2 reader valid but no files found")
+            except Exception as e:
+                console.print(f"    YAFFS2 scan failed: {e}")
+
     # Try embedded filesystem sections from the unpacker
     components = []
     for section in unpack_result.sections:
@@ -985,13 +1224,17 @@ def _deduplicate_components(components: list) -> list:
     """Final deduplication and filtering pass."""
     seen: dict[str, any] = {}
     for comp in components:
-        key = comp.name.lower().replace(" ", "").replace("-", "").replace("/", "")
+        key = _component_dedup_key(comp.name)
         if key not in seen:
             seen[key] = comp
         else:
             existing = seen[key]
             existing.versions.extend(comp.versions)
-            if comp.resolved_version and not existing.resolved_version.replace("detected", ""):
+            if comp.resolved_version and (
+                not existing.resolved_version
+                or "unknown" in existing.resolved_version
+                or existing.resolved_version.startswith("detected")
+            ):
                 existing.resolved_version = comp.resolved_version
             if comp.purl and not existing.purl:
                 existing.purl = comp.purl
@@ -1008,6 +1251,36 @@ def _deduplicate_components(components: list) -> list:
             filtered[key] = comp
 
     return list(filtered.values())
+
+
+# Map library variants to canonical component names
+_COMPONENT_ALIASES = {
+    "libcurl": "curl",
+    "libssl": "openssl",
+    "libcrypto": "openssl",
+    "libuClibc": "uclibc",
+    "uclibc": "uclibc",
+    "udhcp": "busybox",
+    "udhcpc": "busybox",
+    "udhcpd": "busybox",
+    "libz": "zlib",
+    "libpng12": "libpng",
+    "libpng16": "libpng",
+}
+
+
+def _component_dedup_key(name: str) -> str:
+    """Normalize component name for deduplication."""
+    key = name.lower().replace(" ", "").replace("-", "").replace("/", "")
+    # Strip lib prefix for matching (but check aliases first)
+    if key in _COMPONENT_ALIASES:
+        return _COMPONENT_ALIASES[key]
+    # Strip version suffix from .so names (e.g., "libuClibc-0.9.33.2" → "uclibc")
+    if key.startswith("lib") and any(c.isdigit() for c in key):
+        base = key.split(".")[0].split("0")[0].rstrip("-")
+        if base in _COMPONENT_ALIASES:
+            return _COMPONENT_ALIASES[base]
+    return key
 
 
 def _output_json_report(context: AnalysisContext, output: Optional[Path]):

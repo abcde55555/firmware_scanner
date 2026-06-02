@@ -6,11 +6,13 @@ components (APKs, native libraries, executables) with their versions.
 
 import zipfile
 import io
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
 from ..extraction.models import Component, VersionConfidence, ExtractionMethod
+from ..extraction.emba_rules import scan_binary_with_rules, get_rules
 from .axml import AXMLParser, AndroidManifestInfo
 from .build_prop import BuildPropParser, AndroidBuildInfo
 
@@ -50,16 +52,30 @@ APK_DIRECTORIES = [
     "/app",
 ]
 
-# Directories for native libraries
+# Directories for native libraries (including common subdirs)
 LIB_DIRECTORIES = [
     "/system/lib64",
     "/system/lib",
+    "/system/lib64/hw",
+    "/system/lib/hw",
+    "/system/lib64/egl",
+    "/system/lib/egl",
+    "/system/lib64/soundfx",
+    "/system/lib/soundfx",
     "/vendor/lib64",
     "/vendor/lib",
+    "/vendor/lib64/hw",
+    "/vendor/lib/hw",
+    "/vendor/lib64/egl",
+    "/vendor/lib/egl",
     "/product/lib64",
     "/product/lib",
     "/lib64",
     "/lib",
+    "/lib/hw",
+    "/lib/egl",
+    "/lib/soundfx",
+    "/lib/bluez-plugin",
 ]
 
 # Directories for executables
@@ -69,6 +85,7 @@ BIN_DIRECTORIES = [
     "/vendor/bin",
     "/bin",
     "/sbin",
+    "/xbin",
 ]
 
 # Framework JARs
@@ -95,8 +112,8 @@ class AndroidSystemScanner:
         self,
         fs_reader: FilesystemReader,
         max_apks: int = 200,
-        max_libs: int = 300,
-        max_bins: int = 100,
+        max_libs: int = 500,
+        max_bins: int = 400,
     ):
         self._fs = fs_reader
         self._max_apks = max_apks
@@ -138,6 +155,9 @@ class AndroidSystemScanner:
         framework_components = self._scan_framework_jars()
         result.components.extend(framework_components)
 
+        # 6. Apply OS version as fallback for unversioned system components
+        self._apply_os_version_fallback(result)
+
         return result
 
     def _scan_build_props(self) -> AndroidBuildInfo:
@@ -166,6 +186,40 @@ class AndroidSystemScanner:
                 setattr(target, field_name, source_val)
 
         target.all_properties.update(source.all_properties)
+
+    def _apply_os_version_fallback(self, result: AndroidScanResult):
+        """Apply Android OS version as fallback for unversioned system components.
+
+        System libraries, framework JARs, and executables bundled in AOSP follow
+        the OS release version. When no independent version is extracted, the OS
+        version is a reasonable approximation for vulnerability matching.
+        """
+        os_version = result.build_info.android_version
+        if not os_version:
+            return
+
+        build_id = result.build_info.build_id or ""
+        fallback_evidence = f"Inherited from Android {os_version} (build {build_id})" if build_id else f"Inherited from Android {os_version}"
+
+        for comp in result.components:
+            if comp.component_type == "operating-system":
+                continue
+
+            has_real_version = (
+                comp.resolved_version
+                and comp.resolved_version != "detected"
+            )
+            if has_real_version:
+                continue
+
+            # Apply OS version as fallback
+            comp.resolved_version = os_version
+            comp.versions.append(VersionConfidence(
+                version=os_version,
+                confidence=0.45,
+                method=ExtractionMethod.BUILD_METADATA,
+                evidence=fallback_evidence,
+            ))
 
     def _scan_apks(self) -> list[Component]:
         """Scan all APK directories and extract package info."""
@@ -217,31 +271,43 @@ class AndroidSystemScanner:
         """Scan a single APK file to extract its manifest info."""
         apk_data = self._fs.read_file(apk_path, max_size=32 * 1024 * 1024)
         if not apk_data:
-            return None
+            # File unreadable but we know it exists - create minimal entry
+            name = Path(apk_path).stem
+            return Component(
+                name=name,
+                component_type="application",
+                resolved_version="detected",
+                versions=[VersionConfidence(
+                    version="detected",
+                    confidence=0.45,
+                    method=ExtractionMethod.STRING_PATTERN,
+                    evidence=f"APK at {apk_path} (unreadable)",
+                )],
+            )
 
         return self._analyze_apk_data(apk_data, apk_path)
 
     def _analyze_apk_data(self, apk_data: bytes, apk_path: str) -> Component | None:
         """Analyze APK data (ZIP format) to extract manifest info."""
-        if apk_data[:2] != b'PK':
-            return None
-
-        try:
-            zf = zipfile.ZipFile(io.BytesIO(apk_data))
-        except Exception:
-            return None
-
         manifest_info = None
 
-        # Extract and parse AndroidManifest.xml
-        try:
-            if 'AndroidManifest.xml' in zf.namelist():
-                manifest_data = zf.read('AndroidManifest.xml')
-                manifest_info = self._axml_parser.get_manifest_info(manifest_data)
-        except Exception:
-            pass
+        # Try standard ZIP parsing if data starts with PK signature
+        if apk_data[:2] == b'PK':
+            try:
+                zf = zipfile.ZipFile(io.BytesIO(apk_data))
+                try:
+                    if 'AndroidManifest.xml' in zf.namelist():
+                        manifest_data = zf.read('AndroidManifest.xml')
+                        manifest_info = self._axml_parser.get_manifest_info(manifest_data)
+                except Exception:
+                    pass
+                zf.close()
+            except Exception:
+                pass
 
-        zf.close()
+        # If ZIP parsing didn't yield manifest, try raw local header extraction
+        if not manifest_info:
+            manifest_info = self._extract_manifest_from_raw(apk_data)
 
         if not manifest_info or not manifest_info.package_name:
             # Fallback: use filename as component name
@@ -249,6 +315,7 @@ class AndroidSystemScanner:
             return Component(
                 name=name,
                 component_type="application",
+                resolved_version="detected",
                 versions=[VersionConfidence(
                     version="detected",
                     confidence=0.50,
@@ -277,6 +344,68 @@ class AndroidSystemScanner:
 
         return comp
 
+    def _extract_manifest_from_raw(self, apk_data: bytes) -> AndroidManifestInfo | None:
+        """Extract AndroidManifest.xml directly from ZIP local file headers.
+
+        When the ZIP central directory is corrupted (common in YAFFS2 dumps due to
+        page reordering), local file headers are still intact. This method finds the
+        manifest entry and decompresses it directly.
+        """
+        import struct
+        import zlib
+
+        # Find the local file header for AndroidManifest.xml
+        search_name = b'AndroidManifest.xml'
+        pos = apk_data.find(search_name)
+        if pos == -1:
+            return None
+
+        # Back up to find the PK\x03\x04 local header
+        search_start = max(0, pos - 100)
+        header_pos = apk_data.rfind(b'PK\x03\x04', search_start, pos)
+        if header_pos == -1:
+            return None
+
+        # Parse local file header
+        if header_pos + 30 > len(apk_data):
+            return None
+        comp_method = struct.unpack_from('<H', apk_data, header_pos + 8)[0]
+        comp_size = struct.unpack_from('<I', apk_data, header_pos + 18)[0]
+        uncomp_size = struct.unpack_from('<I', apk_data, header_pos + 22)[0]
+        fname_len = struct.unpack_from('<H', apk_data, header_pos + 26)[0]
+        extra_len = struct.unpack_from('<H', apk_data, header_pos + 28)[0]
+
+        data_start = header_pos + 30 + fname_len + extra_len
+
+        if comp_size == 0 or comp_size > 1024 * 1024:
+            return None
+        if data_start + comp_size > len(apk_data):
+            return None
+
+        compressed = apk_data[data_start:data_start + comp_size]
+
+        manifest_data = None
+        try:
+            if comp_method == 0:
+                manifest_data = compressed
+            elif comp_method == 8:
+                manifest_data = zlib.decompress(compressed, -15)
+            else:
+                return None
+        except zlib.error:
+            # Partial decompression - common when YAFFS2 page boundaries corrupt
+            # the tail of compressed data. Package name and version are near the start.
+            try:
+                d = zlib.decompressobj(-15)
+                manifest_data = d.decompress(compressed)
+            except Exception:
+                return None
+
+        if not manifest_data:
+            return None
+
+        return self._axml_parser.get_manifest_info(manifest_data)
+
     def _scan_native_libs(self) -> list[Component]:
         """Scan native library directories for .so files."""
         components: list[Component] = []
@@ -296,6 +425,11 @@ class AndroidSystemScanner:
 
                 name_lower = entry.name.lower()
                 if not name_lower.endswith('.so') and '.so.' not in name_lower:
+                    continue
+
+                # Skip checksum files (e.g., libbcc.so.sha1)
+                checksum_exts = ('.sha1', '.sha256', '.md5', '.sig', '.hash')
+                if any(name_lower.endswith(ext) for ext in checksum_exts):
                     continue
 
                 # Deduplicate (lib64 vs lib)
@@ -343,6 +477,33 @@ class AndroidSystemScanner:
         if sub_components:
             return sub_components[0]
 
+        # Try EMBA static rules (529 patterns for known components)
+        emba_results = scan_binary_with_rules(data, filename)
+        if emba_results:
+            best = emba_results[0]
+            best.versions[0] = VersionConfidence(
+                version=best.resolved_version,
+                confidence=0.85,
+                method=ExtractionMethod.STATIC_RULE,
+                evidence=best.versions[0].evidence if best.versions else f"EMBA rule match in {path}",
+            )
+            return best
+
+        # Try well-known library version extraction from binary strings
+        known_version = self._extract_known_lib_version(lib_name, data)
+        if known_version:
+            return Component(
+                name=filename,
+                component_type="library",
+                resolved_version=known_version[0],
+                versions=[VersionConfidence(
+                    version=known_version[0],
+                    confidence=0.85,
+                    method=ExtractionMethod.STRING_PATTERN,
+                    evidence=known_version[1],
+                )],
+            )
+
         # Fallback: create component from filename
         return Component(
             name=filename,
@@ -355,6 +516,99 @@ class AndroidSystemScanner:
                 evidence=f"Native library at {path}",
             )],
         )
+
+    # Patterns for extracting versions from well-known libraries
+    _KNOWN_LIB_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
+        "ssl": [
+            (rb'OpenSSL (\d+\.\d+\.\d+[a-z]?)', "OpenSSL version string"),
+            (rb'BoringSSL', "BoringSSL (unversioned)"),
+        ],
+        "crypto": [
+            (rb'OpenSSL (\d+\.\d+\.\d+[a-z]?)', "OpenSSL version string"),
+        ],
+        "sqlite": [
+            (rb'(\d+\.\d+\.\d+(?:\.\d+)?)\x00.{0,32}SQLite', "SQLite version string"),
+            (rb'SQLite (\d+\.\d+\.\d+)', "SQLite version string"),
+            (rb'(3\.\d+\.\d+)\x00', "SQLite 3.x version string"),
+        ],
+        "expat": [
+            (rb'expat_(\d+\.\d+\.\d+)', "expat version string"),
+            (rb'(\d+\.\d+\.\d+)\x00.{0,16}expat', "expat version string"),
+        ],
+        "curl": [
+            (rb'libcurl/(\d+\.\d+\.\d+)', "libcurl version string"),
+            (rb'curl (\d+\.\d+\.\d+)', "curl version string"),
+        ],
+        "z": [
+            (rb'(\d+\.\d+\.\d+(?:\.\d+)?)\x00.{0,8}deflate', "zlib version string"),
+            (rb'inflate (\d+\.\d+\.\d+)', "zlib version string"),
+        ],
+        "png": [
+            (rb'libpng-(\d+\.\d+\.\d+)', "libpng version string"),
+            (rb'PNG Library (\d+\.\d+\.\d+)', "libpng version string"),
+        ],
+        "png16": [
+            (rb'libpng-(\d+\.\d+\.\d+)', "libpng version string"),
+        ],
+        "jpeg": [
+            (rb'(\d+\.\d+)\x00.{0,16}JFIF', "libjpeg version string"),
+            (rb'libjpeg-turbo (\d+\.\d+\.\d+)', "libjpeg-turbo version string"),
+        ],
+        "freetype": [
+            (rb'FreeType (\d+\.\d+\.\d+)', "FreeType version string"),
+            (rb'(\d+\.\d+\.\d+)\x00.{0,16}freetype', "FreeType version string"),
+        ],
+        "harfbuzz": [
+            (rb'HarfBuzz (\d+\.\d+\.\d+)', "HarfBuzz version string"),
+            (rb'(\d+\.\d+\.\d+)\x00.{0,16}[Hh]arf[Bb]uzz', "HarfBuzz version string"),
+        ],
+        "xml2": [
+            (rb'libxml2-(\d+\.\d+\.\d+)', "libxml2 version string"),
+            (rb'(\d+\.\d+\.\d+)\x00.{0,16}libxml', "libxml2 version string"),
+        ],
+        "icuuc": [
+            (rb'ICU (\d+\.\d+(?:\.\d+)?)', "ICU version string"),
+            (rb'icudt(\d+)', "ICU data version"),
+        ],
+        "icui18n": [
+            (rb'ICU (\d+\.\d+(?:\.\d+)?)', "ICU version string"),
+        ],
+        "sqlite_jni": [
+            (rb'(3\.\d+\.\d+)\x00', "SQLite 3.x version string"),
+        ],
+        "webcore": [
+            (rb'WebKit/(\d+\.\d+)', "WebKit version string"),
+            (rb'AppleWebKit/(\d+\.\d+)', "WebKit version string"),
+        ],
+        "stlport": [
+            (rb'STLport-(\d+\.\d+)', "STLport version string"),
+        ],
+        "binder": [],
+        "utils": [],
+        "cutils": [],
+        "log": [],
+    }
+
+    def _extract_known_lib_version(self, lib_name: str, data: bytes) -> tuple[str, str] | None:
+        """Try to extract version from well-known library binary data."""
+        patterns = self._KNOWN_LIB_PATTERNS.get(lib_name.lower())
+        if patterns is None:
+            return None
+
+        # Search in first 2MB for version strings (they're usually in .rodata near the start)
+        search_data = data[:2 * 1024 * 1024]
+
+        for pattern, evidence_desc in patterns:
+            match = re.search(pattern, search_data)
+            if match:
+                if match.groups():
+                    version = match.group(1).decode('ascii', errors='replace')
+                    return (version, f"{evidence_desc}: {match.group(0).decode('ascii', errors='replace')}")
+                else:
+                    # Pattern matched but no capture group (e.g., BoringSSL)
+                    return ("detected", evidence_desc)
+
+        return None
 
     def _scan_executables(self) -> list[Component]:
         """Scan binary directories for executables."""
@@ -388,23 +642,36 @@ class AndroidSystemScanner:
                 if data[:4] != b'\x7fELF':
                     continue
 
-                components.append(Component(
-                    name=entry.name,
-                    component_type="application",
-                    resolved_version="detected",
-                    versions=[VersionConfidence(
-                        version="detected",
-                        confidence=0.50,
-                        method=ExtractionMethod.BINARY_SIGNATURE,
-                        evidence=f"ELF executable at {full_path}",
-                    )],
-                ))
+                # Try EMBA rules to extract version from binary
+                emba_results = scan_binary_with_rules(data, entry.name)
+                if emba_results:
+                    best = emba_results[0]
+                    best.component_type = "application"
+                    best.versions[0] = VersionConfidence(
+                        version=best.resolved_version,
+                        confidence=0.82,
+                        method=ExtractionMethod.STATIC_RULE,
+                        evidence=best.versions[0].evidence if best.versions else f"EMBA rule match in {full_path}",
+                    )
+                    components.append(best)
+                else:
+                    components.append(Component(
+                        name=entry.name,
+                        component_type="application",
+                        resolved_version="detected",
+                        versions=[VersionConfidence(
+                            version="detected",
+                            confidence=0.50,
+                            method=ExtractionMethod.BINARY_SIGNATURE,
+                            evidence=f"ELF executable at {full_path}",
+                        )],
+                    ))
                 scanned += 1
 
         return components
 
     def _scan_framework_jars(self) -> list[Component]:
-        """Scan framework JAR files for component identification."""
+        """Scan framework JAR and APK files for component identification."""
         components: list[Component] = []
 
         for dir_path in FRAMEWORK_DIRECTORIES:
@@ -413,7 +680,8 @@ class AndroidSystemScanner:
 
             entries = self._fs.list_directory(dir_path)
             for entry in entries:
-                if not entry.name.lower().endswith('.jar'):
+                name_lower = entry.name.lower()
+                if not name_lower.endswith('.jar') and not name_lower.endswith('.apk'):
                     continue
 
                 full_path = f"{dir_path.rstrip('/')}/{entry.name}"
@@ -421,8 +689,8 @@ class AndroidSystemScanner:
                 if not jar_data or jar_data[:2] != b'PK':
                     continue
 
-                # Create component from JAR name
-                jar_name = entry.name[:-4]  # Remove .jar
+                # Create component from JAR/APK name
+                jar_name = entry.name.rsplit('.', 1)[0]
                 components.append(Component(
                     name=f"framework/{jar_name}",
                     component_type="framework",

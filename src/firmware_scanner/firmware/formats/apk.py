@@ -72,6 +72,7 @@ class GenericZIPFormat(ZipBasedFormat):
         """Select key files for component/version analysis from ZIP archives."""
         targets = []
         names = zf.namelist()
+        target_set = set()
 
         for name in names:
             lower = name.lower()
@@ -98,5 +99,29 @@ class GenericZIPFormat(ZipBasedFormat):
             # History/changelog (version info)
             elif name.endswith(("History.txt", "CHANGELOG.md", "CHANGES")):
                 targets.append(name)
+
+        target_set = set(targets)
+
+        # Second pass: include extensionless files that are likely ELF binaries
+        # (common in embedded firmware: camera/ipc, bin/busybox, etc.)
+        for name in names:
+            if name in target_set or name.endswith("/"):
+                continue
+            info = zf.getinfo(name)
+            if info.file_size < 4096:
+                continue
+            basename = name.rsplit("/", 1)[-1] if "/" in name else name
+            # File has no extension or is in a bin directory
+            has_no_ext = "." not in basename
+            in_bin_dir = any(seg in name.lower() for seg in ("/bin/", "/sbin/", "/usr/bin/", "/usr/sbin/"))
+            if has_no_ext or in_bin_dir:
+                try:
+                    header = zf.read(name)[:4]
+                    if header == b'\x7fELF':
+                        targets.append(name)
+                except Exception:
+                    pass
+            if len(targets) >= 200:
+                break
 
         return targets[:200]

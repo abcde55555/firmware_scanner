@@ -125,6 +125,7 @@ class CycloneDXGenerator:
         mapping = {
             "operating-system": "operating-system",
             "library": "library",
+            "application": "application",
             "firmware": "firmware",
             "framework": "framework",
             "device": "device",

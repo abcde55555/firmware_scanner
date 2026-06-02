@@ -1,0 +1,46 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:f4d98ba9-f7b9-4866-9d68-bf99447cfce2",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-06-02T04:27:02.715148+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "firmware-scanner",
+          "version": "0.1.0",
+          "publisher": "Firmware Security Team"
+        }
+      ]
+    },
+    "component": {
+      "type": "firmware",
+      "name": "fmdemo\\camera.zip",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "8d422376d3931a4c6014099701b2275a78adf6208fffd5b62bc0c8bca30ea274"
+        },
+        {
+          "alg": "MD5",
+          "content": "ce8864075438b5457639f2ffe42d4fa2"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "firmware:architecture",
+        "value": "arm little-endian 32bit"
+      }
+    ]
+  },
+  "components": [],
+  "properties": [
+    {
+      "name": "analysis:warnings",
+      "value": "Extractor 'radare2' unavailable, skipping; Extractor 'ghidra' unavailable, skipping"
+    }
+  ]
+}

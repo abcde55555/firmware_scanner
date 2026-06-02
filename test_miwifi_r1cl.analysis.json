@@ -1,0 +1,48 @@
+{
+  "firmware": {
+    "path": "fmdemo\\miwifi_r1cl_firmware_82b5c_2.7.81.bin",
+    "sha256": "043b2987295a2f15db8afdb0abcdc54e78ee6e9e7dffce95a5c6bcf210127231",
+    "md5": "a77f679fa07f3ae7a1153fdb60082b5c",
+    "size": 9438132,
+    "format": "Raw Binary"
+  },
+  "architecture": {
+    "cpu_family": "arm",
+    "endianness": "little",
+    "file_type": "raw_binary",
+    "word_size": 32,
+    "specific_model": "ARM LE",
+    "confidence": 0.85
+  },
+  "rtos": {
+    "name": "",
+    "confidence": 0.0
+  },
+  "components": [
+    {
+      "name": "linux_kernel",
+      "vendor": "linux",
+      "versions": [
+        {
+          "version": "3.10.14",
+          "confidence": 0.8,
+          "method": "static_rule",
+          "evidence": "EMBA rule 'linux_kernel': MIPS OpenWrt Linux-3.10.14"
+        }
+      ],
+      "resolved_version": "3.10.14",
+      "component_type": "library",
+      "purl": "pkg:generic/linux/linux_kernel@3.10.14",
+      "cpe": "",
+      "licenses": [
+        "GPL-2.0-only"
+      ],
+      "description": ""
+    }
+  ],
+  "warnings": [
+    "Extractor 'radare2' unavailable, skipping",
+    "Extractor 'ghidra' unavailable, skipping"
+  ],
+  "errors": []
+}

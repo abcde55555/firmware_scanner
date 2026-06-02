@@ -16,6 +16,7 @@ from ...android.sparse import SparseImageParser
 from ...android.super_img import SuperImageParser
 from ...android.ext4_reader import Ext4Reader
 from ...android.erofs_reader import ErofsReader
+from ...android.yaffs2_reader import is_yaffs2_image, Yaffs2Reader
 
 
 # Magic bytes and offsets
@@ -83,6 +84,14 @@ class AndroidSystemImageFormat(DiskImageFormat):
             if name_lower.endswith('.img'):
                 return 0.60
             return 0.40
+
+        # YAFFS2 raw dump detection
+        if is_yaffs2_image(data):
+            if any(kw in name_lower for kw in ('android', 'system', 'vendor', 'product')):
+                return 0.92
+            if name_lower.endswith('.img'):
+                return 0.85
+            return 0.75
 
         # Content-based Android detection: look for Android-specific markers in raw data
         # This handles images that are raw dumps without standard filesystem headers
@@ -183,6 +192,8 @@ class AndroidSystemImageFormat(DiskImageFormat):
             return self._unpack_ext4(raw_data, path)
         elif self._is_erofs(raw_data):
             return self._unpack_erofs(raw_data, path)
+        elif is_yaffs2_image(raw_data):
+            return self._unpack_yaffs2(raw_data, path)
 
         # Scan for embedded filesystems within the image
         # (handles raw dumps that contain SquashFS, CramFS, etc.)
@@ -235,6 +246,17 @@ class AndroidSystemImageFormat(DiskImageFormat):
 
         sections = self._extract_filesystem_sections(reader, path.stem)
         metadata = {"filesystem": "erofs", "partition_name": path.stem}
+
+        return UnpackResult(sections=sections, metadata=metadata)
+
+    def _unpack_yaffs2(self, data: bytes, path: Path) -> UnpackResult:
+        """Unpack YAFFS2 raw dump image."""
+        reader = Yaffs2Reader(data)
+        if not reader.is_valid():
+            return self._unpack_fallback(data, path)
+
+        sections = self._extract_filesystem_sections(reader, path.stem)
+        metadata = {"filesystem": "yaffs2", "partition_name": path.stem}
 
         return UnpackResult(sections=sections, metadata=metadata)
 
