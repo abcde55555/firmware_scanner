@@ -1,0 +1,1337 @@
+{
+  "firmware_path": "D:\\work\\Code\\cctest\\firmware_scanner\\fmdemo\\android_system.img",
+  "firmware_sha256": "094e997cd2110e7fabe07bbb3112a672ad147ebe453f6a41d1b834b0a177f0ed",
+  "scan_timestamp": "2026-06-03T10:21:46.808326",
+  "total_components_scanned": 165,
+  "total_vulnerabilities": 0,
+  "critical_count": 0,
+  "high_count": 0,
+  "medium_count": 0,
+  "low_count": 0,
+  "unknown_count": 0,
+  "results": [
+    {
+      "component_name": "Android",
+      "component_version": "4.0.3",
+      "purl": "pkg:generic/android@4.0.3",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.noisefield",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.android.noisefield@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.neldtv.apkstore",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.neldtv.apkstore@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.downloads.ui",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.downloads.ui@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.farcore.videoplayer",
+      "component_version": "1.73",
+      "purl": "pkg:apk/com.farcore.videoplayer@1.73",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.defcontainer",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.defcontainer@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.certinstaller",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.certinstaller@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.wallpaper.holospiral",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.wallpaper.holospiral@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.mainscreentheme",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.mainscreentheme@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.soundrecorder",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.soundrecorder@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.drm",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.drm@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.wallpaper.livepicker",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.wallpaper.livepicker@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.exchange",
+      "component_version": "4.1",
+      "purl": "pkg:apk/com.android.exchange@4.1",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.vpndialogs",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.vpndialogs@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Phone",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.packageinstaller",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.packageinstaller@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Browser",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.calendar",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.calendar@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.gsoft.appinstall",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.gsoft.appinstall@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.htmlviewer",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.htmlviewer@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.sharedstoragebackup",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.sharedstoragebackup@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Settings",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.media",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.media@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "MusicPlayer",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.systemui",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.systemui@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.galaxy4",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.android.galaxy4@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.music",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.music@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.calendar",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.calendar@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.calculator2",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.calculator2@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.backupconfirm",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.backupconfirm@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Bluetooth",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.magicsmoke",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.magicsmoke@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "RemoteIME",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "PicturePlayer",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.downloads",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.downloads@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "org.neldtv.tpmsetting",
+      "component_version": "1.0",
+      "purl": "pkg:apk/org.neldtv.tpmsetting@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.settings",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.settings@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.keychain",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.keychain@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.svox.pico",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.svox.pico@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.userdictionary",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.userdictionary@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.example.Upgrade",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.example.Upgrade@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.protips",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.android.protips@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.phasebeam",
+      "component_version": "1.0",
+      "purl": "pkg:apk/com.android.phasebeam@1.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.inputmethod.latin",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.inputmethod.latin@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Gallery2",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.launcher",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.launcher@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Mms",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.musicvis",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.musicvis@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.wallpaper",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.wallpaper@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.email",
+      "component_version": "4.1",
+      "purl": "pkg:apk/com.android.email@4.1",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.telephony",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.telephony@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Contacts",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.quicksearchbox",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.quicksearchbox@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.camera",
+      "component_version": "1",
+      "purl": "pkg:apk/com.android.camera@1",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.contacts",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.contacts@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.providers.applications",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.providers.applications@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.provision",
+      "component_version": "4.0.3-eng.xlyu.20160408.194630",
+      "purl": "pkg:apk/com.android.provision@4.0.3-eng.xlyu.20160408.194630",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "FileBrowser",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "OOBE",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "com.android.deskclock",
+      "component_version": "2.0.3",
+      "purl": "pkg:apk/com.android.deskclock@2.0.3",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libreference-ril.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "openssl",
+      "component_version": "1.0.0e",
+      "purl": "pkg:generic/openssl/openssl@1.0.0e",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libpng",
+      "component_version": "1.2.46",
+      "purl": "pkg:generic/greg_roelofs/libpng@1.2.46",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libstdc++.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libgabi++.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "e2fsprogs",
+      "component_version": "1.41.11",
+      "purl": "pkg:generic/libext2fs/e2fsprogs@1.41.11",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "zlib",
+      "component_version": "1.2.5",
+      "purl": "pkg:generic/zlib/zlib@1.2.5",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libharfbuzz.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libexpat",
+      "component_version": "2.0.1",
+      "purl": "pkg:generic/libexpat_project/libexpat@2.0.1",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libjpeg.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libandroid.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dbus",
+      "component_version": "1.4.0",
+      "purl": "pkg:generic/freedesktop/dbus@1.4.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libglib.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "libsqlite.so",
+      "component_version": "3.7.4",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "bluetooth-health.so",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "gzip",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "system_server",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "run-as",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "bluetoothd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "hciattach",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "mtpd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "rild",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dumpsys",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_SetPermission_GetCredential",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_PermissionList",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_CheckPermission_Sign",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "vold",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "mediaserver",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "applypatch",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "remote_control",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_MakeAIK",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "mksh",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ssl_client_tpm",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "schedtest",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "tpmd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_MakeEUK",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "linker",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_CheckPermission_SetCredential",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ping",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "surfaceflinger",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_SetEKCredential",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_CheckPermission_DataEncrypt",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "logcat",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "alsa",
+      "component_version": "1.0.23",
+      "purl": "pkg:generic/alsa-project/alsa@1.0.23",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "sensorservice",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "pppd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "keystore",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "iptables",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ip",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_SetPermission_SetCredential",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ssltest",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "toolbox",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "pand",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_SetPermission_NULL",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ip6tables",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_Signing_and_Verify",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dbus-daemon",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "servicemanager",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "skia_gm",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "simg2img",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_SetPermission_Sign",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_CheckStatus",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "omx_tests",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dalvikvm",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "vdc",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "fsck_msdos",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dhcpcd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_SetPermission_DataEncrypt",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "netcfg",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "remotecfg",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "tc",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dexopt",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "tcsd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "bootanimation",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Tssi_EK",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ndc",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_Get_and_Set_Credential",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "adb",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "installd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "netd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_TakeOwnerShip",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "sdptool",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "service",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "alsa_aplay",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "screencap",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "hostapd_wps",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_Data_Encrypt_and_Decrypt",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "app_process",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "bugreport",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "skia_test",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "racoon",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "Ssl_Swap_Tssi_CheckPermission_GetCredential",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dumpstate",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "sdcard",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ntfs-3g",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "hostapd",
+      "component_version": "0.6.9",
+      "purl": "pkg:generic/w1.fi/hostapd@0.6.9",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "debuggerd",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "skia_bench",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "ssl_client_test",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dnsmasq",
+      "component_version": "2.51",
+      "purl": "pkg:generic/dnsmasq/dnsmasq@2.51",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "logwrapper",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "wpa_supplicant",
+      "component_version": "0.8",
+      "purl": "pkg:generic/w1.fi/wpa_supplicant@0.8",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "hciattach_usi",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "dexdump",
+      "component_version": "4.0.3",
+      "purl": "",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    },
+    {
+      "component_name": "sed",
+      "component_version": "4.0",
+      "purl": "pkg:generic/gnu/sed@4.0",
+      "cpe": "",
+      "vulnerabilities": [],
+      "query_error": ""
+    }
+  ],
+  "errors": [
+    "OSV API unreachable: <urlopen error [WinError 10060] 由于连接方在一段时间后没有正确答复或连接的主机没有反应，连接尝试失败。>. Using cached data where available."
+  ]
+}

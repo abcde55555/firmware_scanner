@@ -29,6 +29,11 @@ Firmware Scanner is a Python CLI tool for firmware security analysis. It loads a
   - CycloneDX 1.5 JSON SBOM
   - Standalone HTML report
   - Raw JSON analysis output
+- **Vulnerability scanning**
+  - CVE vulnerability matching via OSV (Google Open Source Vulnerabilities) database
+  - Supports scanning from firmware directly or from existing SBOM files
+  - Local caching with 24h TTL for fast repeated scans
+  - Detailed JSON and HTML vulnerability reports
 - **Extensibility**
   - Custom plugin directory
   - JSON-based signatures
@@ -120,6 +125,18 @@ Create the user configuration file:
 firmware-scanner init
 ```
 
+Scan firmware for known CVE vulnerabilities:
+
+```bash
+firmware-scanner vuln-scan firmware.bin -o vuln_report.html
+```
+
+Scan an existing SBOM for vulnerabilities:
+
+```bash
+firmware-scanner vuln-scan sbom.json -f vuln-json -o vulns.json
+```
+
 You can also run the package module directly:
 
 ```bash
@@ -170,6 +187,47 @@ Prints firmware size, hashes, architecture details, and likely RTOS matches.
 firmware-scanner detect firmware.elf -v
 ```
 
+### `vuln-scan`
+
+Scans for known CVE vulnerabilities using the OSV database. Accepts either a firmware binary or a CycloneDX SBOM JSON file — the input type is auto-detected.
+
+```bash
+# Scan firmware directly (extracts components, then queries CVE database)
+firmware-scanner vuln-scan firmware.bin -o vuln_report.html
+
+# Scan an existing SBOM for vulnerabilities
+firmware-scanner vuln-scan sbom.json -o vulns.json
+
+# Output both JSON and HTML reports
+firmware-scanner vuln-scan firmware.bin -f all -o reports/
+
+# Use a proxy for network access
+firmware-scanner vuln-scan firmware.bin --proxy http://127.0.0.1:7890 -o vulns.json
+```
+
+Output formats:
+
+- `vuln-json` / `json` - detailed JSON vulnerability report
+- `vuln-html` / `html` - standalone HTML vulnerability report
+- `all` - both formats
+
+The vulnerability cache is stored in `~/.firmware-scanner/vuln-cache/` with a 24-hour TTL. On each scan the cache freshness is checked; stale entries are automatically refreshed from OSV. If the network is unavailable, cached data is used with a warning.
+
+### `vuln-update`
+
+Independently update or manage the local vulnerability cache.
+
+```bash
+# Refresh all cached entries from OSV
+firmware-scanner vuln-update
+
+# Refresh via proxy
+firmware-scanner vuln-update --proxy http://127.0.0.1:7890
+
+# Clear all cached entries
+firmware-scanner vuln-update --clear
+```
+
 ### `unpack`
 
 Extracts detected sections/files from the input image.
@@ -201,6 +259,7 @@ src/firmware_scanner/
 ├── rtos/            # RTOS plugin registry and built-in RTOS analyzers
 ├── extraction/      # Component extractors, deep scanner, smart analyzer
 ├── sbom/            # CycloneDX and HTML report generation
+├── vuln/            # CVE vulnerability scanning (OSV API, caching, reports)
 └── utils/           # Binary utility helpers
 
 data/
@@ -215,6 +274,8 @@ tests/               # Fixtures and generated sample outputs
 
 ```text
 Load → Unpack → Architecture Detection → RTOS Detection → Component Extraction → SBOM/Reports
+                                                                                 ↓
+                                                                          vuln-scan → CVE Matching (OSV) → Vulnerability Reports
 ```
 
 The deep scanner analyzes unpacked sections and raw firmware data with component signatures, version regexes, proximity search, global version search, and C-style version define detection. Recursive unpacking then inspects nested artifacts such as archives, compressed images, and application packages where supported.

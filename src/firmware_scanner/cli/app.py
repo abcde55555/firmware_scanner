@@ -270,6 +270,216 @@ def init_command():
     console.print(report)
 
 
+@app.command(name="vuln-scan")
+def vuln_scan(
+    input_file: Path = typer.Argument(..., help="Firmware file or CycloneDX SBOM JSON to scan", exists=True),
+    output: Optional[Path] = typer.Option(None, "-o", "--output", help="Output file or directory"),
+    format: Optional[list[str]] = typer.Option(None, "-f", "--format", help="Output formats: vuln-json, vuln-html (default: vuln-json)"),
+    rtos_hint: Optional[str] = typer.Option(None, "--rtos", help="Expected RTOS type (firmware mode only)"),
+    arch_hint: Optional[str] = typer.Option(None, "--arch", help="Expected architecture (firmware mode only)"),
+    timeout: int = typer.Option(300, "--timeout", help="Analysis timeout in seconds"),
+    verbose: bool = typer.Option(False, "-v", "--verbose", help="Verbose output"),
+    deep: bool = typer.Option(True, "--deep/--no-deep", help="Enable deep scanning (firmware mode only)"),
+    max_size: int = typer.Option(512, "--max-size", help="Max firmware file size in MB"),
+    proxy: Optional[str] = typer.Option(None, "--proxy", help="HTTP proxy for OSV API (e.g. http://127.0.0.1:7890)"),
+):
+    """Scan for known CVE vulnerabilities via OSV database.
+
+    Accepts either a firmware binary or an existing CycloneDX SBOM JSON.
+    The input type is auto-detected: if the file is valid CycloneDX JSON,
+    components are extracted directly; otherwise a full firmware analysis
+    is performed first.
+
+    Output formats (use -f, default vuln-json):
+      vuln-json - Detailed JSON vulnerability report
+      vuln-html - Standalone HTML vulnerability report
+    """
+    from ..vuln.matcher import VulnMatcher
+    from ..vuln.osv_client import OSVClient
+    from ..vuln.sbom_parser import parse_sbom_to_components, is_sbom_file
+
+    # Auto-detect input type
+    if is_sbom_file(input_file):
+        console.print(f"[*] Detected CycloneDX SBOM input: {input_file.name}")
+        components, sbom_meta = parse_sbom_to_components(input_file)
+        firmware_path = sbom_meta.get("firmware_path", str(input_file))
+        firmware_sha256 = sbom_meta.get("firmware_sha256", "")
+        console.print(f"    Components in SBOM: {len(components)}")
+    else:
+        console.print(f"[*] Detected firmware input: {input_file.name}")
+        config = AnalysisConfig(
+            timeout=timeout,
+            rtos_hint=rtos_hint or "",
+            arch_hint=arch_hint or "",
+            verbose=verbose,
+            max_file_size=max_size * 1024 * 1024,
+        )
+        context = _run_analysis(input_file, config, deep_scan=deep)
+        components = context.components
+        firmware_path = str(context.firmware_path)
+        firmware_sha256 = context.file_hash_sha256
+        console.print(f"    Extracted {len(components)} components from firmware")
+
+    # Determine output formats
+    formats = _resolve_vuln_formats(format, output)
+
+    # Run vulnerability scan
+    console.print("[*] Querying OSV vulnerability database...")
+    client = OSVClient(proxy=proxy)
+
+    is_fresh, age = client.check_cache_freshness()
+    if age is not None and not is_fresh:
+        console.print(f"[yellow]    Cache is {age:.1f}h old (>24h), refreshing...[/yellow]")
+    elif age is None:
+        console.print("    First scan - building local vulnerability cache...")
+
+    # Show how many components will actually be queried
+    from ..vuln.matcher import _is_scannable, _normalize_name
+    scannable = [c for c in components if _is_scannable(c)]
+    console.print(f"    Components with valid versions: {len(scannable)}/{len(components)}")
+    if verbose and scannable:
+        console.print("    [dim]Sample queries (first 10):[/dim]")
+        for c in scannable[:10]:
+            norm = _normalize_name(c.name)
+            console.print(f"      [dim]{c.name} v{c.resolved_version} -> {norm}[/dim]")
+
+    def _progress(done: int, total: int, detail: str) -> None:
+        if done >= total:
+            console.print(f"    Queried {total} packages.                              ")
+        elif done % 10 == 0 or done == 1:
+            console.print(f"    [{done}/{total}] {detail[:50]}", highlight=False, end="\r")
+
+    matcher = VulnMatcher(client=client, progress_callback=_progress)
+    try:
+        vuln_result = matcher.scan(components)
+    except Exception as e:
+        console.print(f"[yellow]    Warning: Vulnerability scan error: {e}[/yellow]")
+        return
+
+    # Show errors from the scan (e.g., API timeout)
+    if vuln_result.errors:
+        for err in vuln_result.errors:
+            console.print(f"[yellow]    Warning: {err}[/yellow]")
+
+    vuln_result.firmware_path = firmware_path
+    vuln_result.firmware_sha256 = firmware_sha256
+
+    console.print(
+        f"    [bold]Found {vuln_result.total_vulnerabilities} vulnerabilities[/bold] "
+        f"({vuln_result.critical_count} critical, {vuln_result.high_count} high, "
+        f"{vuln_result.medium_count} medium, {vuln_result.low_count} low)"
+    )
+
+    # Export results
+    _export_vuln_results(vuln_result, formats, output, input_file)
+
+
+@app.command(name="vuln-update")
+def vuln_update(
+    proxy: Optional[str] = typer.Option(None, "--proxy", help="HTTP proxy for OSV API (e.g. http://127.0.0.1:7890)"),
+    clear: bool = typer.Option(False, "--clear", help="Clear all cached entries instead of refreshing"),
+):
+    """Update the local vulnerability cache from OSV database.
+
+    Refreshes all cached vulnerability entries by re-querying OSV.
+    Use --clear to purge the cache entirely.
+    """
+    from ..vuln.osv_client import OSVClient
+    from ..vuln.cache import get_cache_dir, get_cache_age_hours, list_cached_entries, clear_cache
+
+    cache_dir = get_cache_dir()
+    age = get_cache_age_hours(cache_dir)
+
+    if age is not None:
+        console.print(f"[*] Current cache age: {age:.1f} hours")
+    else:
+        console.print("[*] No existing vulnerability cache found.")
+
+    if clear:
+        count = clear_cache(cache_dir)
+        console.print(f"[green]Cleared {count} cached entries.[/green]")
+        return
+
+    entries = list_cached_entries(cache_dir)
+    if not entries:
+        console.print("[yellow]No cached entries to refresh. Run vuln-scan first to populate the cache.[/yellow]")
+        return
+
+    console.print(f"[*] Refreshing {len(entries)} cached entries from OSV...")
+
+    client = OSVClient(proxy=proxy)
+    try:
+        results = client.query_batch(entries)
+        console.print(f"[green]Successfully refreshed {len(results)} entries.[/green]")
+    except Exception as e:
+        console.print(f"[red]Error refreshing cache: {e}[/red]")
+        return
+
+    age = get_cache_age_hours(cache_dir)
+    if age is not None:
+        console.print(f"[green]Cache updated. Current age: {age:.1f} hours[/green]")
+
+
+def _resolve_vuln_formats(format_list: list[str] | None, output: Path | None) -> list[str]:
+    """Determine vulnerability output formats."""
+    if format_list:
+        formats = []
+        for f in format_list:
+            for part in f.split(","):
+                part = part.strip().lower()
+                if part in ("vuln-json", "vuln_json", "json"):
+                    formats.append("vuln-json")
+                elif part in ("vuln-html", "vuln_html", "html"):
+                    formats.append("vuln-html")
+                elif part == "all":
+                    return ["vuln-json", "vuln-html"]
+        return formats if formats else ["vuln-json"]
+
+    if output:
+        suffix = output.suffix.lower()
+        if suffix == ".html":
+            return ["vuln-html"]
+        elif suffix == ".json":
+            return ["vuln-json"]
+    return ["vuln-json"]
+
+
+def _export_vuln_results(vuln_result, formats: list[str], output: Path | None, input_file: Path) -> None:
+    """Export vulnerability scan results."""
+    from ..vuln.report_json import generate_vuln_json
+    from ..vuln.report_html import generate_vuln_html
+
+    base_name = input_file.stem
+
+    if output and output.suffix == "" and len(formats) > 1:
+        output.mkdir(parents=True, exist_ok=True)
+
+    for fmt in formats:
+        if fmt == "vuln-json":
+            content = generate_vuln_json(vuln_result)
+            if output and len(formats) > 1:
+                out_path = (output / f"{base_name}_vuln.json") if output.is_dir() else output.with_suffix(".vuln.json")
+            elif output:
+                out_path = output
+            else:
+                print(content)
+                continue
+            out_path.write_text(content, encoding="utf-8")
+            console.print(f"[green]Vulnerability JSON written to {out_path}[/green]")
+
+        elif fmt == "vuln-html":
+            content = generate_vuln_html(vuln_result)
+            if output and len(formats) > 1:
+                out_path = (output / f"{base_name}_vuln_report.html") if output.is_dir() else output.with_suffix(".vuln.html")
+            elif output:
+                out_path = output
+            else:
+                print(content)
+                continue
+            out_path.write_text(content, encoding="utf-8")
+            console.print(f"[green]Vulnerability HTML report written to {out_path}[/green]")
+
+
 def _resolve_formats(format_list: list[str] | None, output: Path | None) -> list[str]:
     """Determine which output formats to generate."""
     if format_list:
