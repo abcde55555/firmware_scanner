@@ -42,3 +42,46 @@ Thumbs.db
 .env.*
 emba分析/
 fmdemo/
+
+# Test outputs
+*.analysis.json
+test_*.json
+test_*.html
+sbom.json
+sbom.html
+camera_test.*
+
+# Logs
+logs/*.json
+
+# Cache
+.rtos-analyzer/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
