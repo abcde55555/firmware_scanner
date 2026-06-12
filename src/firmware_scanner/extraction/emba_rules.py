@@ -5,6 +5,7 @@ to binary data to extract component versions via regex pattern matching.
 """
 
 import json
+import logging
 import re
 import warnings
 from dataclasses import dataclass, field
@@ -13,6 +14,8 @@ from functools import lru_cache
 from typing import Callable
 
 from .models import Component, VersionConfidence, ExtractionMethod
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass

@@ -1,9 +1,12 @@
 """Recursive firmware unpacker - extracts nested containers to maximum depth."""
 
+import logging
 import struct
 from pathlib import Path
 from dataclasses import dataclass, field
 from ..extraction.models import FirmwareSection, UnpackResult
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -134,7 +137,8 @@ class RecursiveUnpacker:
         try:
             data[:256].decode('utf-8')
             return "text"
-        except Exception:
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Non-critical operation failed: {e}")
             return "binary"
 
     def _unpack_zip(self, data: bytes, parent_name: str, depth: int):
@@ -160,7 +164,8 @@ class RecursiveUnpacker:
                         priority_files.append(name)
                     elif info.file_size > 100:
                         other_files.append(name)
-                except Exception:
+                except Exception as e:  # noqa: BLE001
+                    logger.debug(f"Non-critical operation failed: {e}")
                     continue
 
             # Process priority files first, then others up to limit
@@ -173,11 +178,12 @@ class RecursiveUnpacker:
                     file_data = zf.read(name)
                     full_path = f"{parent_name}/{name}" if parent_name else name
                     self.unpack(file_data, full_path, depth + 1)
-                except Exception:
+                except Exception as e:  # noqa: BLE001
+                    logger.debug(f"Non-critical operation failed: {e}")
                     continue
             zf.close()
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Non-critical operation failed: {e}")
 
     def _unpack_gzip(self, data: bytes, parent_name: str, depth: int):
         """Decompress gzip data."""
@@ -186,10 +192,12 @@ class RecursiveUnpacker:
 
         try:
             decompressed = gzip.decompress(data)
-        except Exception:
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Non-critical operation failed: {e}")
             try:
                 decompressed = zlib.decompress(data[10:], -15)
-            except Exception:
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"Non-critical operation failed: {e}")
                 return
 
         inner_name = parent_name.replace('.gz', '').replace('.tgz', '.tar')
@@ -203,8 +211,8 @@ class RecursiveUnpacker:
             decompressed = lzma.decompress(data)
             inner_name = parent_name.replace('.xz', '').replace('.lzma', '')
             self.unpack(decompressed, inner_name, depth + 1)
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Non-critical operation failed: {e}")
 
     def _unpack_squashfs(self, data: bytes, parent_name: str, depth: int):
         """Extract files from SquashFS v4 filesystem using pure-Python reader."""
@@ -302,7 +310,8 @@ class RecursiveUnpacker:
 
             shutil.rmtree(tmp_dir, ignore_errors=True)
             return len(self._files) > 0
-        except Exception:
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Non-critical operation failed: {e}")
             return False
 
     def _extract_from_squashfs(self, reader, parent_name: str, depth: int):
@@ -408,7 +417,8 @@ class RecursiveUnpacker:
                     self.unpack(file_data, full_path, depth + 1)
 
                 offset = data_padded
-            except Exception:
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"Non-critical operation failed: {e}")
                 break
 
     def _unpack_uboot(self, data: bytes, parent_name: str, depth: int):
@@ -426,8 +436,8 @@ class RecursiveUnpacker:
                 self._unpack_lzma(payload, f"{parent_name}/payload", depth + 1)
             else:
                 self.unpack(payload, f"{parent_name}/payload", depth + 1)
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Non-critical operation failed: {e}")
 
     def _scan_for_embedded_containers(self, data: bytes, parent_name: str, depth: int):
         """Scan a raw firmware blob for embedded filesystems/containers."""
@@ -545,7 +555,8 @@ class RecursiveUnpacker:
                         depth=depth + 1,
                         parent=parent_name,
                     ))
-            except Exception:
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"Non-critical operation failed: {e}")
                 continue
 
         # Scan for APKs and libraries
@@ -561,7 +572,8 @@ class RecursiveUnpacker:
                 break
             try:
                 entries = reader.list_directory(dir_path)
-            except Exception:
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"Non-critical operation failed: {e}")
                 continue
 
             for entry in entries:
@@ -588,7 +600,8 @@ class RecursiveUnpacker:
                                         parent=parent_name,
                                     ))
                                 break
-                    except Exception:
+                    except Exception as e:  # noqa: BLE001
+                        logger.debug(f"Non-critical operation failed: {e}")
                         continue
 
                 elif entry.is_file and (name_lower.endswith('.so') or name_lower.endswith('.apk')):

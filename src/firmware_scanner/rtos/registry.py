@@ -1,7 +1,11 @@
 """RTOS plugin registry and detection orchestrator."""
 
+import logging
+
 from ..core.context import AnalysisContext
 from .base import RTOSPlugin
+
+logger = logging.getLogger(__name__)
 
 
 class RTOSRegistry:
@@ -39,7 +43,8 @@ class RTOSRegistry:
                     if is_linux and plugin.rtos_name not in ("Linux", "OpenWrt"):
                         continue
                     results.append((plugin, confidence))
-            except Exception:
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"Non-critical operation failed: {e}")
                 continue
         results.sort(key=lambda x: x[1], reverse=True)
         return results

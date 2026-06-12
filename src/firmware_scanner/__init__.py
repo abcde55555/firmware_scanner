@@ -1,3 +1,7 @@
-"""RTOS Firmware Analyzer - Security analysis and SBOM generation for RTOS firmware."""
+"""Firmware Scanner - 嵌入式固件安全分析工具."""
+from importlib.metadata import version, PackageNotFoundError
 
-__version__ = "0.1.0"
+try:
+    __version__ = version("firmware-scanner")
+except PackageNotFoundError:
+    __version__ = "0.2.0"

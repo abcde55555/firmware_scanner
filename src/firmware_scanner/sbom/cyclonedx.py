@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from ..extraction.models import Component
+from firmware_scanner import __version__
 
 
 class CycloneDXGenerator:
@@ -54,7 +55,7 @@ class CycloneDXGenerator:
                     {
                         "type": "application",
                         "name": "firmware-scanner",
-                        "version": "0.1.0",
+                        "version": __version__,
                         "publisher": "Firmware Security Team",
                     }
                 ]

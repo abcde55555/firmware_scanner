@@ -1,5 +1,6 @@
 """Deep scanner engine - exhaustive per-section analysis with proximity-based version detection."""
 
+import logging
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -9,6 +10,8 @@ from ..core.context import AnalysisContext
 from ..extraction.models import Component, VersionConfidence, ExtractionMethod
 from ..extraction.emba_rules import scan_binary_with_rules
 from ..utils.binary import find_strings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -70,8 +73,8 @@ class DeepScanner:
                     all_hits.extend(hits)
                 except TimeoutError:
                     pass
-                except Exception:
-                    pass
+                except Exception as e:  # noqa: BLE001
+                    logger.debug(f"Non-critical operation failed: {e}")
                 if self._progress_callback:
                     self._progress_callback(completed, total_sections, f"Scanned: {section_name}")
 
@@ -108,11 +111,6 @@ class DeepScanner:
                 hit.offset, strings_in_section, scan_data
             )
         return hits
-
-        # Phase 4: Resolve versions from nearby strings
-        components = self._resolve_components(all_hits, context)
-
-        return components
 
     def _get_sections(self, context: AnalysisContext) -> list[tuple[str, bytes]]:
         """Get all analyzable data sections from the firmware."""

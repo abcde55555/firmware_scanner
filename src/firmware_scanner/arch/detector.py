@@ -1,10 +1,14 @@
 """Architecture detection orchestrator."""
 
+import logging
+
 from ..arch.models import ArchInfo, CPUFamily, Endianness, FileType
 from .strategies.elf_headers import detect_from_elf_header
 from .strategies.magic_bytes import detect_from_magic_bytes
 from .strategies.instruction_probe import detect_from_instruction_probe
 from .strategies.entropy import find_code_regions
+
+logger = logging.getLogger(__name__)
 
 
 class ArchDetector:
