@@ -1,0 +1,57 @@
+{
+  "freertos": [
+    {"id": "CVE-2021-31571", "severity": "critical", "cvss": 9.8, "summary": "Buffer overflow in FreeRTOS TCP/IP stack", "affected": "<10.4.3"},
+    {"id": "CVE-2021-31572", "severity": "critical", "cvss": 9.8, "summary": "Buffer overflow in FreeRTOS TCP/IP stack parsing", "affected": "<10.4.3"},
+    {"id": "CVE-2018-16522", "severity": "critical", "cvss": 9.8, "summary": "Remote code execution in FreeRTOS TCP/IP", "affected": "<10.0.1"},
+    {"id": "CVE-2018-16524", "severity": "high", "cvss": 7.5, "summary": "Information disclosure in FreeRTOS TCP", "affected": "<10.0.1"},
+    {"id": "CVE-2018-16526", "severity": "critical", "cvss": 9.8, "summary": "Heap overflow in FreeRTOS+TCP", "affected": "<10.0.1"}
+  ],
+  "openssl": [
+    {"id": "CVE-2024-0727", "severity": "medium", "cvss": 5.5, "summary": "NULL pointer dereference in PKCS12 parsing", "affected": "<3.2.1"},
+    {"id": "CVE-2023-5678", "severity": "medium", "cvss": 5.3, "summary": "DH key generation excessive time", "affected": "<3.2.1"},
+    {"id": "CVE-2023-5363", "severity": "high", "cvss": 7.5, "summary": "Incorrect cipher key/IV length processing", "affected": "<3.1.4"},
+    {"id": "CVE-2023-3817", "severity": "medium", "cvss": 5.3, "summary": "DH_check() excessive time with large moduli", "affected": "<3.1.2"},
+    {"id": "CVE-2022-4304", "severity": "medium", "cvss": 5.9, "summary": "RSA decryption timing oracle", "affected": "<3.0.8"},
+    {"id": "CVE-2022-4450", "severity": "high", "cvss": 7.5, "summary": "Double free after PEM_read_bio_ex", "affected": "<3.0.8"}
+  ],
+  "mbedtls": [
+    {"id": "CVE-2023-43615", "severity": "high", "cvss": 7.5, "summary": "Buffer overread in TLS certificate parsing", "affected": "<3.5.0"},
+    {"id": "CVE-2023-45199", "severity": "critical", "cvss": 9.8, "summary": "Heap buffer overflow in DTLS", "affected": "<3.5.1"},
+    {"id": "CVE-2022-46392", "severity": "medium", "cvss": 5.3, "summary": "Side channel in RSA PKCS#1 v1.5", "affected": "<3.3.0"},
+    {"id": "CVE-2022-46393", "severity": "critical", "cvss": 9.8, "summary": "Heap buffer overflow in key parsing", "affected": "<3.3.0"}
+  ],
+  "lwip": [
+    {"id": "CVE-2020-22284", "severity": "critical", "cvss": 9.8, "summary": "Buffer overflow in DNS response parsing", "affected": "<2.1.3"},
+    {"id": "CVE-2020-22283", "severity": "critical", "cvss": 9.8, "summary": "Buffer overflow in TCP urgent data", "affected": "<2.1.3"},
+    {"id": "CVE-2020-8597", "severity": "critical", "cvss": 9.8, "summary": "Buffer overflow in PPP", "affected": "<2.1.3"}
+  ],
+  "busybox": [
+    {"id": "CVE-2022-48174", "severity": "critical", "cvss": 9.8, "summary": "Stack overflow in ash shell", "affected": "<1.36.0"},
+    {"id": "CVE-2022-30065", "severity": "high", "cvss": 7.8, "summary": "Use-after-free in awk", "affected": "<1.35.0"},
+    {"id": "CVE-2021-42386", "severity": "high", "cvss": 7.2, "summary": "Use-after-free in awk", "affected": "<1.34.0"}
+  ],
+  "wolfssl": [
+    {"id": "CVE-2023-6935", "severity": "high", "cvss": 7.5, "summary": "Buffer overflow in TLS 1.3", "affected": "<5.6.6"},
+    {"id": "CVE-2023-6936", "severity": "high", "cvss": 7.5, "summary": "Heap buffer overflow during TLS handshake", "affected": "<5.6.6"},
+    {"id": "CVE-2022-42905", "severity": "critical", "cvss": 9.1, "summary": "Buffer overflow in wolfSSL_read", "affected": "<5.5.2"}
+  ],
+  "zephyr": [
+    {"id": "CVE-2023-4265", "severity": "high", "cvss": 8.8, "summary": "Buffer overflow in Bluetooth L2CAP", "affected": "<3.5.0"},
+    {"id": "CVE-2023-4264", "severity": "high", "cvss": 8.8, "summary": "Buffer overflow in Bluetooth SDP", "affected": "<3.5.0"},
+    {"id": "CVE-2023-1901", "severity": "high", "cvss": 8.8, "summary": "Buffer overflow in Bluetooth HCI", "affected": "<3.4.0"}
+  ],
+  "linux": [
+    {"id": "CVE-2024-1086", "severity": "high", "cvss": 7.8, "summary": "Use-after-free in nf_tables", "affected": "<6.8"},
+    {"id": "CVE-2023-6931", "severity": "high", "cvss": 7.8, "summary": "Heap overflow in perf subsystem", "affected": "<6.7"},
+    {"id": "CVE-2023-4004", "severity": "high", "cvss": 7.8, "summary": "Use-after-free in nft_pipapo", "affected": "<6.5"}
+  ],
+  "curl": [
+    {"id": "CVE-2023-46218", "severity": "medium", "cvss": 6.5, "summary": "Cookie injection with mixed case", "affected": "<8.5.0"},
+    {"id": "CVE-2023-38545", "severity": "critical", "cvss": 9.8, "summary": "SOCKS5 heap buffer overflow", "affected": "<8.4.0"},
+    {"id": "CVE-2023-38546", "severity": "low", "cvss": 3.7, "summary": "Cookie injection", "affected": "<8.4.0"}
+  ],
+  "u-boot": [
+    {"id": "CVE-2022-30790", "severity": "critical", "cvss": 9.8, "summary": "Hole descriptor overwrite in IP defragmentation", "affected": "<2022.07"},
+    {"id": "CVE-2022-30552", "severity": "high", "cvss": 7.1, "summary": "Large buffer overflow in IP defragmentation", "affected": "<2022.07"}
+  ]
+}

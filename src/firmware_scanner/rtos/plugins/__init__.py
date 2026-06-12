@@ -9,3 +9,5 @@ from . import threadx  # noqa: F401
 from . import nuttx  # noqa: F401
 from . import liteos  # noqa: F401
 from . import ucos  # noqa: F401
+from . import riot  # noqa: F401
+from . import mbed  # noqa: F401

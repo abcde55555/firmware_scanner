@@ -63,6 +63,8 @@ def _load_builtin_plugins():
         nuttx,
         liteos,
         ucos,
+        riot,
+        mbed,
     )
 
 
