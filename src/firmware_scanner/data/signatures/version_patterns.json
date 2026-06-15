@@ -1,0 +1,320 @@
+[
+  {
+    "pattern": "FreeRTOS\\s+[Vv](\\d+\\.\\d+\\.\\d+)",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "FreeRTOS\\s+[Vv](\\d{6}\\.\\d{2})",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "Zephyr\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "zephyr-v(\\d+\\.\\d+\\.\\d+)",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "RT-Thread\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "RT-Thread",
+    "vendor": "RT-Thread",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "ESP-IDF\\s+[Vv]?(\\d+\\.\\d+(?:\\.\\d+)?)",
+    "name": "ESP-IDF",
+    "vendor": "Espressif",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "esp-idf/v(\\d+\\.\\d+(?:\\.\\d+)?)",
+    "name": "ESP-IDF",
+    "vendor": "Espressif",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "VxWorks\\s+(\\d+\\.\\d+(?:\\.\\d+)?)",
+    "name": "VxWorks",
+    "vendor": "Wind River",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "ThreadX\\s+[Vv]?(\\d+\\.\\d+(?:\\.\\d+)?)",
+    "name": "ThreadX",
+    "vendor": "Microsoft",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "NuttX\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "NuttX",
+    "vendor": "Apache",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "LiteOS\\s+[Vv](\\d+\\.\\d+(?:\\.\\d+)?)",
+    "name": "LiteOS",
+    "vendor": "Huawei",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "uC/OS-I{1,3}\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "uC/OS",
+    "vendor": "Micrium",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "mbed\\s*TLS\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mbedtls[/-](\\d+\\.\\d+\\.\\d+)",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MBEDTLS_VERSION_STRING\\s+\\\"(\\d+\\.\\d+\\.\\d+)\\\"",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "wolfSSL\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "wolfSSL",
+    "vendor": "wolfSSL Inc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "BearSSL\\s+(\\d+\\.\\d+)",
+    "name": "BearSSL",
+    "vendor": "BearSSL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "OpenSSL\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "OpenSSL",
+    "vendor": "OpenSSL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lwIP\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LWIP_VERSION_STRING\\s+\\\"(\\d+\\.\\d+\\.\\d+)\\\"",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lwip-(\\d+\\.\\d+\\.\\d+)",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "libcurl[/-](\\d+\\.\\d+\\.\\d+)",
+    "name": "libcurl",
+    "vendor": "curl",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Mongoose\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "Mongoose",
+    "vendor": "Cesanta",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FatFs\\s+[Rr]?(\\d+\\.\\d+\\w?)",
+    "name": "FatFs",
+    "vendor": "ChaN",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LittleFS\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "LittleFS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "littlefs[/-]v?(\\d+\\.\\d+\\.\\d+)",
+    "name": "LittleFS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cJSON\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "cJSON",
+    "vendor": "DaveGamble",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nanopb\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "nanopb",
+    "vendor": "nanopb",
+    "component_type": "library"
+  },
+  {
+    "pattern": "protobuf-c\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "protobuf-c",
+    "vendor": "protobuf-c",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LVGL\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "LVGL",
+    "vendor": "LVGL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lvgl-(\\d+\\.\\d+\\.\\d+)",
+    "name": "LVGL",
+    "vendor": "LVGL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "U-Boot\\s+(\\d{4}\\.\\d{2})",
+    "name": "U-Boot",
+    "vendor": "DENX",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "MCUboot\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "MCUboot",
+    "vendor": "MCUboot",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "TinyUSB\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "TinyUSB",
+    "vendor": "hathach",
+    "component_type": "library"
+  },
+  {
+    "pattern": "NimBLE\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "NimBLE",
+    "vendor": "Apache",
+    "component_type": "library"
+  },
+  {
+    "pattern": "STM32Cube\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "STM32Cube",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nRF5\\s+SDK\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "nRF5 SDK",
+    "vendor": "Nordic Semiconductor",
+    "component_type": "library"
+  },
+  {
+    "pattern": "zlib\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "zlib",
+    "vendor": "zlib",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LZ4\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "LZ4",
+    "vendor": "Yann Collet",
+    "component_type": "library"
+  },
+  {
+    "pattern": "miniz\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "miniz",
+    "vendor": "richgel999",
+    "component_type": "library"
+  },
+  {
+    "pattern": "aws-iot-device-sdk[/-]v?(\\d+\\.\\d+\\.\\d+)",
+    "name": "AWS IoT SDK",
+    "vendor": "Amazon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "azure-iot-sdk[/-](\\d+\\.\\d+\\.\\d+)",
+    "name": "Azure IoT SDK",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "SEGGER\\s+RTT\\s+[Vv]?(\\d+\\.\\d+\\w?)",
+    "name": "SEGGER RTT",
+    "vendor": "SEGGER",
+    "component_type": "library"
+  },
+  {
+    "pattern": "OpenThread[/-](\\d+\\.\\d+\\.\\d+)",
+    "name": "OpenThread",
+    "vendor": "Google",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Newlib\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "Newlib",
+    "vendor": "Red Hat",
+    "component_type": "library"
+  },
+  {
+    "pattern": "picolibc\\s+(\\d+\\.\\d+(?:\\.\\d+)?)",
+    "name": "picolibc",
+    "vendor": "picolibc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CMSIS\\s+[Vv]?(\\d+\\.\\d+\\.\\d+)",
+    "name": "CMSIS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Linux version (\\d+\\.\\d+\\.\\d+)",
+    "name": "Linux Kernel",
+    "vendor": "Linux",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "OpenWrt\\s+(\\d+\\.\\d+\\.\\d+)",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "BusyBox\\s+v(\\d+\\.\\d+\\.\\d+)",
+    "name": "BusyBox",
+    "vendor": "BusyBox",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Dropbear\\s+v?(\\d+\\.\\d+)",
+    "name": "Dropbear",
+    "vendor": "Dropbear",
+    "component_type": "library"
+  },
+  {
+    "pattern": "dnsmasq-(\\d+\\.\\d+)",
+    "name": "dnsmasq",
+    "vendor": "dnsmasq",
+    "component_type": "library"
+  },
+  {
+    "pattern": "OpenSSH[_\\s](\\d+\\.\\d+)",
+    "name": "OpenSSH",
+    "vendor": "OpenBSD",
+    "component_type": "library"
+  }
+]

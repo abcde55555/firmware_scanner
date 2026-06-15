@@ -1,0 +1,1670 @@
+[
+  {
+    "pattern": "FreeRTOS",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "xTaskCreate",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "vTaskStartScheduler",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "pvPortMalloc",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "vTaskDelay",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "xQueueCreate",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "xSemaphoreCreateMutex",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "xTimerCreate",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "Tmr Svc",
+    "name": "FreeRTOS",
+    "vendor": "Amazon",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "k_thread_create",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "k_sem_init",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "k_mutex_init",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "z_swap",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "__device_dts_ord_",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "CONFIG_KERNEL",
+    "name": "Zephyr RTOS",
+    "vendor": "Zephyr Project",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "rt_thread_create",
+    "name": "RT-Thread",
+    "vendor": "RT-Thread",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "rt_sem_create",
+    "name": "RT-Thread",
+    "vendor": "RT-Thread",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "rt_device_register",
+    "name": "RT-Thread",
+    "vendor": "RT-Thread",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "rt_system_scheduler_start",
+    "name": "RT-Thread",
+    "vendor": "RT-Thread",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "tx_thread_create",
+    "name": "ThreadX",
+    "vendor": "Microsoft",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "tx_kernel_enter",
+    "name": "ThreadX",
+    "vendor": "Microsoft",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "_tx_thread_schedule",
+    "name": "ThreadX",
+    "vendor": "Microsoft",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "taskSpawn",
+    "name": "VxWorks",
+    "vendor": "Wind River",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "semBCreate",
+    "name": "VxWorks",
+    "vendor": "Wind River",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "Wind River",
+    "name": "VxWorks",
+    "vendor": "Wind River",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "OSTaskCreate",
+    "name": "uC/OS",
+    "vendor": "Micrium",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "OSInit",
+    "name": "uC/OS",
+    "vendor": "Micrium",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "OSStart",
+    "name": "uC/OS",
+    "vendor": "Micrium",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "LOS_TaskCreate",
+    "name": "LiteOS",
+    "vendor": "Huawei",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "LOS_KernelInit",
+    "name": "LiteOS",
+    "vendor": "Huawei",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "nxsched_add_readytorun",
+    "name": "NuttX",
+    "vendor": "Apache",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "nx_start",
+    "name": "NuttX",
+    "vendor": "Apache",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "nsh>",
+    "name": "NuttX",
+    "vendor": "Apache",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "esp_idf",
+    "name": "ESP-IDF",
+    "vendor": "Espressif",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "esp_wifi_init",
+    "name": "ESP-IDF",
+    "vendor": "Espressif",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "esp_event_loop",
+    "name": "ESP-IDF",
+    "vendor": "Espressif",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "mbedtls_ssl_init",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mbedtls_x509_crt_parse",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mbedtls_aes_init",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mbedtls_sha256",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mbedtls_entropy_init",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mbedtls_ctr_drbg_init",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mbedtls_pk_init",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MBEDTLS_",
+    "name": "mbedTLS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "wolfSSL_Init",
+    "name": "wolfSSL",
+    "vendor": "wolfSSL Inc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "wolfSSL_CTX_new",
+    "name": "wolfSSL",
+    "vendor": "wolfSSL Inc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "wolfCrypt_Init",
+    "name": "wolfSSL",
+    "vendor": "wolfSSL Inc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "wc_AesSetKey",
+    "name": "wolfSSL",
+    "vendor": "wolfSSL Inc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "wc_RsaPublicEncrypt",
+    "name": "wolfSSL",
+    "vendor": "wolfSSL Inc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "BearSSL",
+    "name": "BearSSL",
+    "vendor": "BearSSL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "br_ssl_engine",
+    "name": "BearSSL",
+    "vendor": "BearSSL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "OpenSSL",
+    "name": "OpenSSL",
+    "vendor": "OpenSSL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "SSL_CTX_new",
+    "name": "OpenSSL",
+    "vendor": "OpenSSL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "EVP_EncryptInit",
+    "name": "OpenSSL",
+    "vendor": "OpenSSL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "tinycrypt",
+    "name": "TinyCrypt",
+    "vendor": "Intel",
+    "component_type": "library"
+  },
+  {
+    "pattern": "tc_sha256_init",
+    "name": "TinyCrypt",
+    "vendor": "Intel",
+    "component_type": "library"
+  },
+  {
+    "pattern": "tc_aes_encrypt",
+    "name": "TinyCrypt",
+    "vendor": "Intel",
+    "component_type": "library"
+  },
+  {
+    "pattern": "HACL*",
+    "name": "HACL*",
+    "vendor": "Project Everest",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Hacl_Chacha20",
+    "name": "HACL*",
+    "vendor": "Project Everest",
+    "component_type": "library"
+  },
+  {
+    "pattern": "libsodium",
+    "name": "libsodium",
+    "vendor": "libsodium",
+    "component_type": "library"
+  },
+  {
+    "pattern": "crypto_secretbox",
+    "name": "libsodium",
+    "vendor": "libsodium",
+    "component_type": "library"
+  },
+  {
+    "pattern": "sodium_init",
+    "name": "libsodium",
+    "vendor": "libsodium",
+    "component_type": "library"
+  },
+  {
+    "pattern": "micro-ecc",
+    "name": "micro-ecc",
+    "vendor": "micro-ecc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "uECC_sign",
+    "name": "micro-ecc",
+    "vendor": "micro-ecc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "uECC_verify",
+    "name": "micro-ecc",
+    "vendor": "micro-ecc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lwIP",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "tcp_new",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "netconn_new",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "pbuf_alloc",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "etharp_output",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "dns_gethostbyname",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LWIP_",
+    "name": "lwIP",
+    "vendor": "lwIP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "uIP",
+    "name": "uIP",
+    "vendor": "Contiki",
+    "component_type": "library"
+  },
+  {
+    "pattern": "uip_init",
+    "name": "uIP",
+    "vendor": "Contiki",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MQTT",
+    "name": "MQTT",
+    "vendor": "Eclipse Paho",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MQTTClient",
+    "name": "MQTT Client",
+    "vendor": "Eclipse Paho",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mqtt_connect",
+    "name": "MQTT",
+    "vendor": "Eclipse Paho",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MQTTPublish",
+    "name": "MQTT Client",
+    "vendor": "Eclipse Paho",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CoAP",
+    "name": "CoAP",
+    "vendor": "libcoap",
+    "component_type": "library"
+  },
+  {
+    "pattern": "coap_new_pdu",
+    "name": "libcoap",
+    "vendor": "libcoap",
+    "component_type": "library"
+  },
+  {
+    "pattern": "coap_send",
+    "name": "libcoap",
+    "vendor": "libcoap",
+    "component_type": "library"
+  },
+  {
+    "pattern": "http_parser",
+    "name": "http-parser",
+    "vendor": "Node.js",
+    "component_type": "library"
+  },
+  {
+    "pattern": "llhttp_init",
+    "name": "llhttp",
+    "vendor": "Node.js",
+    "component_type": "library"
+  },
+  {
+    "pattern": "picohttpparser",
+    "name": "picohttpparser",
+    "vendor": "h2o",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mongoose",
+    "name": "Mongoose",
+    "vendor": "Cesanta",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mg_http_listen",
+    "name": "Mongoose",
+    "vendor": "Cesanta",
+    "component_type": "library"
+  },
+  {
+    "pattern": "civetweb",
+    "name": "CivetWeb",
+    "vendor": "CivetWeb",
+    "component_type": "library"
+  },
+  {
+    "pattern": "libwebsockets",
+    "name": "libwebsockets",
+    "vendor": "libwebsockets",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lws_create_context",
+    "name": "libwebsockets",
+    "vendor": "libwebsockets",
+    "component_type": "library"
+  },
+  {
+    "pattern": "curl_easy",
+    "name": "libcurl",
+    "vendor": "curl",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CURLOPT_",
+    "name": "libcurl",
+    "vendor": "curl",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nimble",
+    "name": "NimBLE",
+    "vendor": "Apache",
+    "component_type": "library"
+  },
+  {
+    "pattern": "ble_gap_",
+    "name": "NimBLE",
+    "vendor": "Apache",
+    "component_type": "library"
+  },
+  {
+    "pattern": "ble_gatt_",
+    "name": "NimBLE",
+    "vendor": "Apache",
+    "component_type": "library"
+  },
+  {
+    "pattern": "BTstack",
+    "name": "BTstack",
+    "vendor": "BlueKitchen",
+    "component_type": "library"
+  },
+  {
+    "pattern": "btstack_run_loop",
+    "name": "BTstack",
+    "vendor": "BlueKitchen",
+    "component_type": "library"
+  },
+  {
+    "pattern": "esp_bt_controller",
+    "name": "ESP-BT",
+    "vendor": "Espressif",
+    "component_type": "library"
+  },
+  {
+    "pattern": "esp_ble_gap",
+    "name": "ESP-BLE",
+    "vendor": "Espressif",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FatFs",
+    "name": "FatFs",
+    "vendor": "ChaN",
+    "component_type": "library"
+  },
+  {
+    "pattern": "f_open",
+    "name": "FatFs",
+    "vendor": "ChaN",
+    "component_type": "library"
+  },
+  {
+    "pattern": "f_mount",
+    "name": "FatFs",
+    "vendor": "ChaN",
+    "component_type": "library"
+  },
+  {
+    "pattern": "f_read",
+    "name": "FatFs",
+    "vendor": "ChaN",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LittleFS",
+    "name": "LittleFS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lfs_mount",
+    "name": "LittleFS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lfs_file_open",
+    "name": "LittleFS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "littlefs",
+    "name": "LittleFS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "SPIFFS",
+    "name": "SPIFFS",
+    "vendor": "SPIFFS",
+    "component_type": "library"
+  },
+  {
+    "pattern": "spiffs_mount",
+    "name": "SPIFFS",
+    "vendor": "SPIFFS",
+    "component_type": "library"
+  },
+  {
+    "pattern": "JFFS2",
+    "name": "JFFS2",
+    "vendor": "Linux",
+    "component_type": "library"
+  },
+  {
+    "pattern": "yaffs",
+    "name": "YAFFS",
+    "vendor": "Aleph One",
+    "component_type": "library"
+  },
+  {
+    "pattern": "yaffs_mount",
+    "name": "YAFFS",
+    "vendor": "Aleph One",
+    "component_type": "library"
+  },
+  {
+    "pattern": "SquashFS",
+    "name": "SquashFS",
+    "vendor": "SquashFS",
+    "component_type": "library"
+  },
+  {
+    "pattern": "hsqs",
+    "name": "SquashFS",
+    "vendor": "SquashFS",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CramFS",
+    "name": "CramFS",
+    "vendor": "Linux",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nvs_flash_init",
+    "name": "NVS Flash",
+    "vendor": "Espressif",
+    "component_type": "library"
+  },
+  {
+    "pattern": "TinyUSB",
+    "name": "TinyUSB",
+    "vendor": "hathach",
+    "component_type": "library"
+  },
+  {
+    "pattern": "tud_",
+    "name": "TinyUSB",
+    "vendor": "hathach",
+    "component_type": "library"
+  },
+  {
+    "pattern": "tusb_init",
+    "name": "TinyUSB",
+    "vendor": "hathach",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CherryUSB",
+    "name": "CherryUSB",
+    "vendor": "CherryUSB",
+    "component_type": "library"
+  },
+  {
+    "pattern": "usbd_initialize",
+    "name": "CherryUSB",
+    "vendor": "CherryUSB",
+    "component_type": "library"
+  },
+  {
+    "pattern": "USBX",
+    "name": "USBX",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "ux_device_",
+    "name": "USBX",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cJSON",
+    "name": "cJSON",
+    "vendor": "DaveGamble",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cJSON_Parse",
+    "name": "cJSON",
+    "vendor": "DaveGamble",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cJSON_CreateObject",
+    "name": "cJSON",
+    "vendor": "DaveGamble",
+    "component_type": "library"
+  },
+  {
+    "pattern": "jansson",
+    "name": "Jansson",
+    "vendor": "Jansson",
+    "component_type": "library"
+  },
+  {
+    "pattern": "json_loads",
+    "name": "Jansson",
+    "vendor": "Jansson",
+    "component_type": "library"
+  },
+  {
+    "pattern": "jsmn",
+    "name": "JSMN",
+    "vendor": "Serge Zaitsev",
+    "component_type": "library"
+  },
+  {
+    "pattern": "jsmn_parse",
+    "name": "JSMN",
+    "vendor": "Serge Zaitsev",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nanopb",
+    "name": "nanopb",
+    "vendor": "nanopb",
+    "component_type": "library"
+  },
+  {
+    "pattern": "pb_encode",
+    "name": "nanopb",
+    "vendor": "nanopb",
+    "component_type": "library"
+  },
+  {
+    "pattern": "pb_decode",
+    "name": "nanopb",
+    "vendor": "nanopb",
+    "component_type": "library"
+  },
+  {
+    "pattern": "protobuf-c",
+    "name": "protobuf-c",
+    "vendor": "protobuf-c",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MessagePack",
+    "name": "MessagePack",
+    "vendor": "MessagePack",
+    "component_type": "library"
+  },
+  {
+    "pattern": "msgpack_pack",
+    "name": "MessagePack",
+    "vendor": "MessagePack",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CBOR",
+    "name": "TinyCBOR",
+    "vendor": "Intel",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cbor_encoder",
+    "name": "TinyCBOR",
+    "vendor": "Intel",
+    "component_type": "library"
+  },
+  {
+    "pattern": "flatbuffers",
+    "name": "FlatBuffers",
+    "vendor": "Google",
+    "component_type": "library"
+  },
+  {
+    "pattern": "miniz",
+    "name": "miniz",
+    "vendor": "richgel999",
+    "component_type": "library"
+  },
+  {
+    "pattern": "mz_inflate",
+    "name": "miniz",
+    "vendor": "richgel999",
+    "component_type": "library"
+  },
+  {
+    "pattern": "zlib",
+    "name": "zlib",
+    "vendor": "zlib",
+    "component_type": "library"
+  },
+  {
+    "pattern": "inflate",
+    "name": "zlib",
+    "vendor": "zlib",
+    "component_type": "library"
+  },
+  {
+    "pattern": "deflate",
+    "name": "zlib",
+    "vendor": "zlib",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lz4",
+    "name": "LZ4",
+    "vendor": "Yann Collet",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LZ4_decompress",
+    "name": "LZ4",
+    "vendor": "Yann Collet",
+    "component_type": "library"
+  },
+  {
+    "pattern": "snappy",
+    "name": "Snappy",
+    "vendor": "Google",
+    "component_type": "library"
+  },
+  {
+    "pattern": "heatshrink",
+    "name": "Heatshrink",
+    "vendor": "Heatshrink",
+    "component_type": "library"
+  },
+  {
+    "pattern": "uzlib",
+    "name": "uzlib",
+    "vendor": "pfalcon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "SEGGER",
+    "name": "SEGGER RTT",
+    "vendor": "SEGGER",
+    "component_type": "library"
+  },
+  {
+    "pattern": "SEGGER_RTT",
+    "name": "SEGGER RTT",
+    "vendor": "SEGGER",
+    "component_type": "library"
+  },
+  {
+    "pattern": "log_module_register",
+    "name": "Zephyr Logging",
+    "vendor": "Zephyr Project",
+    "component_type": "library"
+  },
+  {
+    "pattern": "NRF_LOG",
+    "name": "nRF Logger",
+    "vendor": "Nordic",
+    "component_type": "library"
+  },
+  {
+    "pattern": "ESP_LOG",
+    "name": "ESP-IDF Logging",
+    "vendor": "Espressif",
+    "component_type": "library"
+  },
+  {
+    "pattern": "esp_log_write",
+    "name": "ESP-IDF Logging",
+    "vendor": "Espressif",
+    "component_type": "library"
+  },
+  {
+    "pattern": "U-Boot",
+    "name": "U-Boot",
+    "vendor": "DENX",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "MCUboot",
+    "name": "MCUboot",
+    "vendor": "MCUboot",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "mcuboot",
+    "name": "MCUboot",
+    "vendor": "MCUboot",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "MCUBOOT_",
+    "name": "MCUboot",
+    "vendor": "MCUboot",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "SecureBoot",
+    "name": "Secure Boot",
+    "vendor": "Generic",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "HAL_Init",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "HAL_GPIO_",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "HAL_UART_",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "HAL_SPI_",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "HAL_I2C_",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "HAL_TIM_",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "__HAL_RCC",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "STM32",
+    "name": "STM32 HAL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nrf_drv_",
+    "name": "nRF SDK",
+    "vendor": "Nordic Semiconductor",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nrfx_",
+    "name": "nRFX Drivers",
+    "vendor": "Nordic Semiconductor",
+    "component_type": "library"
+  },
+  {
+    "pattern": "NRF_",
+    "name": "nRF SDK",
+    "vendor": "Nordic Semiconductor",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nrf_gpio_",
+    "name": "nRF SDK",
+    "vendor": "Nordic Semiconductor",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CMSIS",
+    "name": "CMSIS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "__CMSIS_",
+    "name": "CMSIS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "SystemCoreClock",
+    "name": "CMSIS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "NVIC_SetPriority",
+    "name": "CMSIS",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "driverlib",
+    "name": "TI DriverLib",
+    "vendor": "Texas Instruments",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MAP_GPIO",
+    "name": "TI DriverLib",
+    "vendor": "Texas Instruments",
+    "component_type": "library"
+  },
+  {
+    "pattern": "fsl_",
+    "name": "NXP SDK",
+    "vendor": "NXP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "BOARD_Init",
+    "name": "NXP SDK",
+    "vendor": "NXP",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cyhal_",
+    "name": "Cypress HAL",
+    "vendor": "Infineon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cy_",
+    "name": "Cypress PDL",
+    "vendor": "Infineon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "R_",
+    "name": "Renesas FSP",
+    "vendor": "Renesas",
+    "component_type": "library"
+  },
+  {
+    "pattern": "BSP_IO_",
+    "name": "Renesas FSP",
+    "vendor": "Renesas",
+    "component_type": "library"
+  },
+  {
+    "pattern": "XMC_",
+    "name": "XMC Lib",
+    "vendor": "Infineon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LL_GPIO",
+    "name": "STM32 LL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LL_USART",
+    "name": "STM32 LL",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FreeRTOS+TCP",
+    "name": "FreeRTOS+TCP",
+    "vendor": "Amazon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FreeRTOS_Socket",
+    "name": "FreeRTOS+TCP",
+    "vendor": "Amazon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FreeRTOS+FAT",
+    "name": "FreeRTOS+FAT",
+    "vendor": "Amazon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FreeRTOS+CLI",
+    "name": "FreeRTOS+CLI",
+    "vendor": "Amazon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "NetX",
+    "name": "NetX Duo",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nx_tcp_",
+    "name": "NetX Duo",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FileX",
+    "name": "FileX",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "fx_file_",
+    "name": "FileX",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "GUIX",
+    "name": "GUIX",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "gx_widget",
+    "name": "GUIX",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LevelX",
+    "name": "LevelX",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "LVGL",
+    "name": "LVGL",
+    "vendor": "LVGL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lv_obj_create",
+    "name": "LVGL",
+    "vendor": "LVGL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lv_disp_",
+    "name": "LVGL",
+    "vendor": "LVGL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "lv_label_",
+    "name": "LVGL",
+    "vendor": "LVGL",
+    "component_type": "library"
+  },
+  {
+    "pattern": "emWin",
+    "name": "emWin",
+    "vendor": "SEGGER",
+    "component_type": "library"
+  },
+  {
+    "pattern": "GUI_Init",
+    "name": "emWin",
+    "vendor": "SEGGER",
+    "component_type": "library"
+  },
+  {
+    "pattern": "TouchGFX",
+    "name": "TouchGFX",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "u8g2",
+    "name": "u8g2",
+    "vendor": "olikraus",
+    "component_type": "library"
+  },
+  {
+    "pattern": "u8g2_Setup",
+    "name": "u8g2",
+    "vendor": "olikraus",
+    "component_type": "library"
+  },
+  {
+    "pattern": "arm_fir_",
+    "name": "CMSIS-DSP",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "arm_cfft_",
+    "name": "CMSIS-DSP",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "arm_mat_",
+    "name": "CMSIS-DSP",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "arm_pid_",
+    "name": "CMSIS-DSP",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "arm_nn_",
+    "name": "CMSIS-NN",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "arm_convolve",
+    "name": "CMSIS-NN",
+    "vendor": "ARM",
+    "component_type": "library"
+  },
+  {
+    "pattern": "TensorFlow Lite",
+    "name": "TFLite Micro",
+    "vendor": "Google",
+    "component_type": "library"
+  },
+  {
+    "pattern": "tflite::",
+    "name": "TFLite Micro",
+    "vendor": "Google",
+    "component_type": "library"
+  },
+  {
+    "pattern": "aws_iot_",
+    "name": "AWS IoT SDK",
+    "vendor": "Amazon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "AWS_IOT_",
+    "name": "AWS IoT SDK",
+    "vendor": "Amazon",
+    "component_type": "library"
+  },
+  {
+    "pattern": "az_iot_",
+    "name": "Azure IoT SDK",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "AZURE_IOT",
+    "name": "Azure IoT SDK",
+    "vendor": "Microsoft",
+    "component_type": "library"
+  },
+  {
+    "pattern": "ota_",
+    "name": "OTA Update",
+    "vendor": "Generic",
+    "component_type": "library"
+  },
+  {
+    "pattern": "OTA_",
+    "name": "OTA Update",
+    "vendor": "Generic",
+    "component_type": "library"
+  },
+  {
+    "pattern": "golioth",
+    "name": "Golioth SDK",
+    "vendor": "Golioth",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Unity",
+    "name": "Unity Test",
+    "vendor": "ThrowTheSwitch",
+    "component_type": "library"
+  },
+  {
+    "pattern": "TEST_ASSERT",
+    "name": "Unity Test",
+    "vendor": "ThrowTheSwitch",
+    "component_type": "library"
+  },
+  {
+    "pattern": "cmocka",
+    "name": "CMocka",
+    "vendor": "CMocka",
+    "component_type": "library"
+  },
+  {
+    "pattern": "QUALCOMM",
+    "name": "Qualcomm BSP",
+    "vendor": "Qualcomm",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "QC_IMAGE_VERSION",
+    "name": "Qualcomm BSP",
+    "vendor": "Qualcomm",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "MediaTek",
+    "name": "MediaTek BSP",
+    "vendor": "MediaTek",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "MTK_FW",
+    "name": "MediaTek BSP",
+    "vendor": "MediaTek",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "Realtek",
+    "name": "Realtek SDK",
+    "vendor": "Realtek",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "rtl_",
+    "name": "Realtek SDK",
+    "vendor": "Realtek",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "Broadcom",
+    "name": "Broadcom BSP",
+    "vendor": "Broadcom",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "Marvell",
+    "name": "Marvell BSP",
+    "vendor": "Marvell",
+    "component_type": "firmware"
+  },
+  {
+    "pattern": "silicon_labs",
+    "name": "Silicon Labs SDK",
+    "vendor": "Silicon Labs",
+    "component_type": "library"
+  },
+  {
+    "pattern": "sl_",
+    "name": "Silicon Labs SDK",
+    "vendor": "Silicon Labs",
+    "component_type": "library"
+  },
+  {
+    "pattern": "ATMEL",
+    "name": "Atmel ASF",
+    "vendor": "Microchip",
+    "component_type": "library"
+  },
+  {
+    "pattern": "atmel_start",
+    "name": "Atmel START",
+    "vendor": "Microchip",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Microchip",
+    "name": "Microchip Harmony",
+    "vendor": "Microchip",
+    "component_type": "library"
+  },
+  {
+    "pattern": "MPLAB",
+    "name": "MPLAB Harmony",
+    "vendor": "Microchip",
+    "component_type": "library"
+  },
+  {
+    "pattern": "DRV_",
+    "name": "Microchip Harmony",
+    "vendor": "Microchip",
+    "component_type": "library"
+  },
+  {
+    "pattern": "pm_device_",
+    "name": "Zephyr PM",
+    "vendor": "Zephyr Project",
+    "component_type": "library"
+  },
+  {
+    "pattern": "esp_sleep_",
+    "name": "ESP Sleep",
+    "vendor": "Espressif",
+    "component_type": "library"
+  },
+  {
+    "pattern": "HAL_PWR_",
+    "name": "STM32 Power",
+    "vendor": "STMicroelectronics",
+    "component_type": "library"
+  },
+  {
+    "pattern": "shell_print",
+    "name": "Zephyr Shell",
+    "vendor": "Zephyr Project",
+    "component_type": "library"
+  },
+  {
+    "pattern": "finsh",
+    "name": "FinSH",
+    "vendor": "RT-Thread",
+    "component_type": "library"
+  },
+  {
+    "pattern": "msh>",
+    "name": "MSH Shell",
+    "vendor": "RT-Thread",
+    "component_type": "library"
+  },
+  {
+    "pattern": "printf",
+    "name": "printf",
+    "vendor": "mpaland",
+    "component_type": "library"
+  },
+  {
+    "pattern": "newlib",
+    "name": "Newlib",
+    "vendor": "Red Hat",
+    "component_type": "library"
+  },
+  {
+    "pattern": "picolibc",
+    "name": "picolibc",
+    "vendor": "picolibc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "_sbrk",
+    "name": "Newlib",
+    "vendor": "Red Hat",
+    "component_type": "library"
+  },
+  {
+    "pattern": "FreeModbus",
+    "name": "FreeModbus",
+    "vendor": "FreeModbus",
+    "component_type": "library"
+  },
+  {
+    "pattern": "eMBInit",
+    "name": "FreeModbus",
+    "vendor": "FreeModbus",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CANopen",
+    "name": "CANopenNode",
+    "vendor": "CANopenNode",
+    "component_type": "library"
+  },
+  {
+    "pattern": "CO_CANmodule",
+    "name": "CANopenNode",
+    "vendor": "CANopenNode",
+    "component_type": "library"
+  },
+  {
+    "pattern": "i2c_master",
+    "name": "I2C Driver",
+    "vendor": "Generic",
+    "component_type": "library"
+  },
+  {
+    "pattern": "spi_master",
+    "name": "SPI Driver",
+    "vendor": "Generic",
+    "component_type": "library"
+  },
+  {
+    "pattern": "OpenThread",
+    "name": "OpenThread",
+    "vendor": "Google",
+    "component_type": "library"
+  },
+  {
+    "pattern": "otThreadStart",
+    "name": "OpenThread",
+    "vendor": "Google",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Matter",
+    "name": "Matter",
+    "vendor": "CSA",
+    "component_type": "library"
+  },
+  {
+    "pattern": "chip::",
+    "name": "Matter",
+    "vendor": "CSA",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Linux version",
+    "name": "Linux Kernel",
+    "vendor": "Linux",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "linux_banner",
+    "name": "Linux Kernel",
+    "vendor": "Linux",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "vmlinux",
+    "name": "Linux Kernel",
+    "vendor": "Linux",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "init_task",
+    "name": "Linux Kernel",
+    "vendor": "Linux",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "swapper/0",
+    "name": "Linux Kernel",
+    "vendor": "Linux",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "kernel_init",
+    "name": "Linux Kernel",
+    "vendor": "Linux",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "OpenWrt",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "openwrt",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "LEDE",
+    "name": "OpenWrt",
+    "vendor": "OpenWrt",
+    "component_type": "operating-system"
+  },
+  {
+    "pattern": "BusyBox",
+    "name": "BusyBox",
+    "vendor": "BusyBox",
+    "component_type": "library"
+  },
+  {
+    "pattern": "busybox",
+    "name": "BusyBox",
+    "vendor": "BusyBox",
+    "component_type": "library"
+  },
+  {
+    "pattern": "uClibc",
+    "name": "uClibc",
+    "vendor": "uClibc",
+    "component_type": "library"
+  },
+  {
+    "pattern": "musl libc",
+    "name": "musl",
+    "vendor": "musl",
+    "component_type": "library"
+  },
+  {
+    "pattern": "iptables",
+    "name": "iptables",
+    "vendor": "netfilter",
+    "component_type": "library"
+  },
+  {
+    "pattern": "nf_conntrack",
+    "name": "Netfilter",
+    "vendor": "Linux",
+    "component_type": "library"
+  },
+  {
+    "pattern": "Dropbear",
+    "name": "Dropbear",
+    "vendor": "Dropbear",
+    "component_type": "library"
+  },
+  {
+    "pattern": "dropbear",
+    "name": "Dropbear",
+    "vendor": "Dropbear",
+    "component_type": "library"
+  },
+  {
+    "pattern": "dnsmasq",
+    "name": "dnsmasq",
+    "vendor": "dnsmasq",
+    "component_type": "library"
+  },
+  {
+    "pattern": "OpenSSH",
+    "name": "OpenSSH",
+    "vendor": "OpenBSD",
+    "component_type": "library"
+  }
+]

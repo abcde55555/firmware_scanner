@@ -22,50 +22,14 @@ from typing import Callable
 
 from .models import Component, VersionConfidence, ExtractionMethod
 from .extractors.symbol_table import SYMBOL_COMPONENT_MAP
+from ..data import load_dex_packages
 
 
 # =============================================================================
-# DEX Package -> Component mapping
+# DEX Package -> Component mapping (loaded from JSON)
 # =============================================================================
 
-DEX_PACKAGE_MAP: dict[str, tuple[str, str, str]] = {
-    # (package prefix): (component_name, vendor, version_hint)
-    "com/squareup/okhttp3": ("OkHttp", "Square", "3.x"),
-    "com/squareup/retrofit2": ("Retrofit", "Square", "2.x"),
-    "com/google/gson": ("Gson", "Google", ""),
-    "io/reactivex/rxjava3": ("RxJava", "ReactiveX", "3.x"),
-    "io/reactivex/rxjava2": ("RxJava", "ReactiveX", "2.x"),
-    "com/bumptech/glide": ("Glide", "Bump Technologies", ""),
-    "com/squareup/picasso": ("Picasso", "Square", ""),
-    "org/apache/http": ("Apache HttpClient", "Apache", ""),
-    "com/fasterxml/jackson": ("Jackson", "FasterXML", ""),
-    "org/json": ("org.json", "JSON.org", ""),
-    "com/google/android/material": ("Material Components", "Google", ""),
-    "androidx/": ("AndroidX", "Google", ""),
-    "kotlin/": ("Kotlin Stdlib", "JetBrains", ""),
-    "kotlinx/coroutines": ("Kotlin Coroutines", "JetBrains", ""),
-    "com/google/protobuf": ("Protocol Buffers", "Google", ""),
-    "org/bouncycastle": ("Bouncy Castle", "Legion of the Bouncy Castle", ""),
-    "com/google/firebase": ("Firebase", "Google", ""),
-    "io/netty": ("Netty", "Netty Project", ""),
-    "org/slf4j": ("SLF4J", "QOS.ch", ""),
-    "ch/qos/logback": ("Logback", "QOS.ch", ""),
-    "com/google/dagger": ("Dagger", "Google", ""),
-    "io/ktor": ("Ktor", "JetBrains", ""),
-    "org/koin": ("Koin", "Koin", ""),
-    "com/jakewharton": ("Jake Wharton Libraries", "Jake Wharton", ""),
-    "org/conscrypt": ("Conscrypt", "Google", ""),
-    "io/grpc": ("gRPC", "Google", ""),
-    "com/android/volley": ("Volley", "Google", ""),
-    "org/eclipse/paho": ("Eclipse Paho MQTT", "Eclipse", ""),
-    "com/github/bumptech/glide": ("Glide", "Bump Technologies", ""),
-    "org/greenrobot/eventbus": ("EventBus", "greenrobot", ""),
-    "com/squareup/moshi": ("Moshi", "Square", ""),
-    "com/squareup/leakcanary": ("LeakCanary", "Square", ""),
-    "io/realm": ("Realm", "MongoDB", ""),
-    "com/facebook/react": ("React Native", "Meta", ""),
-    "io/flutter": ("Flutter Engine", "Google", ""),
-}
+DEX_PACKAGE_MAP: dict[str, tuple[str, str, str]] = load_dex_packages()
 
 # Sorted by specificity (longer prefixes first) to avoid early matching on short prefixes
 _DEX_PACKAGE_PREFIXES_SORTED = sorted(DEX_PACKAGE_MAP.keys(), key=len, reverse=True)
