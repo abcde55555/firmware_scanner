@@ -224,7 +224,7 @@ class ELFDeepExtractor:
         # e.g., android.hardware.camera.device@3.7.so -> 3.7
         #       android.hardware.audio.common-V4-ndk.so -> V4
         # -------------------------------------------------------------
-        m_hidl = re.search(r'@(\d+\.\d+)(?:-.*)?\.so$', clean_name)
+        m_hidl = re.search(r'@(\d+\.\d+(?:\.\d+)?)(?:-.*)?\.so$', clean_name)
         if m_hidl:
             result.version = m_hidl.group(1)
             result.confidence = 0.95

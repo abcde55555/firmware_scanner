@@ -985,16 +985,22 @@ class AndroidSystemScanner:
 
                 # Create component from JAR/APK name
                 jar_name = entry.name.rsplit('.', 1)[0]
+                jar_ver = ""
+                m_aidl_jar = re.search(r'-V(\d+(?:\.\d+)?)(?:-java)?$', jar_name)
+                if m_aidl_jar:
+                    jar_ver = f"V{m_aidl_jar.group(1)}"
+
                 components.append(Component(
                     name=f"framework/{jar_name}",
                     component_type="framework",
-                    resolved_version="",
+                    resolved_version=jar_ver,
+                    purl=f"pkg:generic/framework/{jar_name}@{jar_ver}" if jar_ver else "",
                     description=f"Framework JAR at {full_path}",
                     versions=[VersionConfidence(
-                        version="",
-                        confidence=0.60,
-                        method=ExtractionMethod.STRING_PATTERN,
-                        evidence=f"Framework JAR at {full_path}",
+                        version=jar_ver,
+                        confidence=0.90 if jar_ver else 0.60,
+                        method=ExtractionMethod.MANIFEST_BINARY if jar_ver else ExtractionMethod.STRING_PATTERN,
+                        evidence=f"Framework interface {jar_ver}" if jar_ver else f"Framework JAR at {full_path}",
                     )],
                 ))
 
