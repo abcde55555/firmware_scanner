@@ -137,6 +137,14 @@ class SPDX3Generator:
                 pkg_elem["suppliedBy"] = comp.vendor
             if comp.purl:
                 pkg_elem["software_packageUrl"] = comp.purl
+            if comp.cpe:
+                pkg_elem["externalIdentifier"] = [
+                    {
+                        "type": "ExternalIdentifier",
+                        "externalIdentifierType": "cpe23Type",
+                        "identifier": comp.cpe,
+                    }
+                ]
             if comp.description:
                 pkg_elem["description"] = comp.description
 

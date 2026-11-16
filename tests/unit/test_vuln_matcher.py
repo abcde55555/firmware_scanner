@@ -92,3 +92,15 @@ def test_is_scannable():
     # Android HAL interfaces -> skipped
     c4 = Component(name="android.hardware.camera.device@3.2.so", resolved_version="3.2")
     assert _is_scannable(c4) is False
+
+
+def test_cpe_synthesizer():
+    from firmware_scanner.extraction.cpe_synthesizer import synthesize_cpe
+
+    assert synthesize_cpe("libopenssl.so", "1.1.1w") == "cpe:2.3:a:openssl:openssl:1.1.1w:*:*:*:*:*:*:*"
+    assert synthesize_cpe("libcrypto.so.1.1", "1.1.1k") == "cpe:2.3:a:openssl:openssl:1.1.1k:*:*:*:*:*:*:*"
+    assert synthesize_cpe("libssl.so", "3.0.9") == "cpe:2.3:a:openssl:openssl:3.0.9:*:*:*:*:*:*:*"
+    assert synthesize_cpe("libsqlite.so", "3.44.5") == "cpe:2.3:a:sqlite:sqlite:3.44.5:*:*:*:*:*:*:*"
+    assert synthesize_cpe("curl", "8.12.0") == "cpe:2.3:a:haxx:curl:8.12.0:*:*:*:*:*:*:*"
+    assert synthesize_cpe("libcrypto.so", "BoringSSL") == ""
+

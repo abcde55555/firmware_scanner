@@ -187,6 +187,14 @@ class AndroidSystemScanner:
         # 7. Apply AOSP baseline metadata annotation without mass fake 16 versions
         self._apply_os_version_fallback(result)
 
+        # 8. Synthesize canonical NVD CPE 2.3 for components with valid upstream versions
+        from ..extraction.cpe_synthesizer import synthesize_cpe
+        for c in result.components:
+            if c.resolved_version and not c.cpe:
+                cpe_str = synthesize_cpe(c.name, c.resolved_version)
+                if cpe_str:
+                    c.cpe = cpe_str
+
         return result
 
     def _scan_build_props(self) -> AndroidBuildInfo:
