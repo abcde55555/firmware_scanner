@@ -1,9 +1,11 @@
 """OSV API client with local caching."""
 
 import json
+import re
 import urllib.request
 import urllib.error
 from pathlib import Path
+from packaging.version import parse as parse_version, InvalidVersion
 
 from .cache import (
     get_cache_dir,
@@ -15,6 +17,122 @@ from .cache import (
     get_cache_age_hours,
 )
 from .models import Vulnerability, VulnReference, Severity
+
+
+def clean_version(v_str: str) -> str:
+    """Normalize version string for packaging.version parsing, stripping distro/build tags."""
+    if not v_str:
+        return ""
+    if ":" in v_str:
+        v_str = v_str.split(":", 1)[1]
+    v_clean = re.sub(r"^[a-zA-Z_\-]+", "", v_str)
+    v_clean = re.split(r"[-+~]", v_clean)[0]
+    match = re.match(r"^(\d+(\.\d+)*)", v_clean)
+    if match:
+        return match.group(1)
+    return ""
+
+
+def extract_canonical_id(vuln: dict) -> str:
+    """Extract standard CVE identifier (CVE-YYYY-NNNNN) if present in ID, aliases, or references."""
+    vid = vuln.get("id", "")
+    match = re.search(r"CVE-\d{4}-\d+", vid)
+    if match:
+        return match.group(0)
+    for a in vuln.get("aliases", []):
+        match = re.search(r"CVE-\d{4}-\d+", a)
+        if match:
+            return match.group(0)
+    for u in vuln.get("upstream", []):
+        match = re.search(r"CVE-\d{4}-\d+", u)
+        if match:
+            return match.group(0)
+    for r in vuln.get("related", []):
+        match = re.search(r"CVE-\d{4}-\d+", r)
+        if match:
+            return match.group(0)
+    for ref in vuln.get("references", []):
+        url = ref.get("url", "")
+        match = re.search(r"CVE-\d{4}-\d+", url)
+        if match:
+            return match.group(0)
+    return vid
+
+
+def is_version_affected(comp_ver_str: str, vuln: dict) -> bool:
+    """Verify client-side whether comp_ver_str falls within the vulnerability's affected ranges."""
+    target_clean = clean_version(comp_ver_str)
+    if not target_clean:
+        return True
+    try:
+        comp_v = parse_version(target_clean)
+    except InvalidVersion:
+        return True
+
+    all_fixed = []
+    all_last_affected = []
+    all_intro = []
+    has_exact = False
+    in_exact = False
+
+    for aff in vuln.get("affected", []):
+        vers = aff.get("versions", [])
+        if vers:
+            has_exact = True
+            for ev in vers:
+                if clean_version(ev) == target_clean:
+                    in_exact = True
+                    break
+
+        for r in aff.get("ranges", []):
+            for ev in r.get("events", []):
+                if "fixed" in ev:
+                    cf = clean_version(ev["fixed"])
+                    if cf:
+                        try:
+                            all_fixed.append(parse_version(cf))
+                        except InvalidVersion:
+                            pass
+                if "last_affected" in ev:
+                    cla = clean_version(ev["last_affected"])
+                    if cla:
+                        try:
+                            all_last_affected.append(parse_version(cla))
+                        except InvalidVersion:
+                            pass
+                if "introduced" in ev:
+                    ci = clean_version(ev["introduced"])
+                    if ci:
+                        try:
+                            all_intro.append(parse_version(ci))
+                        except InvalidVersion:
+                            pass
+
+    # If any fixed version is <= comp_v, it is already fixed in this version or earlier!
+    if all_fixed:
+        min_fixed = min(all_fixed)
+        if comp_v >= min_fixed:
+            return False
+
+    # If all_last_affected is given and comp_v > max(all_last_affected), not affected
+    if all_last_affected:
+        max_la = max(all_last_affected)
+        if comp_v > max_la:
+            return False
+
+    # If introduced is given and comp_v < min_intro, not affected
+    valid_intros = [i for i in all_intro if i != parse_version("0")]
+    if valid_intros:
+        min_intro = min(valid_intros)
+        if comp_v < min_intro:
+            return False
+
+    # If only exact versions were given (no ranges), must be in exact list
+    if has_exact and not all_fixed and not all_last_affected:
+        if not in_exact:
+            return False
+
+    return True
 
 
 class OSVClient:
@@ -130,35 +248,111 @@ class OSVClient:
 
         return [r if r is not None else [] for r in results]
 
-    def parse_vulns(self, raw_vulns: list[dict]) -> list[Vulnerability]:
-        """Convert raw OSV JSON vulnerability objects to our model."""
-        parsed = []
+    def parse_vulns(
+        self,
+        raw_vulns: list[dict],
+        comp_version: str = "",
+        comp_name: str = "",
+    ) -> list[Vulnerability]:
+        """Convert raw OSV JSON vulnerability objects to our model with semver verification and CVE deduplication."""
+        # 1. Filter out vulnerabilities that do not affect comp_version
+        filtered_vulns: list[dict] = []
         for v in raw_vulns:
-            severity, score, vector = self._extract_severity(v)
-            refs = [
-                VulnReference(url=r.get("url", ""), type=r.get("type", ""))
-                for r in v.get("references", [])
-            ]
-            aliases = v.get("aliases", [])
-            vuln_id = v.get("id", "")
+            if comp_version and not is_version_affected(comp_version, v):
+                continue
+            filtered_vulns.append(v)
 
-            fixed_ver = self._extract_fixed_version(v)
-            affected_str = self._extract_affected_range(v)
+        # 2. Group by canonical CVE ID to eliminate duplicate distro notices
+        cve_groups: dict[str, list[dict]] = {}
+        for v in filtered_vulns:
+            cid = extract_canonical_id(v)
+            if cid not in cve_groups:
+                cve_groups[cid] = []
+            cve_groups[cid].append(v)
+
+        parsed: list[Vulnerability] = []
+        for cid, group in cve_groups.items():
+            best_score = -1.0
+            best_vector = ""
+            best_severity = Severity.UNKNOWN
+            best_summary = ""
+            best_details = ""
+            best_fixed = ""
+            best_affected = ""
+            all_aliases: set[str] = set()
+            all_refs: list[VulnReference] = []
+            seen_ref_urls: set[str] = set()
+            pub_date = ""
+            mod_date = ""
+
+            for v in group:
+                vid = v.get("id", "")
+                if vid != cid:
+                    all_aliases.add(vid)
+                for a in v.get("aliases", []):
+                    if a != cid:
+                        all_aliases.add(a)
+
+                for r in v.get("references", []):
+                    url = r.get("url", "")
+                    if url and url not in seen_ref_urls:
+                        seen_ref_urls.add(url)
+                        all_refs.append(VulnReference(url=url, type=r.get("type", "")))
+
+                summary = v.get("summary", "")
+                if len(summary) > len(best_summary):
+                    best_summary = summary
+
+                details = v.get("details", "")
+                if len(details) > len(best_details):
+                    best_details = details
+
+                fixed = self._extract_fixed_version(v)
+                if fixed and not best_fixed:
+                    best_fixed = fixed
+
+                aff_str = self._extract_affected_range(v)
+                if aff_str and not best_affected:
+                    best_affected = aff_str
+
+                sev, score, vector = self._extract_severity(v)
+                if score is not None and score > best_score:
+                    best_score = score
+                    best_vector = vector
+                    best_severity = sev
+                elif best_severity == Severity.UNKNOWN and sev != Severity.UNKNOWN:
+                    best_severity = sev
+
+                if v.get("published") and not pub_date:
+                    pub_date = v.get("published", "")
+                if v.get("modified") and not mod_date:
+                    mod_date = v.get("modified", "")
+
+            # If score was determined, calculate severity
+            if best_score >= 9.0:
+                best_severity = Severity.CRITICAL
+            elif best_score >= 7.0:
+                best_severity = Severity.HIGH
+            elif best_score >= 4.0:
+                best_severity = Severity.MEDIUM
+            elif best_score > 0.0:
+                best_severity = Severity.LOW
 
             parsed.append(Vulnerability(
-                id=vuln_id,
-                summary=v.get("summary", ""),
-                details=v.get("details", ""),
-                aliases=aliases,
-                severity=severity,
-                cvss_score=score,
-                cvss_vector=vector,
-                affected_versions=affected_str,
-                fixed_version=fixed_ver,
-                references=refs,
-                published=v.get("published", ""),
-                modified=v.get("modified", ""),
+                id=cid,
+                summary=best_summary,
+                details=best_details,
+                aliases=sorted(list(all_aliases)),
+                severity=best_severity,
+                cvss_score=best_score if best_score >= 0 else None,
+                cvss_vector=best_vector,
+                affected_versions=best_affected,
+                fixed_version=best_fixed,
+                references=all_refs,
+                published=pub_date,
+                modified=mod_date,
             ))
+
         return parsed
 
     def _build_query(self, purl: str, name: str, version: str, ecosystem: str) -> dict:
@@ -203,12 +397,20 @@ class OSVClient:
         return [r.get("vulns", []) for r in results]
 
     def _fetch_batch_from_api(self, queries: list[dict]) -> list[list[dict]]:
-        """Fetch multiple queries via batch API, chunking by BATCH_SIZE."""
+        """Fetch multiple queries using /v1/query to obtain complete vulnerability objects."""
         all_results: list[list[dict]] = []
-        for i in range(0, len(queries), self.BATCH_SIZE):
-            chunk = queries[i:i + self.BATCH_SIZE]
-            chunk_results = self._post_batch(chunk)
-            all_results.extend(chunk_results)
+        for q in queries:
+            payload = self._build_query(
+                purl=q.get("purl", ""),
+                name=q.get("name", ""),
+                version=q.get("version", ""),
+                ecosystem=q.get("ecosystem", ""),
+            )
+            try:
+                vulns = self._post_query(payload)
+                all_results.append(vulns)
+            except Exception:
+                all_results.append([])
         return all_results
 
     def _extract_severity(self, vuln: dict) -> tuple[Severity, float | None, str]:

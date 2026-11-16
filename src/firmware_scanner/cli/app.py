@@ -493,7 +493,7 @@ def _resolve_formats(format_list: list[str] | None, output: Path | None) -> list
                 part = part.strip().lower()
                 if part == "all":
                     return ["sbom", "spdx", "html", "json"]
-                if part in ("sbom", "cyclonedx", "cdx"):
+                if part in ("sbom", "cyclonedx", "cdx", "cyclonedx-1.6", "cyclonedx1.6", "cdx-1.6", "cyclonedx-json"):
                     formats.append("sbom")
                 elif part in ("spdx", "spdx3", "spdx-3.0.1", "spdx3.0.1", "spdx-json"):
                     formats.append("spdx")

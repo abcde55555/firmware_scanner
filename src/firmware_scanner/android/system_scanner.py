@@ -161,8 +161,22 @@ class AndroidSystemScanner:
         result.components.extend(lib_components)
         result.lib_count = len(lib_components)
 
+        # Build library version map to resolve dynamically linked frontend binaries (e.g. sqlite3 -> libsqlite.so)
+        lib_version_map: dict[str, str] = {}
+        for c in lib_components:
+            if c.resolved_version and not c.resolved_version.endswith("+") and c.resolved_version != "detected":
+                lib_version_map[c.name] = c.resolved_version
+                base = c.name
+                if base.startswith("lib"):
+                    base = base[3:]
+                if base.endswith(".so"):
+                    base = base[:-3]
+                lib_version_map[base] = c.resolved_version
+                if base == "sqlite":
+                    lib_version_map["sqlite3"] = c.resolved_version
+
         # 5. Scan executables
-        bin_components = self._scan_executables()
+        bin_components = self._scan_executables(lib_version_map)
         result.components.extend(bin_components)
         result.bin_count = len(bin_components)
 
@@ -859,11 +873,12 @@ class AndroidSystemScanner:
                 return (match.group(1).decode('ascii', errors='replace'), f"{desc}: {match.group(0).decode('ascii', errors='replace')}")
         return None
 
-    def _scan_executables(self) -> list[Component]:
+    def _scan_executables(self, lib_version_map: dict[str, str] | None = None) -> list[Component]:
         """Scan binary directories for executables."""
         components: list[Component] = []
         scanned = 0
         seen_names: set[str] = set()
+        lib_versions = lib_version_map or {}
 
         for dir_path in BIN_DIRECTORIES:
             if scanned >= self._max_bins:
@@ -891,25 +906,58 @@ class AndroidSystemScanner:
                 if data[:4] != b'\x7fELF':
                     continue
 
+                # Check if executable dynamically links to a library with known exact version (e.g. sqlite3 -> libsqlite.so)
+                linked_lib_ver = lib_versions.get(entry.name)
+
                 # 1. Multi-tier deep ELF extractor for binaries
                 from ..extraction.elf_deep_extractor import ELFDeepExtractor
                 deep_extractor = ELFDeepExtractor()
                 deep_res = deep_extractor.extract(entry.name, data)
                 if deep_res and deep_res.version:
+                    bin_ver = deep_res.version
+                    bin_confidence = deep_res.confidence
                     evidence_str = deep_res.evidence or f"ELF binary version in {full_path}"
+                    
+                    # If version is an API floor landmark (ends with +) and we have a linked lib exact version, use it!
+                    if (bin_ver.endswith("+") or bin_ver == "detected") and linked_lib_ver:
+                        bin_ver = linked_lib_ver
+                        bin_confidence = 0.95
+                        evidence_str = f"Derived from dynamically linked lib{entry.name}.so ({linked_lib_ver})"
+                    elif bin_ver.endswith("+"):
+                        # Keep evidence but do not propagate '+' to version string for semver compatibility
+                        bin_ver = bin_ver.rstrip("+")
+
                     if deep_res.toolchain:
                         evidence_str += f" | Toolchain: {deep_res.toolchain[:60]}"
                     components.append(Component(
                         name=entry.name,
                         component_type="application",
-                        resolved_version=deep_res.version,
-                        purl=deep_res.purl or f"pkg:generic/{entry.name}@{deep_res.version}",
+                        resolved_version=bin_ver,
+                        purl=f"pkg:generic/{entry.name}@{bin_ver}" if bin_ver else "",
                         description=f"ELF binary at {full_path}",
                         versions=[VersionConfidence(
-                            version=deep_res.version,
-                            confidence=deep_res.confidence,
+                            version=bin_ver,
+                            confidence=bin_confidence,
                             method=deep_res.method,
                             evidence=evidence_str,
+                        )],
+                    ))
+                    scanned += 1
+                    continue
+
+                # Check if linked lib version is available when no deep_res version was extracted
+                if linked_lib_ver:
+                    components.append(Component(
+                        name=entry.name,
+                        component_type="application",
+                        resolved_version=linked_lib_ver,
+                        purl=f"pkg:generic/{entry.name}@{linked_lib_ver}",
+                        description=f"ELF binary at {full_path}",
+                        versions=[VersionConfidence(
+                            version=linked_lib_ver,
+                            confidence=0.90,
+                            method=ExtractionMethod.STRING_PATTERN,
+                            evidence=f"Derived from dynamically linked library version ({linked_lib_ver})",
                         )],
                     ))
                     scanned += 1

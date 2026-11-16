@@ -120,11 +120,14 @@ def _is_scannable(component: Component) -> bool:
     ver = component.resolved_version.strip().lower()
     if not ver or ver in _INVALID_VERSIONS:
         return False
+    # Skip floor landmark symbols (ending with +)
+    if ver.endswith("+"):
+        return False
     # Skip AOSP internal platform versions (e.g. '16 (AOSP ...)')
     if "aosp" in ver or "bp2a" in ver:
         return False
-    # Skip pure Android framework components
-    if component.name.startswith("framework/"):
+    # Skip pure Android framework components and HAL interfaces
+    if component.name.startswith("framework/") or component.name.startswith("android.") or "@" in component.name:
         return False
     # Skip Android APK packages (pkg:apk/...) - they're not tracked in OSV
     if component.purl and component.purl.startswith("pkg:apk/"):
@@ -134,8 +137,8 @@ def _is_scannable(component: Component) -> bool:
         parts = component.name.split(".")
         if len(parts) >= 2 and all(p.replace("_", "").isalnum() for p in parts):
             return False
-    # Has a non-APK purl (npm, pypi, maven, etc.) - always scan
-    if component.purl:
+    # Has a non-generic ecosystem purl (npm, pypi, maven, etc.) - always scan
+    if component.purl and not component.purl.startswith("pkg:generic/"):
         return True
     # Known upstream project mapping - always scan
     normalized = _normalize_name(component.name)
@@ -216,7 +219,11 @@ class VulnMatcher:
                 self._progress(idx + 1, len(scannable), comp.name)
 
             raw_vulns = unique_results[query_map[idx]]
-            vulns = self._client.parse_vulns(raw_vulns)
+            vulns = self._client.parse_vulns(
+                raw_vulns,
+                comp_version=comp.resolved_version,
+                comp_name=comp.name,
+            )
             comp_result = ComponentVulnResult(
                 component_name=comp.name,
                 component_version=comp.resolved_version,
