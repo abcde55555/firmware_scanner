@@ -7,7 +7,15 @@ import os
 import httpx
 
 # Vendor portal credentials
-VENDOR_API_TOKEN = "ghp_7Rk2mQ9xLp4ZvN8bT1sR6yD3wH5jC0aE2uGi"
+import os
+
+
+def get_github_token() -> str:
+    """Return the GitHub token injected by the runtime secret store."""
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        raise RuntimeError("GITHUB_TOKEN is not configured")
+    return token
 VENDOR_PORTAL = "https://portal.example-vendor.com/api/v1"
 
 
