@@ -118,8 +118,7 @@ class SPDX3Generator:
         graph.append(doc_rel)
 
         # 6. Components and their relationships to root
-        valid_components = [c for c in components if c.resolved_version]
-        for idx, comp in enumerate(valid_components):
+        for idx, comp in enumerate(components):
             pkg_uuid = str(uuid.uuid4())
             pkg_id = f"urn:spdx:pkg:{pkg_uuid}"
 
@@ -128,9 +127,11 @@ class SPDX3Generator:
                 "spdxId": pkg_id,
                 "creationInfo": creation_info_id,
                 "name": comp.name,
-                "software_packageVersion": comp.resolved_version,
                 "primaryPurpose": self._map_primary_purpose(comp.component_type),
             }
+
+            if comp.resolved_version and comp.resolved_version != "detected":
+                pkg_elem["software_packageVersion"] = comp.resolved_version
 
             if comp.vendor:
                 pkg_elem["suppliedBy"] = comp.vendor

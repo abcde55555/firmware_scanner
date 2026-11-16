@@ -30,7 +30,7 @@ class CycloneDXGenerator:
             "metadata": self._build_metadata(
                 firmware_path, firmware_hash_sha256, firmware_hash_md5, arch_info, detected_rtos
             ),
-            "components": [self._component_to_cdx(c) for c in components if c.resolved_version],
+            "components": [self._component_to_cdx(c) for c in components],
         }
 
         if analysis_warnings:
@@ -86,8 +86,10 @@ class CycloneDXGenerator:
         cdx_comp: dict[str, Any] = {
             "type": cdx_type,
             "name": comp.name,
-            "version": comp.resolved_version,
         }
+
+        if comp.resolved_version and comp.resolved_version != "detected":
+            cdx_comp["version"] = comp.resolved_version
 
         if comp.vendor:
             cdx_comp["publisher"] = comp.vendor

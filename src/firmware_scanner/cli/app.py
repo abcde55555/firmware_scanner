@@ -301,7 +301,10 @@ def vuln_scan(
 
     # Auto-detect input type
     if is_sbom_file(input_file):
-        console.print(f"[*] Detected CycloneDX SBOM input: {input_file.name}")
+        with open(input_file, encoding="utf-8") as _f:
+            _head = _f.read(1024)
+        _sbom_type = "SPDX 3.0.1" if ("@graph" in _head or "spdx" in _head.lower()) else "CycloneDX"
+        console.print(f"[*] Detected {_sbom_type} SBOM input: {input_file.name}")
         components, sbom_meta = parse_sbom_to_components(input_file)
         firmware_path = sbom_meta.get("firmware_path", str(input_file))
         firmware_sha256 = sbom_meta.get("firmware_sha256", "")
@@ -1363,7 +1366,7 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                 result = scanner.scan()
                 if result.components:
                     _store_android_build_info(context, result)
-                    console.print(f"    ext4 scan: {result.apk_count} APKs, {result.lib_count} libs")
+                    console.print(f"    ext4 scan: {result.apk_count} APKs, {result.lib_count} libs, {result.apex_count} APEX modules")
                     return result.components
                 else:
                     console.print("    ext4 reader valid but no files found")

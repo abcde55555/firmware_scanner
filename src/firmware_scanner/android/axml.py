@@ -38,6 +38,8 @@ ATTR_NAME = 0x01010003
 ATTR_MIN_SDK_VERSION = 0x0101020c
 ATTR_TARGET_SDK_VERSION = 0x01010270
 ATTR_COMPILE_SDK_VERSION = 0x01010572
+ATTR_SHARED_USER_ID = 0x0101000b
+ATTR_EXPORTED = 0x01010010
 
 # Fallback attribute name strings for when resource IDs aren't available
 ATTR_NAME_STRINGS = {
@@ -48,6 +50,8 @@ ATTR_NAME_STRINGS = {
     "targetSdkVersion": "target_sdk",
     "compileSdkVersion": "compile_sdk",
     "name": "name",
+    "sharedUserId": "shared_user_id",
+    "exported": "exported",
 }
 
 
@@ -59,6 +63,9 @@ class AndroidManifestInfo:
     min_sdk_version: int = 0
     target_sdk_version: int = 0
     compile_sdk_version: int = 0
+    shared_user_id: str = ""
+    is_system_uid: bool = False
+    exported_components_count: int = 0
     permissions: list[str] = field(default_factory=list)
     uses_libraries: list[str] = field(default_factory=list)
     activities: list[str] = field(default_factory=list)
@@ -286,6 +293,10 @@ class AXMLParser:
                 elif attr_name == "compileSdkVersion" or res_id == ATTR_COMPILE_SDK_VERSION:
                     if attr.value_type in (TYPE_INT_DEC, TYPE_INT_HEX):
                         info.compile_sdk_version = attr.value_data
+                elif attr_name == "sharedUserId" or res_id == ATTR_SHARED_USER_ID:
+                    info.shared_user_id = self._get_attr_string_value(attr)
+                    if info.shared_user_id == "android.uid.system":
+                        info.is_system_uid = True
 
         elif tag_name == "uses-sdk":
             for attr in attrs:
@@ -315,29 +326,23 @@ class AXMLParser:
                     if lib:
                         info.uses_libraries.append(lib)
 
-        elif tag_name == "activity":
+        elif tag_name in ("activity", "service", "receiver", "provider"):
             for attr in attrs:
                 attr_name = self._get_string(attr.name_idx)
+                res_id = self._get_resource_id(attr.name_idx)
                 if attr_name == "name":
                     name = self._get_attr_string_value(attr)
                     if name:
-                        info.activities.append(name)
-
-        elif tag_name == "service":
-            for attr in attrs:
-                attr_name = self._get_string(attr.name_idx)
-                if attr_name == "name":
-                    name = self._get_attr_string_value(attr)
-                    if name:
-                        info.services.append(name)
-
-        elif tag_name == "receiver":
-            for attr in attrs:
-                attr_name = self._get_string(attr.name_idx)
-                if attr_name == "name":
-                    name = self._get_attr_string_value(attr)
-                    if name:
-                        info.receivers.append(name)
+                        if tag_name == "activity":
+                            info.activities.append(name)
+                        elif tag_name == "service":
+                            info.services.append(name)
+                        elif tag_name == "receiver":
+                            info.receivers.append(name)
+                elif attr_name == "exported" or res_id == ATTR_EXPORTED:
+                    # value_data != 0 (1 or -1 or boolean true)
+                    if attr.value_data != 0:
+                        info.exported_components_count += 1
 
     def _get_string(self, idx: int) -> str:
         if idx < 0 or idx >= len(self._strings):

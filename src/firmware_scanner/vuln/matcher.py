@@ -118,7 +118,7 @@ _INVALID_VERSIONS = {"detected", "unknown", "n/a", ""}
 def _is_scannable(component: Component) -> bool:
     """Check if a component has enough info for a meaningful vulnerability query."""
     ver = component.resolved_version.strip().lower()
-    if ver in _INVALID_VERSIONS:
+    if not ver or ver in _INVALID_VERSIONS:
         return False
     # Skip pure Android framework components
     if component.name.startswith("framework/"):
@@ -127,7 +127,7 @@ def _is_scannable(component: Component) -> bool:
     if component.purl and component.purl.startswith("pkg:apk/"):
         return False
     # Skip Java/Android package names (com.xxx.yyy style)
-    if "." in component.name:
+    if "." in component.name and not component.name.endswith(".so"):
         parts = component.name.split(".")
         if len(parts) >= 2 and all(p.replace("_", "").isalnum() for p in parts):
             return False
@@ -138,11 +138,14 @@ def _is_scannable(component: Component) -> bool:
     normalized = _normalize_name(component.name)
     if normalized.lower() != component.name.lower():
         return True
-    # Unknown lib without known mapping - only scan if 3-part version
+    # For libraries or binaries without known alias mapping:
+    # only scan if version looks like a real upstream semver (e.g. 1.2.3)
     lower = component.name.lower()
-    if lower.startswith("lib"):
+    if lower.startswith("lib") or lower.endswith(".so") or ".so." in lower:
         if not _is_real_version(ver):
             return False
+    if not _is_real_version(ver):
+        return False
     return True
 
 

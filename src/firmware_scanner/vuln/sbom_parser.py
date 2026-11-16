@@ -41,11 +41,8 @@ def parse_sbom_to_components(path: Path) -> tuple[list[Component], dict]:
             elem_type = elem.get("type", "")
             if elem_type in ("software_Package", "Package", "SoftwarePackage"):
                 name = elem.get("name", "")
-                version = elem.get("software_packageVersion") or elem.get("packageVersion") or ""
-                if not name or not version or version == "UNKNOWN":
+                if not name:
                     continue
-                purl = elem.get("software_packageUrl") or elem.get("purl") or ""
-                supplied_by = elem.get("suppliedBy", "")
                 purpose = elem.get("primaryPurpose", "library")
 
                 # If this is the root firmware package, store in metadata
@@ -56,12 +53,17 @@ def parse_sbom_to_components(path: Path) -> tuple[list[Component], dict]:
                             meta["firmware_sha256"] = h.get("hashValue", "")
                     continue
 
+                version = elem.get("software_packageVersion") or elem.get("packageVersion") or ""
+                purl = elem.get("software_packageUrl") or elem.get("purl") or ""
+                supplied_by = elem.get("suppliedBy", "")
+
                 components.append(Component(
                     name=name,
                     vendor=supplied_by if isinstance(supplied_by, str) else "",
                     resolved_version=version,
                     component_type=purpose,
                     purl=purl,
+                    description=elem.get("description", ""),
                 ))
         return components, meta
 

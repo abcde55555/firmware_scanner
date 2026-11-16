@@ -19,7 +19,7 @@ from .models import Vulnerability, VulnReference, Severity
 
 class OSVClient:
     BASE_URL = "https://api.osv.dev/v1"
-    TIMEOUT = 120
+    TIMEOUT = 15
     BATCH_SIZE = 100
 
     def __init__(self, cache_dir: Path | None = None, base_url: str | None = None,
@@ -164,7 +164,7 @@ class OSVClient:
     def _build_query(self, purl: str, name: str, version: str, ecosystem: str) -> dict:
         if purl:
             payload: dict = {"package": {"purl": purl}}
-            if version:
+            if version and "@" not in purl:
                 payload["version"] = version
             return payload
         pkg: dict = {"name": name}
