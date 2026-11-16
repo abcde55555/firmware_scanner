@@ -241,7 +241,7 @@ class VulnMatcher:
         return result
 
     def _build_query(self, component: Component) -> dict:
-        if component.purl:
+        if component.purl and not component.purl.startswith("pkg:generic/"):
             return {
                 "purl": component.purl,
                 "name": component.name,

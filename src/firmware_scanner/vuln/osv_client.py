@@ -244,7 +244,7 @@ class OSVClient:
         return Severity.UNKNOWN, None, ""
 
     def _cvss_vector_to_score(self, vector: str) -> float | None:
-        """Extract base score from CVSS vector if embedded, or estimate from metrics."""
+        """Extract base score from CVSS vector if embedded, or calculate from CVSS v3 metrics."""
         if not vector:
             return None
         # OSV sometimes puts score directly in the vector field as a number
@@ -252,9 +252,37 @@ class OSVClient:
             return float(vector)
         except ValueError:
             pass
-        # For CVSS v3 vectors, try to extract from common patterns
-        # The OSV API doesn't always provide numeric scores in severity,
-        # but we can do a basic extraction from ecosystem_specific or database_specific
+
+        # Standard CVSS v3.x calculation
+        if "CVSS:3" in vector:
+            try:
+                import math
+                parts = dict(part.split(":") for part in vector.split("/") if ":" in part)
+                av = {"N": 0.85, "A": 0.62, "L": 0.55, "P": 0.2}.get(parts.get("AV", "N"), 0.85)
+                ac = {"L": 0.77, "H": 0.44}.get(parts.get("AC", "L"), 0.77)
+                pr_scope = parts.get("S", "U")
+                if pr_scope == "C":
+                    pr = {"N": 0.85, "L": 0.68, "H": 0.50}.get(parts.get("PR", "N"), 0.85)
+                else:
+                    pr = {"N": 0.85, "L": 0.62, "H": 0.27}.get(parts.get("PR", "N"), 0.85)
+                ui = {"N": 0.85, "R": 0.62}.get(parts.get("UI", "N"), 0.85)
+                c = {"H": 0.56, "L": 0.22, "N": 0.0}.get(parts.get("C", "N"), 0.0)
+                i = {"H": 0.56, "L": 0.22, "N": 0.0}.get(parts.get("I", "N"), 0.0)
+                a = {"H": 0.56, "L": 0.22, "N": 0.0}.get(parts.get("A", "N"), 0.0)
+
+                iss = 1.0 - ((1.0 - c) * (1.0 - i) * (1.0 - a))
+                if iss <= 0:
+                    return 0.0
+                impact = 7.52 * (iss - 0.029) - 3.25 * ((iss - 0.02) ** 15) if pr_scope == "C" else 6.42 * iss
+                exploitability = 8.22 * av * ac * pr * ui
+                if pr_scope == "C":
+                    base_score = min(1.08 * (impact + exploitability), 10.0)
+                else:
+                    base_score = min(impact + exploitability, 10.0)
+                return round(math.ceil(base_score * 10) / 10, 1)
+            except Exception:
+                pass
+
         return None
 
     def _extract_fixed_version(self, vuln: dict) -> str:
