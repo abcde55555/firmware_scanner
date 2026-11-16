@@ -121,9 +121,9 @@ class AndroidSystemScanner:
     def __init__(
         self,
         fs_reader: FilesystemReader,
-        max_apks: int = 200,
-        max_libs: int = 500,
-        max_bins: int = 400,
+        max_apks: int = 500,
+        max_libs: int = 2000,
+        max_bins: int = 1000,
     ):
         self._fs = fs_reader
         self._max_apks = max_apks
@@ -562,7 +562,20 @@ class AndroidSystemScanner:
             parts = dir_path.strip('/').split('/')
             partition = parts[0] if parts else "system"
 
-            entries = self._fs.list_directory(dir_path)
+            entries = list(self._fs.list_directory(dir_path))
+            from ..extraction.elf_deep_extractor import KNOWN_RODATA_PATTERNS
+
+            def _lib_priority(entry_name: str) -> tuple[int, str]:
+                nl = entry_name.lower()
+                clean = nl.replace("lib", "").replace(".so", "")
+                for k in KNOWN_RODATA_PATTERNS.keys():
+                    if len(k) >= 3 and (k in clean or k in nl):
+                        return (0, nl)
+                if "@" in nl or "-v" in nl:
+                    return (1, nl)
+                return (2, nl)
+
+            entries.sort(key=lambda e: _lib_priority(e.name))
             for entry in entries:
                 if scanned >= self._max_libs:
                     break
@@ -614,17 +627,31 @@ class AndroidSystemScanner:
         if version_suffix.startswith('.'):
             version = version_suffix[1:]
 
-        # Use the existing ELF analysis from smart_analyzer via symbols
-        from ..extraction.smart_analyzer import SmartSectionAnalyzer
-        analyzer = SmartSectionAnalyzer()
-        sub_components = analyzer.analyze_section(path, data)
+        # 1. Multi-tier deep ELF extractor (SONAME, symbol versioning, rodata banners, landmark symbols, HAL interfaces)
+        from ..extraction.elf_deep_extractor import ELFDeepExtractor
+        deep_extractor = ELFDeepExtractor()
+        deep_res = deep_extractor.extract(filename, data)
+        if deep_res and deep_res.version:
+            evidence_str = deep_res.evidence or f"ELF deep extraction in {path}"
+            if deep_res.toolchain:
+                evidence_str += f" | Toolchain: {deep_res.toolchain[:60]}"
+            return Component(
+                name=filename,
+                component_type="library",
+                resolved_version=deep_res.version,
+                description=f"Native library in /{partition} at {path}",
+                purl=deep_res.purl or f"pkg:generic/{filename}@{deep_res.version}",
+                versions=[VersionConfidence(
+                    version=deep_res.version,
+                    confidence=deep_res.confidence,
+                    method=deep_res.method,
+                    evidence=evidence_str,
+                )],
+            )
 
-        if sub_components:
-            return sub_components[0]
-
-        # Try EMBA static rules (529 patterns for known components)
+        # 2. Try EMBA static rules (529 patterns for known components)
         emba_results = scan_binary_with_rules(data, filename)
-        if emba_results:
+        if emba_results and emba_results[0].resolved_version:
             best = emba_results[0]
             best.description = f"Native library in /{partition} at {path}"
             best.versions[0] = VersionConfidence(
@@ -635,9 +662,9 @@ class AndroidSystemScanner:
             )
             return best
 
-        # Try well-known library version extraction from binary strings
+        # 3. Try well-known library version extraction from binary strings
         known_version = self._extract_known_lib_version(lib_name, data)
-        if known_version:
+        if known_version and known_version[0]:
             return Component(
                 name=filename,
                 component_type="library",
@@ -651,6 +678,13 @@ class AndroidSystemScanner:
                     evidence=known_version[1],
                 )],
             )
+
+        # 4. Symbol table matching fallback via SmartSectionAnalyzer
+        from ..extraction.smart_analyzer import SmartSectionAnalyzer
+        analyzer = SmartSectionAnalyzer()
+        sub_components = analyzer.analyze_section(path, data)
+        if sub_components and sub_components[0].resolved_version and sub_components[0].resolved_version != "detected":
+            return sub_components[0]
 
         # Fallback: create component from filename without fake version
         return Component(
@@ -857,7 +891,31 @@ class AndroidSystemScanner:
                 if data[:4] != b'\x7fELF':
                     continue
 
-                # Check known binary patterns first (e.g. toybox, curl, e2fsck)
+                # 1. Multi-tier deep ELF extractor for binaries
+                from ..extraction.elf_deep_extractor import ELFDeepExtractor
+                deep_extractor = ELFDeepExtractor()
+                deep_res = deep_extractor.extract(entry.name, data)
+                if deep_res and deep_res.version:
+                    evidence_str = deep_res.evidence or f"ELF binary version in {full_path}"
+                    if deep_res.toolchain:
+                        evidence_str += f" | Toolchain: {deep_res.toolchain[:60]}"
+                    components.append(Component(
+                        name=entry.name,
+                        component_type="application",
+                        resolved_version=deep_res.version,
+                        purl=deep_res.purl or f"pkg:generic/{entry.name}@{deep_res.version}",
+                        description=f"ELF binary at {full_path}",
+                        versions=[VersionConfidence(
+                            version=deep_res.version,
+                            confidence=deep_res.confidence,
+                            method=deep_res.method,
+                            evidence=evidence_str,
+                        )],
+                    ))
+                    scanned += 1
+                    continue
+
+                # Check known binary patterns next (e.g. toybox, curl, e2fsck)
                 known_bin = self._extract_known_bin_version(entry.name, data)
                 if known_bin:
                     components.append(Component(

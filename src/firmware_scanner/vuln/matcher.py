@@ -120,6 +120,9 @@ def _is_scannable(component: Component) -> bool:
     ver = component.resolved_version.strip().lower()
     if not ver or ver in _INVALID_VERSIONS:
         return False
+    # Skip AOSP internal platform versions (e.g. '16 (AOSP ...)')
+    if "aosp" in ver or "bp2a" in ver:
+        return False
     # Skip pure Android framework components
     if component.name.startswith("framework/"):
         return False

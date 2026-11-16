@@ -319,20 +319,23 @@ class Ext4Reader:
         dindirect_block = struct.unpack_from('<I', block_data, 52)[0]
         if dindirect_block:
             ind_data = self._read_block(dindirect_block)
-            ptrs_per_block = self._sb.block_size // 4
-            for i in range(ptrs_per_block):
-                if len(result) >= size:
-                    break
-                block_num = struct.unpack_from('<I', ind_data, i * 4)[0]
-                if block_num:
-                    self._read_indirect(block_num, result, size)
+            if len(ind_data) >= 4:
+                ptrs_per_block = min(self._sb.block_size // 4, len(ind_data) // 4)
+                for i in range(ptrs_per_block):
+                    if len(result) >= size:
+                        break
+                    block_num = struct.unpack_from('<I', ind_data, i * 4)[0]
+                    if block_num:
+                        self._read_indirect(block_num, result, size)
 
         return bytes(result[:size])
 
     def _read_indirect(self, indirect_block: int, result: bytearray, max_size: int):
         """Read blocks referenced by an indirect block."""
         ind_data = self._read_block(indirect_block)
-        ptrs_per_block = self._sb.block_size // 4
+        if len(ind_data) < 4:
+            return
+        ptrs_per_block = min(self._sb.block_size // 4, len(ind_data) // 4)
 
         for i in range(ptrs_per_block):
             if len(result) >= max_size:
