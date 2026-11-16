@@ -1,4 +1,4 @@
-"""CycloneDX 1.5 SBOM generation."""
+"""CycloneDX 1.6 SBOM generation."""
 
 import json
 import uuid
@@ -10,7 +10,7 @@ from firmware_scanner import __version__
 
 
 class CycloneDXGenerator:
-    SPEC_VERSION = "1.5"
+    SPEC_VERSION = "1.6"
 
     def generate(
         self,

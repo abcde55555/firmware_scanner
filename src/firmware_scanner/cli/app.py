@@ -44,7 +44,7 @@ console = Console(stderr=True)
 def analyze(
     firmware: Path = typer.Argument(..., help="Path to firmware file", exists=True),
     output: Optional[Path] = typer.Option(None, "-o", "--output", help="Output directory or file path"),
-    format: Optional[list[str]] = typer.Option(None, "-f", "--format", help="Output formats: sbom,html,json (multiple allowed)"),
+    format: Optional[list[str]] = typer.Option(None, "-f", "--format", help="Output formats: sbom (CycloneDX 1.6), spdx (SPDX 3.0.1), html, json (multiple allowed)"),
     rtos_hint: Optional[str] = typer.Option(None, "--rtos", help="Expected RTOS type"),
     arch_hint: Optional[str] = typer.Option(None, "--arch", help="Expected architecture"),
     extractors: Optional[list[str]] = typer.Option(None, "-e", "--extractor", help="Specific extractors to use"),
@@ -65,10 +65,11 @@ def analyze(
     """Perform full firmware analysis and generate reports.
 
     Output formats (use -f multiple times for multiple outputs):
-      sbom  - CycloneDX 1.5 JSON SBOM
+      sbom  - CycloneDX 1.6 JSON SBOM
+      spdx  - SPDX 3.0.1 JSON-LD SBOM
       html  - Standalone HTML report
       json  - Raw JSON analysis data
-      all   - All formats at once
+      all   - All formats at once (CycloneDX 1.6, SPDX 3.0.1, HTML, JSON)
 
     If -o is a directory, files are named automatically.
     If -o is a file path, format is inferred from extension.
@@ -488,9 +489,11 @@ def _resolve_formats(format_list: list[str] | None, output: Path | None) -> list
             for part in f.split(","):
                 part = part.strip().lower()
                 if part == "all":
-                    return ["sbom", "html", "json"]
-                if part in ("sbom", "cyclonedx"):
+                    return ["sbom", "spdx", "html", "json"]
+                if part in ("sbom", "cyclonedx", "cdx"):
                     formats.append("sbom")
+                elif part in ("spdx", "spdx3", "spdx-3.0.1", "spdx3.0.1", "spdx-json"):
+                    formats.append("spdx")
                 elif part in ("html", "report"):
                     formats.append("html")
                 elif part == "json":
@@ -499,43 +502,61 @@ def _resolve_formats(format_list: list[str] | None, output: Path | None) -> list
 
     # Infer from output file extension
     if output:
+        name_lower = output.name.lower()
         suffix = output.suffix.lower()
-        if suffix == ".html":
+        if "spdx" in name_lower:
+            return ["spdx"]
+        elif suffix == ".html":
             return ["html"]
         elif suffix == ".json":
             return ["sbom"]
-        # If output is a directory, default to all
+        # If output is a directory, default to CycloneDX and SPDX
         if output.is_dir() or not suffix:
-            return ["sbom"]
+            return ["sbom", "spdx"]
     return ["sbom"]
 
 
 def _export_results(context: AnalysisContext, formats: list[str], output: Path | None, firmware: Path) -> None:
     """Export analysis results in requested formats."""
     from ..sbom.html_report import generate_html_report
+    from ..sbom.generator import SBOMGenerator
 
     base_name = firmware.stem
 
-    # If output is a directory, generate files there
-    if output and output.suffix == "" and len(formats) > 1:
+    # If output is a directory or path without suffix, ensure parent/directory exists
+    if output and (output.is_dir() or output.suffix == ""):
         output.mkdir(parents=True, exist_ok=True)
+
+    generator = SBOMGenerator()
 
     for fmt in formats:
         if fmt == "sbom":
-            sbom_content = SBOMGenerator().generate(context)
-            if output and len(formats) > 1:
-                out_path = (output / f"{base_name}_sbom.json") if output.is_dir() else output.with_suffix(".json")
+            sbom_content = generator.generate_cyclonedx(context)
+            if output and (output.is_dir() or len(formats) > 1):
+                out_path = (output / f"{base_name}_cyclonedx_1.6.json") if output.is_dir() else output.with_suffix(".cdx.json")
             elif output:
                 out_path = output
             else:
                 print(sbom_content)
                 continue
             out_path.write_text(sbom_content, encoding="utf-8")
-            console.print(f"[green]SBOM written to {out_path}[/green]")
+            console.print(f"[green]CycloneDX 1.6 SBOM written to {out_path}[/green]")
+
+        elif fmt == "spdx":
+            spdx_content = generator.generate_spdx(context)
+            if output and (output.is_dir() or len(formats) > 1):
+                out_path = (output / f"{base_name}_spdx_3.0.1.json") if output.is_dir() else output.with_suffix(".spdx.json")
+            elif output:
+                out_path = output
+            else:
+                print(spdx_content)
+                continue
+            out_path.write_text(spdx_content, encoding="utf-8")
+            console.print(f"[green]SPDX 3.0.1 SBOM written to {out_path}[/green]")
 
         elif fmt == "html":
             html_content = generate_html_report(context)
-            if output and len(formats) > 1:
+            if output and (output.is_dir() or len(formats) > 1):
                 out_path = (output / f"{base_name}_report.html") if output.is_dir() else output.with_suffix(".html")
             elif output:
                 out_path = output
@@ -546,9 +567,10 @@ def _export_results(context: AnalysisContext, formats: list[str], output: Path |
             console.print(f"[green]HTML report written to {out_path}[/green]")
 
         elif fmt == "json":
-            _output_json_report(context, output if len(formats) == 1 else
+            _output_json_report(context, output if (len(formats) == 1 and output and not output.is_dir()) else
                                ((output / f"{base_name}_analysis.json") if output and output.is_dir() else
                                 (output.with_suffix(".analysis.json") if output else None)))
+
 
 
 def _run_analysis(
