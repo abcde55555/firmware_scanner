@@ -99,6 +99,25 @@ def parse_sbom_to_components(path: Path) -> tuple[list[Component], dict]:
             meta["firmware_sha256"] = h.get("content", "")
             break
 
+    meta["raw_metadata"] = bom_metadata
+    build_info = {}
+    for p in bom_metadata.get("properties", []):
+        pname = p.get("name", "")
+        pval = p.get("value", "")
+        if pname == "asrock:chip-model":
+            build_info["chip_model"] = pval
+        elif pname == "asrock:build-date":
+            build_info["build_date"] = pval
+        elif pname == "asrock:build-id":
+            build_info["build_id"] = pval
+        elif pname == "asrock:target-product":
+            build_info["target_product"] = pval
+    if not build_info.get("target_product") and bom_metadata.get("name"):
+        build_info["target_product"] = bom_metadata["name"]
+    if not build_info.get("build_id") and bom_metadata.get("version"):
+        build_info["build_id"] = bom_metadata["version"]
+    meta["build_info"] = build_info
+
     components = []
     for comp_data in bom.get("components", []):
         name = comp_data.get("name", "")

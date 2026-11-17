@@ -168,7 +168,15 @@ def test_asrock_atv_sbom_metadata():
     assert props["asrock:build-id"] == "BP2A.250805.005"
     assert props["asrock:target-product"] == "waydroid_tv_x86_64"
 
-    # 3. Components have bom-ref
+    # 3. Components have bom-ref and non-empty version in 1.5
     for c in data["components"]:
         assert "bom-ref" in c
+        assert "version" in c and c["version"]
+
+    # 4. Top-level platform compatibility fields
+    assert data["name"] == "waydroid_tv_x86_64"
+    assert data["type"] == "firmware"
+    assert data["lifecycles"] == [{"phase": "build"}]
+    top_props = {p["name"]: p["value"] for p in data.get("properties", [])}
+    assert top_props["asrock:chip-model"] == "x86_64"
 

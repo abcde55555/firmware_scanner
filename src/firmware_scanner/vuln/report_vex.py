@@ -5,8 +5,13 @@ from .models import VulnScanResult, Severity
 from ..extraction.models import Component
 
 
-def generate_cyclonedx_vex(result: VulnScanResult, components: list[Component] | None = None) -> str:
-    """Generate CycloneDX 1.6 SBOM with VEX (vulnerabilities) section."""
+def generate_cyclonedx_vex(
+    result: VulnScanResult,
+    components: list[Component] | None = None,
+    build_info: dict[str, Any] | None = None,
+    spec_version: str = "1.6",
+) -> str:
+    """Generate CycloneDX SBOM with VEX (vulnerabilities) section."""
     from ..sbom.cyclonedx import CycloneDXGenerator
 
     cdx_vulns: list[dict[str, Any]] = []
@@ -68,6 +73,8 @@ def generate_cyclonedx_vex(result: VulnScanResult, components: list[Component] |
         components=comp_list,
         firmware_path=result.firmware_path or "firmware",
         firmware_hash_sha256=result.firmware_sha256 or "",
+        build_info=build_info,
+        spec_version=spec_version,
         vulnerabilities=cdx_vulns,
     )
     return gen.to_json(bom)

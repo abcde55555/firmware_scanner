@@ -26,28 +26,37 @@ class CycloneDXGenerator:
         build_info: dict[str, Any] | None = None,
         spec_version: str = "1.6",
     ) -> dict[str, Any]:
+        meta = self._build_metadata(
+            firmware_path,
+            firmware_hash_sha256,
+            firmware_hash_md5,
+            arch_info,
+            detected_rtos,
+            build_info=build_info,
+        )
+
         bom: dict[str, Any] = {
             "bomFormat": "CycloneDX",
             "specVersion": spec_version,
             "serialNumber": f"urn:uuid:{uuid.uuid4()}",
             "version": 1,
-            "metadata": self._build_metadata(
-                firmware_path,
-                firmware_hash_sha256,
-                firmware_hash_md5,
-                arch_info,
-                detected_rtos,
-                build_info=build_info,
-            ),
+            # Dual-layer platform compatibility fields (in case platforms inspect root-level or metadata)
+            "name": meta.get("name", ""),
+            "type": meta.get("type", "firmware"),
+            "lifecycles": meta.get("lifecycles", [{"phase": "build"}]),
+            "metadata": meta,
             "components": [
                 self._component_to_cdx(c, spec_version=spec_version) for c in components
             ],
         }
 
+        root_props = list(meta.get("properties", []))
         if analysis_warnings:
-            bom["properties"] = [
+            root_props.append(
                 {"name": "analysis:warnings", "value": "; ".join(analysis_warnings[:10])}
-            ]
+            )
+        if root_props:
+            bom["properties"] = root_props
 
         if vulnerabilities:
             bom["vulnerabilities"] = vulnerabilities
@@ -175,6 +184,10 @@ class CycloneDXGenerator:
 
         if comp.resolved_version and comp.resolved_version != "detected":
             cdx_comp["version"] = comp.resolved_version
+        elif spec_version == "1.5":
+            # For CycloneDX 1.5 enterprise platforms (e.g. atv-sbom-3), every component
+            # must have a non-empty version so platforms do not drop unversioned components.
+            cdx_comp["version"] = "unknown"
 
         if comp.vendor:
             cdx_comp["publisher"] = comp.vendor

@@ -58,7 +58,7 @@ def analyze(
     android_max_apks: int = typer.Option(500, "--android-max-apks", help="Max APKs to scan in Android images"),
     android_max_libs: int = typer.Option(2000, "--android-max-libs", help="Max native libs to scan in Android images"),
     android_tools_dir: Optional[Path] = typer.Option(None, "--android-tools", help="Dir with Android image tools (simg2img, lpunpack)"),
-    max_size: int = typer.Option(512, "--max-size", help="Max firmware file size in MB (default 512)"),
+    max_size: int = typer.Option(4096, "--max-size", help="Max firmware file size in MB (default 4096)"),
     log_dir: Optional[Path] = typer.Option("./logs", "--log-dir", help="Scan telemetry log directory"),
     no_log: bool = typer.Option(False, "--no-log", help="Disable scan telemetry logging"),
 ):
@@ -281,7 +281,7 @@ def vuln_scan(
     timeout: int = typer.Option(300, "--timeout", help="Analysis timeout in seconds"),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Verbose output"),
     deep: bool = typer.Option(True, "--deep/--no-deep", help="Enable deep scanning (firmware mode only)"),
-    max_size: int = typer.Option(512, "--max-size", help="Max firmware file size in MB"),
+    max_size: int = typer.Option(4096, "--max-size", help="Max firmware file size in MB (default 4096)"),
     proxy: Optional[str] = typer.Option(None, "--proxy", help="HTTP proxy for OSV API (e.g. http://127.0.0.1:7890)"),
 ):
     """Scan for known CVE vulnerabilities via OSV database.
@@ -301,6 +301,7 @@ def vuln_scan(
     from ..vuln.sbom_parser import parse_sbom_to_components, is_sbom_file
 
     # Auto-detect input type
+    build_info = None
     if is_sbom_file(input_file):
         with open(input_file, encoding="utf-8") as _f:
             _head = _f.read(1024)
@@ -309,6 +310,7 @@ def vuln_scan(
         components, sbom_meta = parse_sbom_to_components(input_file)
         firmware_path = sbom_meta.get("firmware_path", str(input_file))
         firmware_sha256 = sbom_meta.get("firmware_sha256", "")
+        build_info = sbom_meta.get("build_info")
         console.print(f"    Components in SBOM: {len(components)}")
     else:
         console.print(f"[*] Detected firmware input: {input_file.name}")
@@ -323,6 +325,7 @@ def vuln_scan(
         components = context.components
         firmware_path = str(context.firmware_path)
         firmware_sha256 = context.file_hash_sha256
+        build_info = context.metadata.get("android_build_info")
         console.print(f"    Extracted {len(components)} components from firmware")
 
     # Determine output formats
@@ -376,7 +379,7 @@ def vuln_scan(
     )
 
     # Export results
-    _export_vuln_results(vuln_result, formats, output, input_file)
+    _export_vuln_results(vuln_result, formats, output, input_file, build_info=build_info)
 
 
 @app.command(name="vuln-update")
@@ -451,7 +454,13 @@ def _resolve_vuln_formats(format_list: list[str] | None, output: Path | None) ->
     return ["vuln-json"]
 
 
-def _export_vuln_results(vuln_result, formats: list[str], output: Path | None, input_file: Path) -> None:
+def _export_vuln_results(
+    vuln_result,
+    formats: list[str],
+    output: Path | None,
+    input_file: Path,
+    build_info: dict | None = None,
+) -> None:
     """Export vulnerability scan results."""
     from ..vuln.report_json import generate_vuln_json
     from ..vuln.report_html import generate_vuln_html
@@ -465,10 +474,10 @@ def _export_vuln_results(vuln_result, formats: list[str], output: Path | None, i
     for fmt in formats:
         if fmt == "vuln-json":
             content = generate_vuln_json(vuln_result)
-            if output and len(formats) > 1:
-                out_path = (output / f"{base_name}_vuln.json") if output.is_dir() else output.with_suffix(".vuln.json")
+            if output and output.is_dir():
+                out_path = output / f"{base_name}_vuln.json"
             elif output:
-                out_path = output
+                out_path = output if len(formats) == 1 else output.with_suffix(".vuln.json")
             else:
                 print(content)
                 continue
@@ -477,10 +486,10 @@ def _export_vuln_results(vuln_result, formats: list[str], output: Path | None, i
 
         elif fmt == "vuln-html":
             content = generate_vuln_html(vuln_result)
-            if output and len(formats) > 1:
-                out_path = (output / f"{base_name}_vuln_report.html") if output.is_dir() else output.with_suffix(".vuln.html")
+            if output and output.is_dir():
+                out_path = output / f"{base_name}_vuln_report.html"
             elif output:
-                out_path = output
+                out_path = output if len(formats) == 1 else output.with_suffix(".vuln.html")
             else:
                 print(content)
                 continue
@@ -488,16 +497,22 @@ def _export_vuln_results(vuln_result, formats: list[str], output: Path | None, i
             console.print(f"[green]Vulnerability HTML report written to {out_path}[/green]")
 
         elif fmt in ("vex", "cyclonedx-vex"):
-            content = generate_cyclonedx_vex(vuln_result)
-            if output and len(formats) > 1:
-                out_path = (output / f"{base_name}_vex.json") if output.is_dir() else output.with_suffix(".vex.json")
+            content_15 = generate_cyclonedx_vex(vuln_result, build_info=build_info, spec_version="1.5")
+            content_16 = generate_cyclonedx_vex(vuln_result, build_info=build_info, spec_version="1.6")
+            if output and output.is_dir():
+                out_path_15 = output / f"{base_name}_vex.json"
+                out_path_16 = output / f"{base_name}_cyclonedx_1.6_vex.json"
+                out_path_15.write_text(content_15, encoding="utf-8")
+                out_path_16.write_text(content_16, encoding="utf-8")
+                console.print(f"[green]CycloneDX 1.5 VEX written to {out_path_15}[/green]")
+                console.print(f"[green]CycloneDX 1.6 VEX written to {out_path_16}[/green]")
             elif output:
                 out_path = output
+                out_path.write_text(content_15, encoding="utf-8")
+                console.print(f"[green]CycloneDX 1.5 VEX written to {out_path}[/green]")
             else:
-                print(content)
+                print(content_15)
                 continue
-            out_path.write_text(content, encoding="utf-8")
-            console.print(f"[green]CycloneDX 1.6 VEX written to {out_path}[/green]")
 
 
 def _resolve_formats(format_list: list[str] | None, output: Path | None) -> list[str]:
@@ -557,8 +572,8 @@ def _export_results(context: AnalysisContext, formats: list[str], output: Path |
                 out_path_16 = (output / f"{base_name}_cyclonedx_1.6.json") if output.is_dir() else output.with_suffix(".cdx.json")
                 out_path_15.write_text(sbom_content_15, encoding="utf-8")
                 out_path_16.write_text(sbom_content_16, encoding="utf-8")
-                console.print(f"[green]CycloneDX 1.5 SBOM written to {out_path_15}[/green]")
-                console.print(f"[green]CycloneDX 1.6 SBOM written to {out_path_16}[/green]")
+                console.print(f"[bold green]✔ CycloneDX 1.5 SBOM (Recommended for ATV-SBOM platforms): {out_path_15}[/bold green]")
+                console.print(f"[cyan]✔ CycloneDX 1.6 SBOM (with CBOM crypto assets): {out_path_16}[/cyan]")
             elif output:
                 output.write_text(sbom_content_15, encoding="utf-8")
                 console.print(f"[green]CycloneDX 1.5 SBOM written to {output}[/green]")
