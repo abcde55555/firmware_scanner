@@ -151,6 +151,28 @@ _CANONICAL_CPE_MAP: dict[str, tuple[str, str]] = {
     # BoringSSL (Google fork - distinct from OpenSSL)
     "boringssl": ("google", "boringssl"),
     "libboringssl": ("google", "boringssl"),
+
+    # Bluetooth & System Services
+    "bluez": ("bluez", "bluez"),
+    "bluetoothd": ("bluez", "bluez"),
+    "libbluetooth": ("bluez", "bluez"),
+    "leveldb": ("google", "leveldb"),
+    "libleveldb": ("google", "leveldb"),
+    "protobuf": ("google", "protobuf"),
+    "libprotobuf": ("google", "protobuf"),
+    "libprotobuf-lite": ("google", "protobuf"),
+    "libdb": ("oracle", "berkeley_db"),
+    "berkeley_db": ("oracle", "berkeley_db"),
+    "icu": ("icu-project", "international_components_for_unicode"),
+    "libicuuc": ("icu-project", "international_components_for_unicode"),
+    "libicui18n": ("icu-project", "international_components_for_unicode"),
+    "miniupnpd": ("miniupnp_project", "miniupnpd"),
+    "miniupnpc": ("miniupnp_project", "miniupnpc"),
+    "libminiupnpc": ("miniupnp_project", "miniupnpc"),
+    "libbpf": ("libbpf", "libbpf"),
+    "bpf": ("libbpf", "libbpf"),
+    "mksh": ("mirbsd", "mksh"),
+    "zlib-ng": ("zlib-ng", "zlib-ng"),
 }
 
 

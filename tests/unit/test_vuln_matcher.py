@@ -102,5 +102,11 @@ def test_cpe_synthesizer():
     assert synthesize_cpe("libssl.so", "3.0.9") == "cpe:2.3:a:openssl:openssl:3.0.9:*:*:*:*:*:*:*"
     assert synthesize_cpe("libsqlite.so", "3.44.5") == "cpe:2.3:a:sqlite:sqlite:3.44.5:*:*:*:*:*:*:*"
     assert synthesize_cpe("curl", "8.12.0") == "cpe:2.3:a:haxx:curl:8.12.0:*:*:*:*:*:*:*"
+    assert synthesize_cpe("libmbedtls.so", "2.28.8") == "cpe:2.3:a:arm:mbed_tls:2.28.8:*:*:*:*:*:*:*"
+    assert synthesize_cpe("dnsmasq", "2.86") == "cpe:2.3:a:thekelleys:dnsmasq:2.86:*:*:*:*:*:*:*"
+    assert synthesize_cpe("dropbear", "2022.83") == "cpe:2.3:a:dropbear_ssh_project:dropbear_ssh:2022.83:*:*:*:*:*:*:*"
+    assert synthesize_cpe("bluez", "5.66") == "cpe:2.3:a:bluez:bluez:5.66:*:*:*:*:*:*:*"
+    assert synthesize_cpe("libprotobuf.so", "3.19.4") == "cpe:2.3:a:google:protobuf:3.19.4:*:*:*:*:*:*:*"
+    assert synthesize_cpe("toybox", "0.8.12") == "cpe:2.3:a:landley:toybox:0.8.12:*:*:*:*:*:*:*"
     assert synthesize_cpe("libcrypto.so", "BoringSSL") == ""
 

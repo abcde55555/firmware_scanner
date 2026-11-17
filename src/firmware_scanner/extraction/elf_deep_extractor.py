@@ -47,10 +47,21 @@ class ELFExtractionResult:
 LANDMARK_SYMBOLS: list[tuple[str, str, str, str]] = [
     ("EVP_MAC_CTX_new", "OpenSSL/BoringSSL", "3.0+", "EVP_MAC API introduced in OpenSSL 3.0+ / BoringSSL"),
     ("TLS_method", "OpenSSL", "1.1+", "TLS_method API introduced in OpenSSL 1.1.0"),
+    ("EVP_CIPHER_CTX_reset", "OpenSSL", "1.1.0+", "EVP_CIPHER_CTX_reset introduced in OpenSSL 1.1.0"),
     ("deflatePending", "zlib", "1.2.11+", "deflatePending API introduced in zlib 1.2.11"),
     ("sqlite3_autocommit", "sqlite3", "3.37.0+", "sqlite3_autocommit API introduced in SQLite 3.37.0"),
     ("sqlite3_drop_modules", "sqlite3", "3.30.0+", "sqlite3_drop_modules API introduced in SQLite 3.30.0"),
     ("sqlite3_keyword_name", "sqlite3", "3.24.0+", "sqlite3_keyword_name API introduced in SQLite 3.24.0"),
+    ("sqlite3_prepare_v3", "sqlite3", "3.20.0+", "sqlite3_prepare_v3 introduced in SQLite 3.20.0"),
+    ("curl_ws_send", "curl", "7.86.0+", "WebSocket support API introduced in curl 7.86.0"),
+    ("curl_multi_wakeup", "curl", "7.68.0+", "curl_multi_wakeup API introduced in curl 7.68.0"),
+    ("curl_mime_init", "curl", "7.56.0+", "MIME API introduced in curl 7.56.0"),
+    ("xmlSAX2ResolveEntity", "libxml2", "2.6.0+", "xmlSAX2 API introduced in libxml2 2.6.0"),
+    ("cJSON_Version", "cjson", "1.0.0+", "cJSON_Version API introduced in cJSON 1.0.0"),
+    ("FT_Library_Version", "freetype", "2.0.0+", "FT_Library_Version API in FreeType"),
+    ("hb_version_string", "harfbuzz", "1.0.0+", "HarfBuzz version API"),
+    ("uv_version_string", "libuv", "1.0.0+", "libuv version API"),
+    ("event_base_new", "libevent", "2.0.1+", "event_base_new introduced in libevent 2.0"),
 ]
 
 
@@ -204,6 +215,88 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
     "vpx": [
         (rb'libvpx v(\d+\.\d+\.\d+)', "libvpx version string"),
         (rb'v(\d+\.\d+\.\d+)\x00.{0,32}vpx', "libvpx version string"),
+    ],
+    "mbedtls": [
+        (rb'mbed\s+TLS\s+(\d+\.\d+\.\d+)', "mbed TLS version string"),
+        (rb'PolarSSL\s+(\d+\.\d+\.\d+)', "PolarSSL version string"),
+    ],
+    "mbedcrypto": [
+        (rb'mbed\s+TLS\s+(\d+\.\d+\.\d+)', "mbed TLS version string"),
+    ],
+    "wolfssl": [
+        (rb'wolfSSL\s+([0-9]+\.[0-9]+\.[0-9]+[a-z]?)', "wolfSSL version string"),
+        (rb'CyaSSL\s+([0-9]+\.[0-9]+\.[0-9]+)', "CyaSSL version string"),
+    ],
+    "gnutls": [
+        (rb'GnuTLS\s+([0-9]+\.[0-9]+\.[0-9]+)', "GnuTLS version string"),
+        (rb'gnutls_([0-9]+\.[0-9]+\.[0-9]+)', "GnuTLS version string"),
+    ],
+    "ssh": [
+        (rb'libssh[_-]([0-9]+\.[0-9]+\.[0-9]+)', "libssh version string"),
+    ],
+    "ssh2": [
+        (rb'libssh2/([0-9]+\.[0-9]+\.[0-9]+)', "libssh2 version string"),
+    ],
+    "dropbear": [
+        (rb'Dropbear\s+v?([0-9]{4}\.[0-9]+)', "Dropbear version string"),
+    ],
+    "sshd": [
+        (rb'OpenSSH_([0-9]+\.[0-9]+(?:p[0-9]+)?)', "OpenSSH version string"),
+    ],
+    "openssh": [
+        (rb'OpenSSH_([0-9]+\.[0-9]+(?:p[0-9]+)?)', "OpenSSH version string"),
+    ],
+    "nghttp2": [
+        (rb'nghttp2/([0-9]+\.[0-9]+\.[0-9]+)', "nghttp2 version string"),
+    ],
+    "cares": [
+        (rb'c-ares\s+(?:library\s+)?version\s+([0-9]+\.[0-9]+\.[0-9]+)', "c-ares version string"),
+    ],
+    "mosquitto": [
+        (rb'mosquitto\s+version\s+([0-9]+\.[0-9]+\.[0-9]+)', "Mosquitto version string"),
+    ],
+    "lighttpd": [
+        (rb'lighttpd/([0-9]+\.[0-9]+\.[0-9]+)', "lighttpd version string"),
+    ],
+    "nginx": [
+        (rb'nginx/([0-9]+\.[0-9]+\.[0-9]+)', "nginx version string"),
+    ],
+    "zstd": [
+        (rb'zstd\s+v?([0-9]+\.[0-9]+\.[0-9]+)', "zstandard version string"),
+        (rb'\x00(1\.[0-9]+\.[0-9]+)\x00.{0,16}ZSTD', "zstd version string"),
+    ],
+    "brotli": [
+        (rb'brotli\s+v?([0-9]+\.[0-9]+\.[0-9]+)', "brotli version string"),
+    ],
+    "cjson": [
+        (rb'cJSON\s+([0-9]+\.[0-9]+\.[0-9]+)', "cJSON version string"),
+    ],
+    "jansson": [
+        (rb'jansson\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)', "jansson version string"),
+    ],
+    "json-c": [
+        (rb'json-c\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)', "json-c version string"),
+        (rb'json_c_version\s+([0-9]+\.[0-9]+)', "json-c version string"),
+    ],
+    "freetype": [
+        (rb'FreeType\s+([0-9]+\.[0-9]+\.[0-9]+)', "FreeType version string"),
+    ],
+    "tiff": [
+        (rb'LIBTIFF,\s+Version\s+([0-9]+\.[0-9]+\.[0-9]+)', "libtiff version string"),
+    ],
+    "webp": [
+        (rb'libwebp\s+([0-9]+\.[0-9]+\.[0-9]+)', "libwebp version string"),
+    ],
+    "bluez": [
+        (rb'bluez\s+([0-9]+\.[0-9]+)', "BlueZ version string"),
+        (rb'bluetoothd\s+([0-9]+\.[0-9]+)', "BlueZ bluetoothd version string"),
+    ],
+    "leveldb": [
+        (rb'leveldb\s+version\s+([0-9]+\.[0-9]+)', "LevelDB version string"),
+    ],
+    "protobuf": [
+        (rb'libprotobuf\s+([0-9]+\.[0-9]+\.[0-9]+)', "Protobuf version string"),
+        (rb'protobuf\s+([0-9]+\.[0-9]+\.[0-9]+)', "Protobuf version string"),
     ],
 }
 
@@ -362,6 +455,37 @@ class ELFDeepExtractor:
             cxx_tags.sort()
             latest = cxx_tags[-1]
             ver_part = latest.replace('GLIBCXX_', '')
+            return (ver_part, latest)
+
+        # Check Libxml2 tags (LIBXML2_2.9.0)
+        xml2_tags = [t for t in tags if t.startswith('LIBXML2_')]
+        if xml2_tags:
+            xml2_tags.sort()
+            latest = xml2_tags[-1]
+            ver_part = latest.replace('LIBXML2_', '').replace('_', '.')
+            return (ver_part, latest)
+
+        # Check XZ tags (XZ_5.2)
+        xz_tags = [t for t in tags if t.startswith('XZ_')]
+        if xz_tags:
+            xz_tags.sort()
+            latest = xz_tags[-1]
+            ver_part = latest.replace('XZ_', '').replace('_', '.')
+            return (ver_part, latest)
+
+        # Check GnuTLS tags (GNUTLS_3_6_14)
+        gnutls_tags = [t for t in tags if t.startswith('GNUTLS_')]
+        if gnutls_tags:
+            gnutls_tags.sort()
+            latest = gnutls_tags[-1]
+            ver_part = latest.replace('GNUTLS_', '').replace('_', '.')
+            return (ver_part, latest)
+
+        # Check Libpng tags (PNG16_0)
+        png_tags = [t for t in tags if t.startswith('PNG16_') or t.startswith('PNG12_')]
+        if png_tags:
+            latest = sorted(png_tags)[-1]
+            ver_part = "1.6" if "PNG16" in latest else "1.2"
             return (ver_part, latest)
 
         return None

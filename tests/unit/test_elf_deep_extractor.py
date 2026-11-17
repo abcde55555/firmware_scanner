@@ -110,6 +110,24 @@ def test_rodata_binaries(extractor):
     assert res is not None
     assert res.version == "R59"
 
+    # mbed TLS
+    mbed_data = b"\x7fELF" + b"\x00" * 20 + b"mbed TLS 2.28.8" + b"\x00" * 20
+    res = extractor.extract("libmbedtls.so", mbed_data)
+    assert res is not None
+    assert res.version == "2.28.8"
+
+    # cJSON
+    cjson_data = b"\x7fELF" + b"\x00" * 20 + b"cJSON 1.7.18" + b"\x00" * 20
+    res = extractor.extract("libcjson.so", cjson_data)
+    assert res is not None
+    assert res.version == "1.7.18"
+
+    # Dropbear
+    dropbear_data = b"\x7fELF" + b"\x00" * 20 + b"Dropbear v2022.83" + b"\x00" * 20
+    res = extractor.extract("dropbear", dropbear_data)
+    assert res is not None
+    assert res.version == "2022.83"
+
 
 def test_landmark_symbol_fingerprinting(extractor):
     """Test Layer 3: Exported Landmark API milestone fingerprinting."""
@@ -118,6 +136,12 @@ def test_landmark_symbol_fingerprinting(extractor):
     assert res is not None
     assert res.version == "1.1+"
     assert res.method == ExtractionMethod.SYMBOL_TABLE
+
+    # curl milestone
+    curl_sym = b"\x7fELF" + b"\x00" * 20 + b"curl_ws_send\x00" + b"\x00" * 20
+    res_curl = extractor.extract("libcurl.so", curl_sym)
+    assert res_curl is not None
+    assert res_curl.version == "7.86.0+"
 
 
 def test_crypto_magic_constants(extractor):
