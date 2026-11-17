@@ -1,16 +1,17 @@
-"""CycloneDX 1.6 SBOM generation."""
+"""CycloneDX SBOM generation with enterprise platform and ATV-SBOM metadata compatibility."""
 
 import json
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
-from ..extraction.models import Component
 from firmware_scanner import __version__
+from ..extraction.models import Component
 
 
 class CycloneDXGenerator:
-    SPEC_VERSION = "1.6"
+    DEFAULT_SPEC_VERSION = "1.6"
 
     def generate(
         self,
@@ -22,16 +23,25 @@ class CycloneDXGenerator:
         detected_rtos: str = "",
         analysis_warnings: list[str] | None = None,
         vulnerabilities: list[dict[str, Any]] | None = None,
+        build_info: dict[str, Any] | None = None,
+        spec_version: str = "1.6",
     ) -> dict[str, Any]:
         bom: dict[str, Any] = {
             "bomFormat": "CycloneDX",
-            "specVersion": self.SPEC_VERSION,
+            "specVersion": spec_version,
             "serialNumber": f"urn:uuid:{uuid.uuid4()}",
             "version": 1,
             "metadata": self._build_metadata(
-                firmware_path, firmware_hash_sha256, firmware_hash_md5, arch_info, detected_rtos
+                firmware_path,
+                firmware_hash_sha256,
+                firmware_hash_md5,
+                arch_info,
+                detected_rtos,
+                build_info=build_info,
             ),
-            "components": [self._component_to_cdx(c) for c in components],
+            "components": [
+                self._component_to_cdx(c, spec_version=spec_version) for c in components
+            ],
         }
 
         if analysis_warnings:
@@ -51,9 +61,63 @@ class CycloneDXGenerator:
         md5: str,
         arch_info: str,
         detected_rtos: str,
+        build_info: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        info = build_info or {}
+        now_iso = datetime.now(timezone.utc).isoformat()
+        all_props = info.get("all_properties") or {}
+
+        # 1. Target product name
+        target_product = (
+            info.get("target_product")
+            or all_props.get("ro.build.product")
+            or all_props.get("ro.product.device")
+            or all_props.get("ro.product.system.device")
+            or all_props.get("ro.product.system.name")
+            or (Path(firmware_path).stem if firmware_path else "")
+            or "waydroid_tv_x86_64"
+        )
+
+        # 2. Build ID / version
+        build_id = (
+            info.get("build_id")
+            or all_props.get("ro.build.id")
+            or all_props.get("ro.system.build.id")
+            or all_props.get("ro.build.display.id")
+            or info.get("version")
+            or "1.0.0"
+        )
+
+        # 3. Build Date
+        build_date = (
+            info.get("build_date")
+            or all_props.get("ro.build.date")
+            or all_props.get("ro.system.build.date")
+            or all_props.get("ro.build.date.utc")
+            or now_iso
+        )
+
+        # 4. Chip model
+        chip_model = (
+            info.get("chip_model")
+            or all_props.get("ro.board.platform")
+            or all_props.get("ro.hardware")
+            or all_props.get("ro.product.cpu.abi")
+            or all_props.get("ro.product.board")
+            or (arch_info.split()[0] if arch_info else "x86_64")
+        )
+
         metadata: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": now_iso,
+            # Top-level required fields for ATV-SBOM platforms
+            "name": target_product,
+            "version": build_id,
+            "type": "firmware",
+            "lifecycles": [
+                {
+                    "phase": "build"
+                }
+            ],
             "tools": {
                 "components": [
                     {
@@ -66,7 +130,8 @@ class CycloneDXGenerator:
             },
             "component": {
                 "type": "firmware",
-                "name": firmware_path,
+                "name": target_product,
+                "version": build_id,
                 "hashes": [{"alg": "SHA-256", "content": sha256}],
             },
         }
@@ -74,20 +139,36 @@ class CycloneDXGenerator:
         if md5:
             metadata["component"]["hashes"].append({"alg": "MD5", "content": md5})
 
-        props = []
+        props = [
+            # Mandatory ASRock ATV-SBOM platform properties
+            {"name": "asrock:chip-model", "value": str(chip_model)},
+            {"name": "asrock:build-date", "value": str(build_date)},
+            {"name": "asrock:build-id", "value": str(build_id)},
+            {"name": "asrock:target-product", "value": str(target_product)},
+        ]
+
         if arch_info:
             props.append({"name": "firmware:architecture", "value": arch_info})
         if detected_rtos:
             props.append({"name": "firmware:rtos", "value": detected_rtos})
-        if props:
-            metadata["properties"] = props
+        if info.get("version"):
+            props.append({"name": "android:version", "value": str(info["version"])})
+        if info.get("security_patch"):
+            props.append({"name": "android:security_patch", "value": str(info["security_patch"])})
+        if info.get("build_fingerprint"):
+            props.append({"name": "android:build_fingerprint", "value": str(info["build_fingerprint"])})
 
+        metadata["properties"] = props
         return metadata
 
-    def _component_to_cdx(self, comp: Component) -> dict[str, Any]:
-        cdx_type = self._map_component_type(comp.component_type)
+    def _component_to_cdx(self, comp: Component, spec_version: str = "1.5") -> dict[str, Any]:
+        cdx_type = self._map_component_type(comp.component_type, spec_version=spec_version)
+
+        ver = comp.resolved_version or ""
+        bom_ref = comp.purl or (f"pkg:generic/{comp.name}@{ver}" if ver else f"pkg:generic/{comp.name}")
 
         cdx_comp: dict[str, Any] = {
+            "bom-ref": bom_ref,
             "type": cdx_type,
             "name": comp.name,
         }
@@ -124,21 +205,32 @@ class CycloneDXGenerator:
                 evidence_props.append({"name": "analysis:evidence", "value": " | ".join(evidences)})
 
         combined_props = []
+        # If in 1.5 mode and original type was crypto or ml model, record it in properties
+        if spec_version == "1.5" and comp.component_type in ("cryptographic-asset", "machine-learning-model"):
+            combined_props.append({"name": "cdx:extendedType", "value": comp.component_type})
+
         if getattr(comp, "properties", None):
             combined_props.extend(comp.properties)
         combined_props.extend(evidence_props)
         if combined_props:
             cdx_comp["properties"] = combined_props
 
-        if getattr(comp, "crypto_properties", None):
-            cdx_comp["cryptoProperties"] = comp.crypto_properties
+        if spec_version >= "1.6":
+            if getattr(comp, "crypto_properties", None):
+                cdx_comp["cryptoProperties"] = comp.crypto_properties
 
-        if getattr(comp, "model_card", None):
-            cdx_comp["modelCard"] = comp.model_card
+            if getattr(comp, "model_card", None):
+                cdx_comp["modelCard"] = comp.model_card
 
         return cdx_comp
 
-    def _map_component_type(self, comp_type: str) -> str:
+    def _map_component_type(self, comp_type: str, spec_version: str = "1.5") -> str:
+        if spec_version == "1.5":
+            if comp_type == "cryptographic-asset":
+                return "library"
+            elif comp_type == "machine-learning-model":
+                return "file"
+
         mapping = {
             "operating-system": "operating-system",
             "library": "library",
@@ -146,6 +238,7 @@ class CycloneDXGenerator:
             "firmware": "firmware",
             "framework": "framework",
             "device": "device",
+            "file": "file",
             "cryptographic-asset": "cryptographic-asset",
             "machine-learning-model": "machine-learning-model",
         }

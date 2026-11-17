@@ -132,3 +132,43 @@ def test_sbom_parser_supports_cyclonedx_1_6_and_spdx_3_0_1(tmp_path):
     assert len(spdx_comps) == 2
     assert any(c.name == "busybox" and c.resolved_version == "1.35.0" for c in spdx_comps)
     assert any(c.name == "libsqlite.so" and c.resolved_version == "3.40.1" for c in spdx_comps)
+
+
+def test_asrock_atv_sbom_metadata():
+    """Verify that ATV-SBOM mandatory metadata fields and properties are generated."""
+    context = _create_sample_context()
+    gen = CycloneDXGenerator()
+    data = gen.generate(
+        components=context.components,
+        firmware_path="/firmware/system.img",
+        firmware_hash_sha256="abc12345",
+        build_info={
+            "chip_model": "x86_64",
+            "build_date": "Fri Apr  3 05:46:52 UTC 2026",
+            "build_id": "BP2A.250805.005",
+            "target_product": "waydroid_tv_x86_64",
+        },
+        spec_version="1.5",
+    )
+
+    meta = data["metadata"]
+    # 1. Mandatory metadata fields
+    assert meta["name"] == "waydroid_tv_x86_64"
+    assert meta["version"] == "BP2A.250805.005"
+    assert meta["type"] == "firmware"
+    assert meta["lifecycles"] == [{"phase": "build"}]
+    assert meta["component"]["name"] == "waydroid_tv_x86_64"
+    assert meta["component"]["version"] == "BP2A.250805.005"
+    assert meta["component"]["type"] == "firmware"
+
+    # 2. Mandatory ASRock properties
+    props = {p["name"]: p["value"] for p in meta["properties"]}
+    assert props["asrock:chip-model"] == "x86_64"
+    assert props["asrock:build-date"] == "Fri Apr  3 05:46:52 UTC 2026"
+    assert props["asrock:build-id"] == "BP2A.250805.005"
+    assert props["asrock:target-product"] == "waydroid_tv_x86_64"
+
+    # 3. Components have bom-ref
+    for c in data["components"]:
+        assert "bom-ref" in c
+

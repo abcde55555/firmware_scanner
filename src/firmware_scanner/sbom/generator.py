@@ -12,10 +12,10 @@ class SBOMGenerator:
         self._spdx3 = SPDX3Generator()
 
     def generate(self, context: AnalysisContext) -> str:
-        """Generate CycloneDX 1.6 SBOM JSON by default."""
-        return self.generate_cyclonedx(context)
+        """Generate CycloneDX 1.5 SBOM JSON by default for enterprise platform compatibility."""
+        return self.generate_cyclonedx(context, spec_version="1.5")
 
-    def generate_cyclonedx(self, context: AnalysisContext) -> str:
+    def generate_cyclonedx(self, context: AnalysisContext, spec_version: str = "1.5") -> str:
         arch_str = ""
         if context.arch_info:
             arch_str = (
@@ -23,6 +23,8 @@ class SBOMGenerator:
                 f"{context.arch_info.endianness.value}-endian "
                 f"{context.arch_info.word_size}bit"
             )
+
+        android_info = context.metadata.get("android_build_info")
 
         bom = self._cdx.generate(
             components=context.components,
@@ -32,6 +34,8 @@ class SBOMGenerator:
             arch_info=arch_str,
             detected_rtos=context.detected_rtos,
             analysis_warnings=context.warnings,
+            build_info=android_info,
+            spec_version=spec_version,
         )
 
         return self._cdx.to_json(bom)

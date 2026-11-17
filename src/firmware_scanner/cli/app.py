@@ -550,16 +550,21 @@ def _export_results(context: AnalysisContext, formats: list[str], output: Path |
 
     for fmt in formats:
         if fmt == "sbom":
-            sbom_content = generator.generate_cyclonedx(context)
+            sbom_content_15 = generator.generate_cyclonedx(context, spec_version="1.5")
+            sbom_content_16 = generator.generate_cyclonedx(context, spec_version="1.6")
             if output and (output.is_dir() or len(formats) > 1):
-                out_path = (output / f"{base_name}_cyclonedx_1.6.json") if output.is_dir() else output.with_suffix(".cdx.json")
+                out_path_15 = (output / f"{base_name}_sbom.json") if output.is_dir() else output.with_suffix(".sbom.json")
+                out_path_16 = (output / f"{base_name}_cyclonedx_1.6.json") if output.is_dir() else output.with_suffix(".cdx.json")
+                out_path_15.write_text(sbom_content_15, encoding="utf-8")
+                out_path_16.write_text(sbom_content_16, encoding="utf-8")
+                console.print(f"[green]CycloneDX 1.5 SBOM written to {out_path_15}[/green]")
+                console.print(f"[green]CycloneDX 1.6 SBOM written to {out_path_16}[/green]")
             elif output:
-                out_path = output
+                output.write_text(sbom_content_15, encoding="utf-8")
+                console.print(f"[green]CycloneDX 1.5 SBOM written to {output}[/green]")
             else:
-                print(sbom_content)
+                print(sbom_content_15)
                 continue
-            out_path.write_text(sbom_content, encoding="utf-8")
-            console.print(f"[green]CycloneDX 1.6 SBOM written to {out_path}[/green]")
 
         elif fmt == "spdx":
             spdx_content = generator.generate_spdx(context)
@@ -1462,12 +1467,54 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
 
 def _store_android_build_info(context: AnalysisContext, result) -> None:
     """Store Android build info in context metadata."""
+    binfo = result.build_info
+    all_props = binfo.all_properties or {}
+
+    chip_model = (
+        all_props.get("ro.board.platform")
+        or all_props.get("ro.hardware")
+        or all_props.get("ro.product.cpu.abi")
+        or all_props.get("ro.product.board")
+        or binfo.platform
+        or binfo.hardware
+        or binfo.board
+        or binfo.abi
+        or "x86_64"
+    )
+    build_date = (
+        all_props.get("ro.build.date")
+        or all_props.get("ro.system.build.date")
+        or all_props.get("ro.build.date.utc")
+        or ""
+    )
+    build_id = (
+        binfo.build_id
+        or all_props.get("ro.build.id")
+        or all_props.get("ro.system.build.id")
+        or all_props.get("ro.build.display.id")
+        or ""
+    )
+    target_product = (
+        all_props.get("ro.build.product")
+        or all_props.get("ro.product.device")
+        or all_props.get("ro.product.system.device")
+        or all_props.get("ro.product.system.name")
+        or binfo.device
+        or binfo.model
+        or ""
+    )
+
     context.metadata["android_build_info"] = {
-        "version": result.build_info.android_version,
-        "security_patch": result.build_info.security_patch,
-        "manufacturer": result.build_info.manufacturer,
-        "model": result.build_info.model,
-        "build_fingerprint": result.build_info.build_fingerprint,
+        "version": binfo.android_version,
+        "security_patch": binfo.security_patch,
+        "manufacturer": binfo.manufacturer,
+        "model": binfo.model,
+        "build_fingerprint": binfo.build_fingerprint,
+        "build_id": build_id,
+        "build_date": build_date,
+        "chip_model": chip_model,
+        "target_product": target_product,
+        "all_properties": all_props,
     }
 
 
