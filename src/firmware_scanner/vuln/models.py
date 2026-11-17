@@ -32,6 +32,13 @@ class Vulnerability(BaseModel):
     references: list[VulnReference] = []
     published: str = ""
     modified: str = ""
+    # Threat Intelligence & Cross-Database Mapping
+    is_cisa_kev: bool = False
+    cisa_kev_due_date: str = ""
+    epss_score: float | None = None
+    epss_percentile: float | None = None
+    cnvd_id: str = ""
+    cnnvd_id: str = ""
 
 
 class ComponentVulnResult(BaseModel):
@@ -54,5 +61,7 @@ class VulnScanResult(BaseModel):
     medium_count: int = 0
     low_count: int = 0
     unknown_count: int = 0
+    cisa_kev_count: int = 0
+    high_epss_count: int = 0
     results: list[ComponentVulnResult] = []
     errors: list[str] = []

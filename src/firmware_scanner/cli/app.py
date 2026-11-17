@@ -664,7 +664,7 @@ def _run_analysis(
 
     # Determine if this is an Android system image
     is_android_system = format_name in (
-        "Android System Image", "Android OTA Payload", "Android Block OTA"
+        "Android System Image", "Android OTA Payload", "Android Block OTA", "Android Super Image"
     ) or (
         format_name == "Allwinner Firmware Image"
         and any(

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..core.context import AnalysisContext
+from .license_compliance import audit_firmware_licenses, ComplianceSeverity
 
 
 def generate_html_report(context: AnalysisContext) -> str:
@@ -14,6 +15,8 @@ def generate_html_report(context: AnalysisContext) -> str:
     if context.arch_info:
         arch_str = f"{context.arch_info.cpu_family.value} {context.arch_info.endianness.value}-endian {context.arch_info.word_size}bit"
 
+    audit_report = audit_firmware_licenses(context.components)
+    license_html = _render_license_audit(audit_report)
     components_html = _render_components_table(context)
     warnings_html = _render_warnings(context)
 
@@ -123,6 +126,8 @@ tr:hover {{ background: #f7fafc; }}
         {components_html}
     </div>
 
+    {license_html}
+
     {warnings_html}
 
     <div class="footer">
@@ -180,6 +185,7 @@ def _render_components_table(context: AnalysisContext) -> str:
             <td><strong>{html.escape(comp.name)}</strong></td>
             <td>{version_display}</td>
             <td><span class="badge {badge_class}">{type_label}</span></td>
+            <td>{html.escape(', '.join(comp.licenses) if comp.licenses else 'Unknown')}</td>
             <td class="source-path">{html.escape(source_path)}</td>
             <td>
                 <div class="confidence-bar"><div class="confidence-fill {conf_class}" style="width:{conf_width}%"></div></div>
@@ -193,12 +199,63 @@ def _render_components_table(context: AnalysisContext) -> str:
             <th>Component</th>
             <th>Version</th>
             <th>Type</th>
+            <th>License</th>
             <th>Source Path</th>
             <th>Confidence</th>
             <th>Methods</th>
         </tr></thead>
         <tbody>{rows}</tbody>
     </table>"""
+
+
+def _render_license_audit(report) -> str:
+    """Render open source license audit and risk compliance section."""
+    if not report.licenses_found and not report.compliance_issues:
+        return ""
+
+    issues_html = ""
+    for issue in report.compliance_issues:
+        sev_color = "#e53e3e" if issue.severity.value in ("critical", "high") else "#dd6b20"
+        bg_color = "#fff5f5" if issue.severity.value in ("critical", "high") else "#fffaf0"
+        affected = ", ".join(issue.affected_components[:5])
+        if len(issue.affected_components) > 5:
+            affected += f" (+{len(issue.affected_components) - 5} more)"
+        issues_html += f"""
+        <div style="padding: 0.75rem 1rem; margin-bottom: 0.75rem; border-left: 4px solid {sev_color}; background: {bg_color}; border-radius: 4px;">
+            <strong>[{issue.severity.value.upper()}] {html.escape(issue.title)}</strong>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">{html.escape(issue.description)}</p>
+            <p style="font-size: 0.8rem; color: #718096; margin-top: 0.25rem;">Affected components: {html.escape(affected)}</p>
+        </div>"""
+
+    lic_pills = " ".join([
+        f'<span class="badge" style="background:#edf2f7;color:#4a5568;margin-right:0.4rem;margin-bottom:0.4rem;">{html.escape(k)} ({v})</span>'
+        for k, v in sorted(report.licenses_found.items(), key=lambda x: -x[1])
+    ])
+
+    compliance_badge = (
+        '<span class="badge" style="background:#c6f6d5;color:#22543d;">COMPLIANT</span>'
+        if report.is_compliant
+        else '<span class="badge" style="background:#fed7d7;color:#742a2a;">COMPLIANCE ALERTS</span>'
+    )
+
+    return f"""<div class="card">
+        <h2>License Compliance & Audit {compliance_badge}</h2>
+        <div class="stats" style="margin-bottom: 1rem;">
+            <div class="stat">
+                <div class="number">{report.licensed_components} / {report.total_components}</div>
+                <div class="label">Identified Licenses</div>
+            </div>
+            <div class="stat">
+                <div class="number" style="color: {'#e53e3e' if not report.is_compliant else '#38a169'}">{len(report.compliance_issues)}</div>
+                <div class="label">Compliance Alerts</div>
+            </div>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <div class="label" style="font-size:0.8rem;color:#718096;margin-bottom:0.5rem;text-transform:uppercase;">Licenses Detected</div>
+            <div>{lic_pills if lic_pills else 'None identified'}</div>
+        </div>
+        {issues_html}
+    </div>"""
 
 
 def _render_warnings(context: AnalysisContext) -> str:

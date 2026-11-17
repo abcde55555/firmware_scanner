@@ -64,6 +64,12 @@ class RecursiveUnpacker:
             self._unpack_ext4(data, name, depth)
         elif file_type == "erofs":
             self._unpack_erofs(data, name, depth)
+        elif file_type == "cramfs":
+            self._unpack_cramfs(data, name, depth)
+        elif file_type == "jffs2":
+            self._unpack_jffs2(data, name, depth)
+        elif file_type == "fit_image":
+            self._unpack_fit_image(data, name, depth)
         else:
             # For large binary blobs, scan for embedded containers
             if file_type == "binary" and len(data) > 65536:
@@ -111,6 +117,15 @@ class RecursiveUnpacker:
         # EROFS filesystem
         if len(data) >= 0x404 and struct.unpack_from('<I', data, 0x400)[0] == 0xE0F5E1E2:
             return "erofs"
+        # CramFS filesystem
+        if len(data) >= 4 and struct.unpack('<I', data[:4])[0] in (0x28CD3D45, 0x453DCD28):
+            return "cramfs"
+        # JFFS2 flash filesystem
+        if len(data) >= 4 and data[:2] in (b'\x85\x19', b'\x19\x85'):
+            return "jffs2"
+        # U-Boot FIT Image / Device Tree Blob
+        if len(data) >= 4 and struct.unpack('>I', data[:4])[0] == 0xD00DFEED:
+            return "fit_image"
 
         # Name-based detection
         lower = name.lower()
@@ -438,6 +453,56 @@ class RecursiveUnpacker:
                 self.unpack(payload, f"{parent_name}/payload", depth + 1)
         except Exception as e:  # noqa: BLE001
             logger.debug(f"Non-critical operation failed: {e}")
+
+    def _unpack_cramfs(self, data: bytes, parent_name: str, depth: int):
+        """Extract files from CramFS filesystem."""
+        from .cramfs_reader import CramFSReader
+
+        reader = CramFSReader(data)
+        if not reader.is_valid():
+            return
+
+        for entry in reader.list_files()[:150]:
+            if len(self._files) >= self._max_files:
+                break
+            content = reader.read_file(entry, max_size=self._max_file_size)
+            if content:
+                full_path = f"{parent_name}/{entry.path.lstrip('/')}" if parent_name else entry.path.lstrip('/')
+                self.unpack(content, full_path, depth + 1)
+
+    def _unpack_jffs2(self, data: bytes, parent_name: str, depth: int):
+        """Extract files from JFFS2 flash filesystem."""
+        from .jffs2_reader import JFFS2Reader
+
+        reader = JFFS2Reader(data)
+        if not reader.is_valid():
+            return
+
+        for f_obj in reader.list_files()[:150]:
+            if len(self._files) >= self._max_files:
+                break
+            content = reader.read_file(f_obj, max_size=self._max_file_size)
+            if content:
+                full_path = f"{parent_name}/{f_obj.path.lstrip('/')}" if parent_name else f_obj.path.lstrip('/')
+                self.unpack(content, full_path, depth + 1)
+
+    def _unpack_fit_image(self, data: bytes, parent_name: str, depth: int):
+        """Extract embedded images from U-Boot FIT image."""
+        from .fdt_parser import FDTParser
+
+        parser = FDTParser(data)
+        if not parser.is_valid():
+            return
+
+        for img in parser.fit_images:
+            if not img.data or len(self._files) >= self._max_files:
+                continue
+            sec_name = f"{parent_name}/{img.node_name}" if parent_name else img.node_name
+            if img.image_type == "kernel":
+                sec_name += ".bin"
+            elif img.image_type == "ramdisk":
+                sec_name += ".cpio"
+            self.unpack(img.data, sec_name, depth + 1)
 
     def _scan_for_embedded_containers(self, data: bytes, parent_name: str, depth: int):
         """Scan a raw firmware blob for embedded filesystems/containers."""

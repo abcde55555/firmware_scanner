@@ -92,6 +92,8 @@ details summary:hover {{ color: #3182ce; }}
             <div class="stat stat-high"><div class="number">{result.high_count}</div><div class="label">High</div></div>
             <div class="stat stat-medium"><div class="number">{result.medium_count}</div><div class="label">Medium</div></div>
             <div class="stat stat-low"><div class="number">{result.low_count}</div><div class="label">Low</div></div>
+            <div class="stat" style="background:#fff5f5;border-left:3px solid #e53e3e;"><div class="number" style="color:#c53030;">{result.cisa_kev_count}</div><div class="label" style="color:#742a2a;font-weight:700;">CISA KEV</div></div>
+            <div class="stat" style="background:#faf5ff;border-left:3px solid #805ad5;"><div class="number" style="color:#553c9e;">{result.high_epss_count}</div><div class="label" style="color:#44337a;font-weight:700;">High EPSS (&ge;20%)</div></div>
         </div>
         <p style="font-size:0.9rem; color:#718096;">Scanned {result.total_components_scanned} components, {len(affected)} with known vulnerabilities.</p>
     </div>
@@ -153,13 +155,25 @@ def _render_vuln_details(vulns: list[Vulnerability]) -> str:
         if v.aliases:
             aliases_str = f'<span>Aliases: {html_mod.escape(", ".join(v.aliases[:5]))}</span>'
 
+        threat_badges = []
+        if v.is_cisa_kev:
+            threat_badges.append('<span class="badge" style="background:#e53e3e;color:white;font-weight:700;">CISA KEV EXPLOITED</span>')
+        if v.epss_score is not None:
+            threat_badges.append(f'<span class="badge" style="background:#805ad5;color:white;">EPSS: {v.epss_score * 100:.1f}%</span>')
+        threat_badge_str = f" {' '.join(threat_badges)}" if threat_badges else ""
+
+        cnvd_str = f'<span>CNVD: {html_mod.escape(v.cnvd_id)}</span>' if v.cnvd_id else ''
+        cnnvd_str = f'<span>CNNVD: {html_mod.escape(v.cnnvd_id)}</span>' if v.cnnvd_id else ''
+
         parts.append(f"""<div class="vuln-details {sev_class}">
-    <div class="vuln-id">{html_mod.escape(v.id)}{score_html} <span class="badge badge-{v.severity.value}">{v.severity.value.upper()}</span></div>
+    <div class="vuln-id">{html_mod.escape(v.id)}{score_html} <span class="badge badge-{v.severity.value}">{v.severity.value.upper()}</span>{threat_badge_str}</div>
     <div class="vuln-summary">{html_mod.escape(v.summary or v.details[:200] if v.details else "No description available")}</div>
     <div class="vuln-meta">
         {f'<span>Affected: {html_mod.escape(v.affected_versions)}</span>' if v.affected_versions else ''}
         {f'<span>Fixed: {html_mod.escape(v.fixed_version)}</span>' if v.fixed_version else ''}
         {aliases_str}
+        {cnvd_str}
+        {cnnvd_str}
         {f'<span>Published: {html_mod.escape(v.published[:10])}</span>' if v.published else ''}
     </div>
     {refs_html}

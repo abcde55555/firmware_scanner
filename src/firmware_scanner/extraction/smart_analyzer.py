@@ -22,6 +22,14 @@ from typing import Callable
 
 from .models import Component, VersionConfidence, ExtractionMethod
 from .extractors.symbol_table import SYMBOL_COMPONENT_MAP
+from .modern_binary_extractor import (
+    extract_go_buildinfo,
+    extract_rust_crates,
+    extract_kernel_module_info,
+    extract_python_dist_info,
+    extract_npm_package_json,
+)
+from .hash_matcher import BinaryHashMatcher
 from ..data import load_dex_packages
 
 
@@ -144,6 +152,9 @@ class SmartSectionAnalyzer:
     detections than raw byte scanning alone.
     """
 
+    def __init__(self, custom_hashes: dict[str, tuple] | None = None):
+        self._hash_matcher = BinaryHashMatcher(custom_hashes)
+
     def analyze_section(self, name: str, data: bytes) -> list[Component]:
         """Route to appropriate analyzer based on section name/content.
 
@@ -157,9 +168,41 @@ class SmartSectionAnalyzer:
         components: list[Component] = []
         lower_name = name.lower()
 
-        # ELF/SO files - extract symbols
-        if data[:4] == b'\x7fELF' or lower_name.endswith('.so'):
+        # 0. Cryptographic binary hash matching (SHA-256 and ELF .text/.rodata sections)
+        hash_comp = self._hash_matcher.match_binary(data, name)
+        if hash_comp:
+            components.append(hash_comp)
+
+        # ELF/SO/KO binary files - Go buildinfo, Rust crates, Kernel modules, and symbols
+        if data[:4] == b'\x7fELF' or lower_name.endswith(('.so', '.ko')):
+            if lower_name.endswith('.ko'):
+                components.extend(extract_kernel_module_info(data, name))
+
+            go_comps = extract_go_buildinfo(data, name)
+            if go_comps:
+                components.extend(go_comps)
+
+            rust_comps = extract_rust_crates(data, name)
+            if rust_comps:
+                components.extend(rust_comps)
+
             components.extend(self._analyze_elf(name, data))
+
+        # Python package metadata (METADATA, PKG-INFO)
+        elif lower_name.endswith(('metadata', 'pkg-info')) and ('dist-info' in lower_name or 'egg-info' in lower_name):
+            try:
+                text = data.decode('utf-8', errors='replace')
+                components.extend(extract_python_dist_info(text, name))
+            except Exception:
+                pass
+
+        # Node.js package.json in web roots
+        elif lower_name.endswith('package.json'):
+            try:
+                text = data.decode('utf-8', errors='replace')
+                components.extend(extract_npm_package_json(text, name))
+            except Exception:
+                pass
 
         # DEX files - parse string pool
         elif lower_name.endswith('.dex') or data[:4] == b'dex\n':

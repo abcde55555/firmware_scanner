@@ -15,6 +15,7 @@ class ExtractionMethod(str, Enum):
     MANIFEST_BINARY = "manifest_binary"
     BUILD_METADATA = "build_metadata"
     STATIC_RULE = "static_rule"
+    SIGNATURE_HASH = "signature_hash"
 
 
 class VersionConfidence(BaseModel):

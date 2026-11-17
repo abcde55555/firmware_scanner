@@ -6,6 +6,7 @@ from typing import Callable
 from ..extraction.models import Component
 from .models import ComponentVulnResult, VulnScanResult, Severity
 from .osv_client import OSVClient
+from .threat_intel import is_cisa_kev, get_cisa_kev_info, get_epss_score, get_cnvd_cnnvd_ids
 
 
 # Maps firmware library names to upstream project names recognized by OSV
@@ -238,6 +239,26 @@ class VulnMatcher:
             result.results.append(comp_result)
             result.total_vulnerabilities += len(vulns)
             for v in vulns:
+                # Threat intelligence enrichment (CISA KEV, EPSS, CNVD/CNNVD)
+                cve_id = v.id if v.id.startswith("CVE-") else next((a for a in v.aliases if a.startswith("CVE-")), "")
+                if cve_id:
+                    if is_cisa_kev(cve_id):
+                        v.is_cisa_kev = True
+                        kev_info = get_cisa_kev_info(cve_id)
+                        if kev_info:
+                            v.cisa_kev_due_date = kev_info.get("due_date", "")
+                        result.cisa_kev_count += 1
+
+                    epss_score, epss_perc = get_epss_score(cve_id, v.cvss_score)
+                    v.epss_score = epss_score
+                    v.epss_percentile = epss_perc
+                    if epss_score >= 0.20:
+                        result.high_epss_count += 1
+
+                    cnvd, cnnvd = get_cnvd_cnnvd_ids(cve_id)
+                    v.cnvd_id = cnvd
+                    v.cnnvd_id = cnnvd
+
                 if v.severity == Severity.CRITICAL:
                     result.critical_count += 1
                 elif v.severity == Severity.HIGH:

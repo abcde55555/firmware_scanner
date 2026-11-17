@@ -15,15 +15,22 @@ from .formats.generic_img import GenericImageFormat
 from .formats.allwinner import AllwinnerImageFormat
 from .formats.android_system import AndroidSystemImageFormat
 from .formats.android_ota import AndroidPayloadFormat, AndroidBlockOTAFormat
+from .formats.android_super import AndroidSuperImageFormat
+from .formats.flash_fs import CramFSFormat, JFFS2Format
+from .formats.fit_image import FITImageFormat
 from ..extraction.models import UnpackResult
 
 FORMAT_HANDLERS: list[type[FirmwareFormat]] = [
     ELFFormat,
     APKFormat,
+    AndroidSuperImageFormat,
     AndroidSystemImageFormat,
     AndroidPayloadFormat,
     AndroidBlockOTAFormat,
     AllwinnerImageFormat,
+    FITImageFormat,
+    CramFSFormat,
+    JFFS2Format,
     GenericZIPFormat,
     UBootFormat,
     CompressedFirmwareFormat,

@@ -2,6 +2,7 @@
 
 from typing import Any
 from .models import VulnScanResult, Severity
+from .threat_intel import determine_vex_status
 from ..extraction.models import Component
 
 
@@ -47,11 +48,30 @@ def generate_cyclonedx_vex(
             if ratings:
                 vuln_entry["ratings"] = ratings
 
-            # VEX Analysis
+            # Context-Aware VEX Analysis & Threat Intel
+            vex_state, vex_justification, priority = determine_vex_status(
+                v.id, v.severity.value, v.cvss_score
+            )
             vuln_entry["analysis"] = {
-                "state": "exploitable" if v.severity in (Severity.CRITICAL, Severity.HIGH) else "in_triage",
-                "detail": f"Affected versions: {v.affected_versions}" if v.affected_versions else "Pending verification",
+                "state": vex_state,
+                "detail": f"{vex_justification} (Affected versions: {v.affected_versions or 'all'})",
             }
+
+            # Properties for CISA KEV, EPSS, and CNVD/CNNVD
+            vuln_props = [
+                {"name": "remediation:priority", "value": priority},
+                {"name": "cisa:kev", "value": "true" if v.is_cisa_kev else "false"},
+            ]
+            if v.epss_score is not None:
+                vuln_props.append({"name": "epss:score", "value": f"{v.epss_score:.5f}"})
+            if v.epss_percentile is not None:
+                vuln_props.append({"name": "epss:percentile", "value": f"{v.epss_percentile:.5f}"})
+            if v.cnvd_id:
+                vuln_props.append({"name": "cnvd:id", "value": v.cnvd_id})
+            if v.cnnvd_id:
+                vuln_props.append({"name": "cnnvd:id", "value": v.cnnvd_id})
+
+            vuln_entry["properties"] = vuln_props
 
             cdx_vulns.append(vuln_entry)
 

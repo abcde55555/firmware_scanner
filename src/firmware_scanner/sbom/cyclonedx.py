@@ -8,6 +8,7 @@ from typing import Any
 
 from firmware_scanner import __version__
 from ..extraction.models import Component
+from .license_compliance import normalize_license, audit_firmware_licenses
 
 
 class CycloneDXGenerator:
@@ -34,6 +35,19 @@ class CycloneDXGenerator:
             detected_rtos,
             build_info=build_info,
         )
+
+        # License compliance audit summary
+        audit_report = audit_firmware_licenses(components)
+        if "properties" not in meta:
+            meta["properties"] = []
+        meta["properties"].append({
+            "name": "compliance:license:status",
+            "value": "compliant" if audit_report.is_compliant else "non-compliant",
+        })
+        meta["properties"].append({
+            "name": "compliance:license:issues_count",
+            "value": str(len(audit_report.compliance_issues)),
+        })
 
         bom: dict[str, Any] = {
             "bomFormat": "CycloneDX",
@@ -209,12 +223,13 @@ class CycloneDXGenerator:
         if comp.licenses:
             cdx_lics = []
             for lic in comp.licenses:
-                if any(op in lic for op in (" AND ", " OR ", " WITH ", " ")):
-                    cdx_lics.append({"expression": lic})
-                elif lic.lower() in ("proprietary", "unknown", "custom", "commercial"):
-                    cdx_lics.append({"license": {"name": lic}})
+                norm = normalize_license(lic)
+                if any(op in norm for op in (" AND ", " OR ", " WITH ")):
+                    cdx_lics.append({"expression": norm})
+                elif norm.lower() in ("proprietary", "unknown", "custom", "commercial"):
+                    cdx_lics.append({"license": {"name": norm}})
                 else:
-                    cdx_lics.append({"license": {"id": lic}})
+                    cdx_lics.append({"license": {"id": norm}})
             cdx_comp["licenses"] = cdx_lics
 
         if comp.description:
