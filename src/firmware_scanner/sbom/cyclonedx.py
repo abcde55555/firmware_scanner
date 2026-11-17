@@ -173,6 +173,23 @@ class CycloneDXGenerator:
             "name": comp.name,
         }
 
+        # For Maven components, separate group and name per CycloneDX specification
+        if comp.purl and comp.purl.startswith("pkg:maven/"):
+            try:
+                purl_body = comp.purl.split("pkg:maven/", 1)[1].split("?", 1)[0]
+                path_part = purl_body.split("@", 1)[0] if "@" in purl_body else purl_body
+                if "/" in path_part:
+                    grp, art = path_part.rsplit("/", 1)
+                    cdx_comp["group"] = grp
+                    cdx_comp["name"] = art
+            except Exception:
+                pass
+        elif ":" in comp.name and not comp.name.startswith(("cpe:", "pkg:", "framework/")):
+            parts = comp.name.split(":", 1)
+            if all(parts):
+                cdx_comp["group"] = parts[0]
+                cdx_comp["name"] = parts[1]
+
         if comp.resolved_version and comp.resolved_version != "detected":
             cdx_comp["version"] = comp.resolved_version
         elif spec_version == "1.5":

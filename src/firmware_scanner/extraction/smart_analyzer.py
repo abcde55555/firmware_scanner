@@ -175,6 +175,10 @@ class SmartSectionAnalyzer:
         elif data[:6] == b'\xfd7zXZ\x00':  # xz magic
             components.extend(self._analyze_compressed(name, data, 'xz'))
 
+        # JAR/WAR Java archives
+        elif lower_name.endswith(('.jar', '.war')) or (len(data) > 4 and data[:2] == b'PK' and ('jar' in lower_name or 'war' in lower_name)):
+            components.extend(self._analyze_jar(name, data))
+
         # Config/manifest files
         elif lower_name.endswith(('.yml', '.yaml', '.json', '.xml', '.properties', '.gradle')):
             components.extend(self._analyze_config(name, data))
@@ -192,6 +196,135 @@ class SmartSectionAnalyzer:
         ):
             components.extend(self._analyze_text_file(name, data))
 
+        return components
+
+    # =========================================================================
+    # Java JAR / WAR analysis
+    # =========================================================================
+
+    def _analyze_jar(self, name: str, data: bytes) -> list[Component]:
+        """Analyze JAR/WAR archives for Maven POM properties, MANIFEST.MF, and nested libraries."""
+        import io
+        import zipfile
+
+        components: list[Component] = []
+        if len(data) < 4 or data[:2] != b"PK":
+            return components
+
+        try:
+            zf = zipfile.ZipFile(io.BytesIO(data))
+        except Exception:
+            return components
+
+        seen: set[str] = set()
+
+        # 1. pom.properties (highest confidence for Maven artifacts)
+        for entry_name in zf.namelist():
+            if entry_name.endswith("pom.properties"):
+                try:
+                    content = zf.read(entry_name).decode("utf-8", errors="ignore")
+                    props = {}
+                    for line in content.splitlines():
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            props[k.strip()] = v.strip()
+                    group_id = props.get("groupId", "")
+                    artifact_id = props.get("artifactId", "")
+                    version = props.get("version", "")
+                    if artifact_id and version:
+                        comp_name = f"{group_id}:{artifact_id}" if group_id else artifact_id
+                        if comp_name not in seen:
+                            seen.add(comp_name)
+                            purl = f"pkg:maven/{group_id}/{artifact_id}@{version}" if group_id else f"pkg:generic/{artifact_id}@{version}"
+                            components.append(Component(
+                                name=comp_name,
+                                component_type="library",
+                                resolved_version=version,
+                                purl=purl,
+                                description=f"Java/Maven library in {name}",
+                                versions=[VersionConfidence(
+                                    version=version,
+                                    confidence=0.98,
+                                    method=ExtractionMethod.MANIFEST_BINARY,
+                                    evidence=f"{entry_name} in {name}",
+                                )],
+                            ))
+                except Exception:
+                    continue
+
+        # 2. Nested JARs (e.g. Spring Boot BOOT-INF/lib/*.jar, Tomcat WEB-INF/lib/*.jar)
+        for entry_name in zf.namelist():
+            if entry_name.endswith(".jar") and entry_name != name:
+                try:
+                    nested_data = zf.read(entry_name)
+                    if nested_data and nested_data[:2] == b"PK":
+                        nested_comps = self._analyze_jar(f"{name}!/{entry_name}", nested_data)
+                        for nc in nested_comps:
+                            if nc.name not in seen:
+                                seen.add(nc.name)
+                                components.append(nc)
+                except Exception:
+                    continue
+
+        # 3. If no pom.properties were found for this jar, inspect META-INF/MANIFEST.MF
+        if not components and "META-INF/MANIFEST.MF" in zf.namelist():
+            try:
+                manifest_text = zf.read("META-INF/MANIFEST.MF").decode("utf-8", errors="ignore")
+                headers: dict[str, str] = {}
+                current_key = None
+                for line in manifest_text.splitlines():
+                    if line.startswith(" ") and current_key:
+                        headers[current_key] += line.strip()
+                    elif ":" in line:
+                        k, v = line.split(":", 1)
+                        current_key = k.strip()
+                        headers[current_key] = v.strip()
+
+                title = headers.get("Implementation-Title") or headers.get("Bundle-SymbolicName") or headers.get("Specification-Title") or ""
+                title = title.split(";")[0].strip()
+                version = headers.get("Implementation-Version") or headers.get("Bundle-Version") or headers.get("Specification-Version") or ""
+                if title and version:
+                    purl = f"pkg:maven/{title}/{title}@{version}" if "." in title else f"pkg:generic/{title}@{version}"
+                    components.append(Component(
+                        name=title,
+                        component_type="library",
+                        resolved_version=version,
+                        purl=purl,
+                        description=f"Java library from MANIFEST.MF in {name}",
+                        versions=[VersionConfidence(
+                            version=version,
+                            confidence=0.90,
+                            method=ExtractionMethod.MANIFEST_BINARY,
+                            evidence=f"META-INF/MANIFEST.MF in {name}",
+                        )],
+                    ))
+            except Exception:
+                pass
+
+        # 4. Fallback: Parse artifact name and version from JAR file basename
+        if not components:
+            basename = name.rsplit("!", 1)[-1].rsplit("/", 1)[-1]
+            m = re.match(r"^([a-zA-Z0-9_\-\.]+?)-(\d+(?:\.\d+)*(?:[\.\-_][a-zA-Z0-9]+)?)\.jar$", basename)
+            if m:
+                art_name = m.group(1)
+                art_ver = m.group(2)
+                if not art_name.startswith("framework") and not art_ver.startswith("V"):
+                    components.append(Component(
+                        name=art_name,
+                        component_type="library",
+                        resolved_version=art_ver,
+                        purl=f"pkg:generic/{art_name}@{art_ver}",
+                        description=f"Java JAR package at {name}",
+                        versions=[VersionConfidence(
+                            version=art_ver,
+                            confidence=0.75,
+                            method=ExtractionMethod.STRING_PATTERN,
+                            evidence=f"JAR filename {basename}",
+                        )],
+                    ))
+
+        zf.close()
         return components
 
     # =========================================================================

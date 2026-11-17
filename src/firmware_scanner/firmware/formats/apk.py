@@ -64,7 +64,7 @@ class GenericZIPFormat(ZipBasedFormat):
     def can_handle(cls, data: bytes, path: Path) -> float:
         if data[:2] != b"PK":
             return 0.0
-        if path.suffix.lower() in (".zip",):
+        if path.suffix.lower() in (".zip", ".jar", ".war"):
             return 0.80
         return 0.0
 
@@ -77,7 +77,9 @@ class GenericZIPFormat(ZipBasedFormat):
         for name in names:
             lower = name.lower()
             # Manifest/version files (highest value)
-            if name.endswith(("manifest.yml", "manifest.yaml", "manifest.json")):
+            if name.endswith(("manifest.yml", "manifest.yaml", "manifest.json", "pom.properties", "pom.xml", "META-INF/MANIFEST.MF")):
+                targets.append(name)
+            elif lower.endswith(".jar"):
                 targets.append(name)
             elif "version" in lower and name.endswith((".h", ".txt", ".json", ".py", ".cmake")):
                 targets.append(name)

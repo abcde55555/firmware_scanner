@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-import lief
+try:
+    import lief
+except ImportError:
+    lief = None
 
 from ...core.context import AnalysisContext
 from ..models import Component, VersionConfidence, ExtractionMethod
