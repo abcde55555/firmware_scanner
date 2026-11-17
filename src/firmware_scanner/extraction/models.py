@@ -34,6 +34,9 @@ class Component(BaseModel):
     cpe: str = ""
     licenses: list[str] = []
     description: str = ""
+    properties: list[dict[str, str]] = []
+    crypto_properties: dict = {}
+    model_card: dict = {}
 
 
 class FirmwareSection(BaseModel):

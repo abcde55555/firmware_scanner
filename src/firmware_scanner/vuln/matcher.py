@@ -123,6 +123,9 @@ def _is_scannable(component: Component) -> bool:
     # Skip floor landmark symbols (ending with +)
     if ver.endswith("+"):
         return False
+    # Skip single-integer versions (e.g. '16' from OS platform fallback) - open source C/C++ libs always have major.minor
+    if "." not in ver and component.component_type != "operating-system":
+        return False
     # Skip AOSP internal platform versions (e.g. '16 (AOSP ...)')
     if "aosp" in ver or "bp2a" in ver:
         return False
@@ -132,6 +135,9 @@ def _is_scannable(component: Component) -> bool:
     # Skip Android APK packages (pkg:apk/...) - they're not tracked in OSV
     if component.purl and component.purl.startswith("pkg:apk/"):
         return False
+    # Skip Android internal Rust dylibs
+    if component.name.endswith(".dylib.so"):
+        return False
     # Skip Java/Android package names (com.xxx.yyy style)
     if "." in component.name and not component.name.endswith(".so"):
         parts = component.name.split(".")
@@ -140,25 +146,19 @@ def _is_scannable(component: Component) -> bool:
     # Has a non-generic ecosystem purl (npm, pypi, maven, etc.) - always scan
     if component.purl and not component.purl.startswith("pkg:generic/"):
         return True
-    # Known upstream project mapping - always scan
+    # Known upstream project mapping
     normalized = _normalize_name(component.name)
     if normalized.lower() != component.name.lower():
-        return True
+        return _is_real_version(ver)
     # For libraries or binaries without known alias mapping:
     # only scan if version looks like a real upstream semver (e.g. 1.2.3)
-    lower = component.name.lower()
-    if lower.startswith("lib") or lower.endswith(".so") or ".so." in lower:
-        if not _is_real_version(ver):
-            return False
-    if not _is_real_version(ver):
-        return False
-    return True
+    return _is_real_version(ver)
 
 
 def _is_real_version(ver: str) -> bool:
     """Check if version looks like a genuine upstream version (e.g., 1.2.3, 7.79.1)."""
     parts = ver.split(".")
-    if len(parts) < 3:
+    if len(parts) < 2:
         return False
     try:
         int(parts[0])

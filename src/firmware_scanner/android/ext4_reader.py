@@ -40,9 +40,19 @@ FT_SOCK = 6
 FT_SYMLINK = 7
 
 # Inode mode type bits
+S_IFMT = 0o170000
 S_IFREG = 0o100000
 S_IFDIR = 0o040000
 S_IFLNK = 0o120000
+
+def S_ISLNK(m: int) -> bool:
+    return (m & S_IFMT) == S_IFLNK
+
+def S_ISDIR(m: int) -> bool:
+    return (m & S_IFMT) == S_IFDIR
+
+def S_ISREG(m: int) -> bool:
+    return (m & S_IFMT) == S_IFREG
 
 ROOT_INODE = 2
 
@@ -230,6 +240,8 @@ class Ext4Reader:
 
         result = bytearray()
         self._walk_extent_tree(block_data, result, size, depth=0)
+        if len(result) < size:
+            result.extend(b'\x00' * (size - len(result)))
         return bytes(result[:size])
 
     def _walk_extent_tree(self, node_data: bytes, result: bytearray, max_size: int, depth: int):
@@ -246,6 +258,7 @@ class Ext4Reader:
 
         if tree_depth == 0:
             # Leaf node - read extent entries
+            bs = self._sb.block_size
             for i in range(min(entries, 340)):
                 if len(result) >= max_size:
                     break
@@ -254,7 +267,7 @@ class Ext4Reader:
                     break
 
                 # ee_block (logical block), ee_len, ee_start_hi, ee_start_lo
-                _logical_block = struct.unpack_from('<I', node_data, entry_offset)[0]
+                logical_block = struct.unpack_from('<I', node_data, entry_offset)[0]
                 ee_len = struct.unpack_from('<H', node_data, entry_offset + 4)[0]
                 ee_start_hi = struct.unpack_from('<H', node_data, entry_offset + 6)[0]
                 ee_start_lo = struct.unpack_from('<I', node_data, entry_offset + 8)[0]
@@ -263,13 +276,21 @@ class Ext4Reader:
                 if ee_len > 32768:
                     ee_len -= 32768
 
+                # Sparse hole check: pad with zeros if there's a hole before this extent
+                target_pos = logical_block * bs
+                if len(result) < target_pos:
+                    pad_len = min(target_pos - len(result), max_size - len(result))
+                    result.extend(b'\x00' * pad_len)
+
                 physical_block = (ee_start_hi << 32) | ee_start_lo
-                for b in range(ee_len):
-                    if len(result) >= max_size:
-                        break
-                    block_data = self._read_block(physical_block + b)
-                    remaining = max_size - len(result)
-                    result.extend(block_data[:remaining])
+                # Fast contiguous extent read
+                start_byte = physical_block * bs
+                extent_bytes_len = min(ee_len * bs, max_size - len(result))
+                if 0 <= start_byte < len(self._data):
+                    chunk = self._data[start_byte:start_byte + extent_bytes_len]
+                    result.extend(chunk)
+                else:
+                    result.extend(b'\x00' * extent_bytes_len)
         else:
             # Internal node - follow index entries
             for i in range(min(entries, 340)):
@@ -378,14 +399,49 @@ class Ext4Reader:
 
         return entries
 
-    def _resolve_path(self, path: str) -> int | None:
-        """Resolve a filesystem path to an inode number."""
+    def _read_symlink_target(self, inode: Ext4Inode) -> str:
+        """Read symlink target string from inode."""
+        if inode.size <= 60 and not (inode.flags & EXT4_EXTENTS_FL):
+            target_bytes = inode.block_data[:inode.size]
+        else:
+            target_bytes = self._read_file_data(inode, max_size=min(inode.size, 4096))
+        return target_bytes.decode('utf-8', errors='replace').rstrip('\x00')
+
+    def read_symlink(self, path: str) -> str | None:
+        """Read symlink target if path points to a symlink."""
+        inode_num = self._resolve_path(path, follow_symlinks=False)
+        if inode_num is None:
+            return None
+        inode = self._read_inode(inode_num)
+        if inode is None or not S_ISLNK(inode.mode):
+            return None
+        return self._read_symlink_target(inode)
+
+    def _resolve_path(self, path: str, follow_symlinks: bool = True, max_hops: int = 10) -> int | None:
+        """Resolve a filesystem path to an inode number, optionally following symlinks."""
+        if max_hops <= 0:
+            return None
+
         parts = [p for p in path.strip('/').split('/') if p]
         current_inode = ROOT_INODE
 
-        for part in parts:
+        for idx, part in enumerate(parts):
             inode = self._read_inode(current_inode)
-            if inode is None or not (inode.mode & S_IFDIR):
+            if inode is None:
+                return None
+
+            # If current component is a symlink, resolve it first
+            if S_ISLNK(inode.mode) and follow_symlinks:
+                target = self._read_symlink_target(inode)
+                rem = "/".join(parts[idx:])
+                new_path = f"{target}/{rem}" if not target.endswith('/') else f"{target}{rem}"
+                if not target.startswith('/'):
+                    # Relative symlink
+                    parent = "/".join(parts[:idx])
+                    new_path = f"/{parent}/{new_path}".replace('//', '/')
+                return self._resolve_path(new_path, follow_symlinks=True, max_hops=max_hops - 1)
+
+            if not S_ISDIR(inode.mode):
                 return None
 
             entries = self._read_directory(inode)
@@ -399,6 +455,16 @@ class Ext4Reader:
             if not found:
                 return None
 
+        # Check if final inode is a symlink and we want to follow it
+        if follow_symlinks:
+            final_inode = self._read_inode(current_inode)
+            if final_inode and S_ISLNK(final_inode.mode):
+                target = self._read_symlink_target(final_inode)
+                if not target.startswith('/'):
+                    parent = "/".join(parts[:-1])
+                    target = f"/{parent}/{target}".replace('//', '/')
+                return self._resolve_path(target, follow_symlinks=True, max_hops=max_hops - 1)
+
         return current_inode
 
     def list_directory(self, path: str) -> list[DirEntry]:
@@ -406,22 +472,22 @@ class Ext4Reader:
         if not self._valid:
             return []
 
-        inode_num = self._resolve_path(path)
+        inode_num = self._resolve_path(path, follow_symlinks=True)
         if inode_num is None:
             return []
 
         inode = self._read_inode(inode_num)
-        if inode is None or not (inode.mode & S_IFDIR):
+        if inode is None or not S_ISDIR(inode.mode):
             return []
 
         return self._read_directory(inode)
 
     def read_file(self, path: str, max_size: int = 16 * 1024 * 1024) -> bytes | None:
-        """Read file content at the given path."""
+        """Read file content at the given path, following symlinks if needed."""
         if not self._valid:
             return None
 
-        inode_num = self._resolve_path(path)
+        inode_num = self._resolve_path(path, follow_symlinks=True)
         if inode_num is None:
             return None
 
@@ -429,7 +495,7 @@ class Ext4Reader:
         if inode is None:
             return None
 
-        if inode.mode & S_IFDIR:
+        if S_ISDIR(inode.mode) or S_ISLNK(inode.mode):
             return None
 
         return self._read_file_data(inode, max_size)

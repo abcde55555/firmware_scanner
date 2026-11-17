@@ -161,6 +161,10 @@ _CANONICAL_CPE_MAP: dict[str, tuple[str, str]] = {
     "protobuf": ("google", "protobuf"),
     "libprotobuf": ("google", "protobuf"),
     "libprotobuf-lite": ("google", "protobuf"),
+    "libprotobuf-cpp-full": ("google", "protobuf"),
+    "libprotobuf-cpp-lite": ("google", "protobuf"),
+    "tinyxml2": ("tinyxml2_project", "tinyxml2"),
+    "libtinyxml2": ("tinyxml2_project", "tinyxml2"),
     "libdb": ("oracle", "berkeley_db"),
     "berkeley_db": ("oracle", "berkeley_db"),
     "icu": ("icu-project", "international_components_for_unicode"),
@@ -174,6 +178,21 @@ _CANONICAL_CPE_MAP: dict[str, tuple[str, str]] = {
     "mksh": ("mirbsd", "mksh"),
     "zlib-ng": ("zlib-ng", "zlib-ng"),
 }
+
+# Dynamically load expanded catalog from gangmu rules if available
+import json
+from pathlib import Path
+
+_CATALOG_PATH = Path(__file__).parent / "cpe_catalog.json"
+if _CATALOG_PATH.exists():
+    try:
+        with open(_CATALOG_PATH, "r", encoding="utf-8") as _f:
+            _loaded = json.load(_f)
+            for _k, _v in _loaded.items():
+                if _k not in _CANONICAL_CPE_MAP:
+                    _CANONICAL_CPE_MAP[_k] = tuple(_v)
+    except Exception:
+        pass
 
 
 def normalize_cpe_name(name: str) -> str:

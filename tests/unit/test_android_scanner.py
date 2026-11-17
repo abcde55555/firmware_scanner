@@ -92,13 +92,15 @@ def test_known_bin_patterns():
 
 
 def test_no_fake_16_fallback():
-    """Verify that unversioned platform components are NOT stamped with fake OS version 16."""
+    """Verify that third-party components are NOT stamped with fake OS version 16,
+    while first-party AOSP components receive platform build metadata."""
     scanner = AndroidSystemScanner(MockFilesystem({}))
     result = AndroidScanResult(
         build_info=AndroidBuildInfo(android_version="16", security_patch="2025-08-05", build_id="BP2A.250805.005"),
         components=[
             Component(name="Android", component_type="operating-system", resolved_version=""),
-            Component(name="libbinder.so", component_type="library", resolved_version=""),
+            Component(name="libcrypto.so", component_type="library", resolved_version=""),
+            Component(name="libbinder.so", component_type="library", resolved_version="", description="AOSP native library in /system at /system/lib64/libbinder.so"),
             Component(name="curl", component_type="application", resolved_version="8.12.0"),
         ]
     )
@@ -107,13 +109,17 @@ def test_no_fake_16_fallback():
     # OS component gets 16
     assert result.components[0].resolved_version == "16"
 
-    # libbinder.so should remain unversioned (empty string), NOT "16"
+    # libcrypto.so (third-party blacklist) should remain unversioned (empty string), NOT "16"
     assert result.components[1].resolved_version == ""
     assert "AOSP platform component" in result.components[1].description
     assert "Baseline: Android 16, SPL 2025-08-05" in result.components[1].description
 
+    # libbinder.so (first-party AOSP) gets platform OS release 16 with BUILD_METADATA
+    assert result.components[2].resolved_version == "16"
+    assert "Baseline: Android 16, SPL 2025-08-05" in result.components[2].description
+
     # curl keeps its real version
-    assert result.components[2].resolved_version == "8.12.0"
+    assert result.components[3].resolved_version == "8.12.0"
 
 
 def test_sbom_includes_unversioned_components():

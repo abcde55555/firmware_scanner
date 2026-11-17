@@ -1,0 +1,2538 @@
+{
+  "3proxy": [
+    "3proxy",
+    "3proxy"
+  ],
+  "4diac-forte": [
+    "eclipse",
+    "4diac_forte"
+  ],
+  "abseil": [
+    "abseil",
+    "common_libraries"
+  ],
+  "accel-ppp": [
+    "accel-ppp",
+    "accel-ppp"
+  ],
+  "aide": [
+    "advanced_intrusion_detection_environment_project",
+    "advanced_intrusion_detection_environment"
+  ],
+  "aircrack-ng": [
+    "aircrack-ng",
+    "aircrack-ng"
+  ],
+  "alsa-lib": [
+    "alsa-project",
+    "alsa-lib"
+  ],
+  "alsa-plugins": [
+    "alsa-project",
+    "alsa"
+  ],
+  "alsa-utils": [
+    "alsa-project",
+    "alsa"
+  ],
+  "apache mynewt nimble": [
+    "apache",
+    "nimble"
+  ],
+  "apache nuttx rtos kernel": [
+    "apache",
+    "nuttx"
+  ],
+  "apache-httpd": [
+    "apache",
+    "http_server"
+  ],
+  "apk-tools": [
+    "alpinelinux",
+    "apk-tools"
+  ],
+  "apparmor": [
+    "apparmor",
+    "apparmor"
+  ],
+  "apr": [
+    "apache",
+    "portable_runtime"
+  ],
+  "apr-util": [
+    "apache",
+    "apr-util"
+  ],
+  "apt": [
+    "debian",
+    "advanced_package_tool"
+  ],
+  "arduino-esp32": [
+    "espressif",
+    "arduino-esp32"
+  ],
+  "arduinojson": [
+    "arduino_json_project",
+    "arduino_json"
+  ],
+  "ardupilot-libraries": [
+    "ardupilot",
+    "arduplane"
+  ],
+  "argon2": [
+    "argon2_project",
+    "argon2"
+  ],
+  "aria2": [
+    "tatsuhiro_tsujikawa",
+    "aria2"
+  ],
+  "arm mbed os connectivity (netsocket, nanostack, lwipstack)": [
+    "arm",
+    "mbed_os"
+  ],
+  "arm mbed os core (rtos, platform, drivers)": [
+    "arm",
+    "mbed_os"
+  ],
+  "arm-trusted-firmware": [
+    "trustedfirmware",
+    "trusted_firmware-a"
+  ],
+  "asn1c": [
+    "asn1c_project",
+    "asn1c"
+  ],
+  "assimp": [
+    "assimp",
+    "assimp"
+  ],
+  "asterisk": [
+    "digium",
+    "asterisk"
+  ],
+  "audit-userspace": [
+    "audit-userspace_project",
+    "audit-userspace"
+  ],
+  "avahi": [
+    "avahi",
+    "avahi"
+  ],
+  "aws-c-io": [
+    "amazon",
+    "amazon_web_services_aws-c-io"
+  ],
+  "aws-lc": [
+    "amazon",
+    "aws_libcrypto"
+  ],
+  "azure c shared utility": [
+    "microsoft",
+    "azure_c_shared_utility"
+  ],
+  "azure uamqp c library": [
+    "microsoft",
+    "azure_uamqp"
+  ],
+  "azure umqtt c library": [
+    "microsoft",
+    "azure-umqtt-c"
+  ],
+  "azure-c-shared-utility": [
+    "microsoft",
+    "azure_c_shared_utility"
+  ],
+  "azure-uamqp-c": [
+    "microsoft",
+    "azure_uamqp"
+  ],
+  "azure-umqtt-c": [
+    "microsoft",
+    "azure-umqtt-c"
+  ],
+  "bacnet-stack": [
+    "bacnetstack",
+    "bacnet_stack"
+  ],
+  "barebox": [
+    "pengutronix",
+    "barebox"
+  ],
+  "basicstation": [
+    "semtech",
+    "lora_basics_station"
+  ],
+  "bcc": [
+    "iovisor",
+    "bpf_compiler_collection"
+  ],
+  "belle-sip": [
+    "linphone",
+    "belle-sip"
+  ],
+  "bird": [
+    "nic",
+    "bird"
+  ],
+  "bluez": [
+    "bluez",
+    "bluez"
+  ],
+  "blynk-library": [
+    "blynk",
+    "blynk-library"
+  ],
+  "botan": [
+    "botan_project",
+    "botan"
+  ],
+  "bridge-utils": [
+    "kernel",
+    "bridge-utils"
+  ],
+  "brotli": [
+    "google",
+    "brotli"
+  ],
+  "brpc": [
+    "apache",
+    "brpc"
+  ],
+  "btstack": [
+    "bluekitchen-gmbh",
+    "btstack"
+  ],
+  "btstack (bluekitchen bluetooth stack)": [
+    "bluekitchen-gmbh",
+    "btstack"
+  ],
+  "bubblewrap": [
+    "projectatomic",
+    "bubblewrap"
+  ],
+  "busybox": [
+    "busybox",
+    "busybox"
+  ],
+  "bzip2": [
+    "bzip",
+    "bzip2"
+  ],
+  "bzip3": [
+    "bzip3_project",
+    "bzip3"
+  ],
+  "bzrtp": [
+    "bzrtp_project",
+    "bzrtp"
+  ],
+  "c-ares": [
+    "c-ares",
+    "c-ares"
+  ],
+  "c-periphery": [
+    "c-periphery_project",
+    "c-periphery"
+  ],
+  "cairo": [
+    "cairographics",
+    "cairo"
+  ],
+  "cap'n proto": [
+    "capnproto",
+    "capnproto"
+  ],
+  "capnproto": [
+    "capnproto",
+    "capnproto"
+  ],
+  "capstone": [
+    "capstone-engine",
+    "capstone"
+  ],
+  "chrony": [
+    "tuxfamily",
+    "chrony"
+  ],
+  "cifs-utils": [
+    "samba",
+    "cifs-utils"
+  ],
+  "civetweb": [
+    "civetweb_project",
+    "civetweb"
+  ],
+  "cjose": [
+    "cisco",
+    "cjose"
+  ],
+  "cjson": [
+    "cjson_project",
+    "cjson"
+  ],
+  "clamav": [
+    "clamav",
+    "clamav"
+  ],
+  "cmark-gfm": [
+    "github",
+    "cmark-gfm"
+  ],
+  "collectd": [
+    "collectd",
+    "collectd"
+  ],
+  "colord": [
+    "freedesktop",
+    "colord"
+  ],
+  "connman": [
+    "intel",
+    "connman"
+  ],
+  "conntrack-tools": [
+    "netfilter",
+    "conntrack-tools"
+  ],
+  "contiki": [
+    "contiki-os",
+    "contiki"
+  ],
+  "contiki-ng": [
+    "contiki-ng",
+    "contiki-ng"
+  ],
+  "contiki-ng operating system": [
+    "contiki-ng",
+    "contiki-ng"
+  ],
+  "coreboot-drivers": [
+    "coreboot",
+    "coreboot"
+  ],
+  "coreboot-lib": [
+    "coreboot",
+    "coreboot"
+  ],
+  "coreboot-security": [
+    "coreboot",
+    "coreboot"
+  ],
+  "coremqtt": [
+    "freertos",
+    "coremqtt"
+  ],
+  "corosync": [
+    "corosync",
+    "corosync"
+  ],
+  "coturn": [
+    "coturn_project",
+    "coturn"
+  ],
+  "cpp-httplib": [
+    "yhirose",
+    "cpp-httplib"
+  ],
+  "cppcheck": [
+    "cppchecksolutions",
+    "cppcheck"
+  ],
+  "cpython": [
+    "python",
+    "python"
+  ],
+  "crun": [
+    "crun_project",
+    "crun"
+  ],
+  "cryptolib": [
+    "nasa",
+    "cryptolib"
+  ],
+  "cryptopp": [
+    "cryptopp",
+    "crypto\\+\\+"
+  ],
+  "cryptsetup": [
+    "cryptsetup_project",
+    "cryptsetup"
+  ],
+  "cups": [
+    "openprinting",
+    "cups"
+  ],
+  "cups-browsed": [
+    "openprinting",
+    "cups-browsed"
+  ],
+  "curl": [
+    "haxx",
+    "curl"
+  ],
+  "curl (libcurl)": [
+    "haxx",
+    "curl"
+  ],
+  "cyclonedds": [
+    "eclipse",
+    "cyclonedds"
+  ],
+  "cyrus-imapd": [
+    "cyrus",
+    "imap"
+  ],
+  "cyrus-sasl": [
+    "cyrus",
+    "sasl"
+  ],
+  "das u-boot": [
+    "denx",
+    "u-boot"
+  ],
+  "dav1d": [
+    "videolan",
+    "dav1d"
+  ],
+  "dbus": [
+    "freedesktop",
+    "dbus"
+  ],
+  "dcmtk": [
+    "offis",
+    "dcmtk"
+  ],
+  "dhcpcd": [
+    "dhcpcd_project",
+    "dhcpcd"
+  ],
+  "dlt-daemon": [
+    "genivi",
+    "diagnostic_log_and_trace"
+  ],
+  "dnsmasq": [
+    "thekelleys",
+    "dnsmasq"
+  ],
+  "domoticz": [
+    "domoticz",
+    "domoticz"
+  ],
+  "dosfstools": [
+    "dosfstools_project",
+    "dosfstools"
+  ],
+  "dovecot": [
+    "dovecot",
+    "dovecot"
+  ],
+  "drogon": [
+    "drogon",
+    "drogon"
+  ],
+  "dropbear": [
+    "dropbear_ssh_project",
+    "dropbear_ssh"
+  ],
+  "dtc": [
+    "dtc_project",
+    "dtc"
+  ],
+  "duktape": [
+    "duktape_project",
+    "duktape"
+  ],
+  "e2fsprogs": [
+    "e2fsprogs_project",
+    "e2fsprogs"
+  ],
+  "eclipse paho embedded c (mqttpacket and mqttclient-c)": [
+    "eclipse",
+    "paho_mqtt_c\\/c\\+\\+_client"
+  ],
+  "eclipse threadx (azure rtos threadx)": [
+    "eclipse",
+    "threadx"
+  ],
+  "eclipse threadx filex (azure rtos filex)": [
+    "eclipse",
+    "threadx_filex"
+  ],
+  "eclipse threadx netx duo (azure rtos netx duo)": [
+    "eclipse",
+    "threadx_netx_duo"
+  ],
+  "eclipse threadx usbx (azure rtos usbx)": [
+    "eclipse",
+    "threadx_usbx"
+  ],
+  "edk2-embeddedpkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-fatpkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-mdemodulepkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-mdepkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-networkpkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-pcatchipsetpkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-securitypkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-shellpkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-ueficpupkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "edk2-uefipayloadpkg": [
+    "tianocore",
+    "edk2"
+  ],
+  "encfs": [
+    "arg0",
+    "encfs"
+  ],
+  "erofs-utils": [
+    "erofs-utils_project",
+    "erofs-utils"
+  ],
+  "espeak-ng": [
+    "espeak-ng",
+    "espeak-ng"
+  ],
+  "espruino": [
+    "espruino",
+    "espruino"
+  ],
+  "ethtool": [
+    "kernel",
+    "ethtool"
+  ],
+  "exfatprogs": [
+    "namjaejeon",
+    "exfatprogs"
+  ],
+  "exif": [
+    "libexif_project",
+    "exif"
+  ],
+  "exim": [
+    "exim",
+    "exim"
+  ],
+  "exiv2": [
+    "exiv2",
+    "exiv2"
+  ],
+  "expat": [
+    "libexpat_project",
+    "libexpat"
+  ],
+  "expect": [
+    "don_libes",
+    "expect"
+  ],
+  "f prime": [
+    "nasa",
+    "fprime"
+  ],
+  "faac": [
+    "freeware_advanced_audio_coder_project",
+    "freeware_advanced_audio_coder"
+  ],
+  "faad2": [
+    "faad2_project",
+    "faad2"
+  ],
+  "fast-dds": [
+    "eprosima",
+    "fast_dds"
+  ],
+  "fatfs": [
+    "elm-chan",
+    "fatfs"
+  ],
+  "fetchmail": [
+    "fetchmail",
+    "fetchmail"
+  ],
+  "ffmpeg": [
+    "ffmpeg",
+    "ffmpeg"
+  ],
+  "file": [
+    "file_project",
+    "file"
+  ],
+  "filex": [
+    "eclipse",
+    "threadx_filex"
+  ],
+  "firejail": [
+    "firejail_project",
+    "firejail"
+  ],
+  "flac": [
+    "flac_project",
+    "flac"
+  ],
+  "flac (libflac)": [
+    "flac_project",
+    "flac"
+  ],
+  "flashmq": [
+    "flashmq",
+    "flashmq"
+  ],
+  "flatbuffers": [
+    "google",
+    "flatbuffers"
+  ],
+  "flatcc": [
+    "dvidelabs",
+    "flatcc"
+  ],
+  "flatcc (flatbuffers in c)": [
+    "dvidelabs",
+    "flatcc"
+  ],
+  "flatpak": [
+    "flatpak",
+    "flatpak"
+  ],
+  "fluent bit": [
+    "treasuredata",
+    "fluent_bit"
+  ],
+  "fluent-bit": [
+    "treasuredata",
+    "fluent_bit"
+  ],
+  "fmt": [
+    "fmt",
+    "fmt"
+  ],
+  "fnet": [
+    "butok",
+    "fnet"
+  ],
+  "fprime": [
+    "nasa",
+    "fprime"
+  ],
+  "freediameter": [
+    "freediameter",
+    "freediameter"
+  ],
+  "freemodbus": [
+    "embedded-solutions",
+    "freemodbus"
+  ],
+  "freeradius": [
+    "freeradius",
+    "freeradius"
+  ],
+  "freerdp": [
+    "freerdp",
+    "freerdp"
+  ],
+  "freertos-kernel": [
+    "amazon",
+    "freertos"
+  ],
+  "freertos-plus-tcp": [
+    "amazon",
+    "freertos-plus-tcp"
+  ],
+  "freetype": [
+    "freetype",
+    "freetype"
+  ],
+  "fribidi": [
+    "gnu",
+    "fribidi"
+  ],
+  "frr": [
+    "frrouting",
+    "frrouting"
+  ],
+  "fwupd": [
+    "fwupd",
+    "fwupd"
+  ],
+  "gdk-pixbuf": [
+    "gnome",
+    "gdk-pixbuf"
+  ],
+  "gdkpixbuf": [
+    "gnome",
+    "gdk-pixbuf"
+  ],
+  "giflib": [
+    "giflib_project",
+    "giflib"
+  ],
+  "glib": [
+    "gnome",
+    "glib"
+  ],
+  "gnu wget": [
+    "gnu",
+    "wget"
+  ],
+  "gnupg": [
+    "gnupg",
+    "gnupg"
+  ],
+  "gnutls": [
+    "gnu",
+    "gnutls"
+  ],
+  "goahead": [
+    "embedthis",
+    "goahead"
+  ],
+  "gpac": [
+    "gpac",
+    "gpac"
+  ],
+  "gperftools": [
+    "gperftools_project",
+    "gperftools"
+  ],
+  "gpgme": [
+    "gnu",
+    "gpgme"
+  ],
+  "gpsd": [
+    "gpsd_project",
+    "gpsd"
+  ],
+  "gvfs": [
+    "gnome",
+    "gvfs"
+  ],
+  "h2o": [
+    "dena",
+    "h2o"
+  ],
+  "haproxy": [
+    "haproxy",
+    "haproxy"
+  ],
+  "harfbuzz": [
+    "harfbuzz_project",
+    "harfbuzz"
+  ],
+  "heimdal": [
+    "heimdal_project",
+    "heimdal"
+  ],
+  "hiredis": [
+    "redislabs",
+    "hiredis"
+  ],
+  "hoard": [
+    "emery_berger",
+    "hoard"
+  ],
+  "hostap": [
+    "w1.fi",
+    "hostapd"
+  ],
+  "hostap (wpa_supplicant / hostapd)": [
+    "w1.fi",
+    "hostapd"
+  ],
+  "htop": [
+    "htop",
+    "htop"
+  ],
+  "hyperscan": [
+    "intel",
+    "hyperscan"
+  ],
+  "icecast-server": [
+    "icecast",
+    "icecast"
+  ],
+  "icu4c": [
+    "icu-project",
+    "international_components_for_unicode"
+  ],
+  "igmpproxy": [
+    "pali",
+    "igmpproxy"
+  ],
+  "imagemagick": [
+    "imagemagick",
+    "imagemagick"
+  ],
+  "intel-pcm": [
+    "intel",
+    "performance_counter_monitor"
+  ],
+  "iperf3": [
+    "es",
+    "iperf3"
+  ],
+  "ipmitool": [
+    "ipmitool_project",
+    "ipmitool"
+  ],
+  "ipp-crypto": [
+    "intel",
+    "integrated_performance_primitives_cryptography"
+  ],
+  "iproute2": [
+    "iproute2_project",
+    "iproute2"
+  ],
+  "ipset": [
+    "netfilter",
+    "ipset"
+  ],
+  "iptables": [
+    "netfilter",
+    "iptables"
+  ],
+  "isc-dhcp": [
+    "isc",
+    "dhcp"
+  ],
+  "iwd": [
+    "intel",
+    "inet_wireless_daemon"
+  ],
+  "jack2": [
+    "jackaudio",
+    "jack2"
+  ],
+  "janet": [
+    "janet-lang",
+    "janet"
+  ],
+  "jansson": [
+    "jansson_project",
+    "jansson"
+  ],
+  "janus-gateway": [
+    "meetecho",
+    "janus"
+  ],
+  "jasper": [
+    "jasper_project",
+    "jasper"
+  ],
+  "jbig2dec": [
+    "artifex",
+    "jbig2dec"
+  ],
+  "jerryscript": [
+    "jerryscript",
+    "jerryscript"
+  ],
+  "jose": [
+    "latchset",
+    "jose"
+  ],
+  "jq": [
+    "jqlang",
+    "jq"
+  ],
+  "json-c": [
+    "json-c",
+    "json-c"
+  ],
+  "jsoncpp": [
+    "jsoncpp_project",
+    "jsoncpp"
+  ],
+  "kamailio": [
+    "kamailio",
+    "kamailio"
+  ],
+  "keepalived": [
+    "keepalived",
+    "keepalived"
+  ],
+  "kexec-tools": [
+    "kexec-tools_project",
+    "kexec-tools"
+  ],
+  "knot-dns": [
+    "knot-dns",
+    "knot_dns"
+  ],
+  "knot-resolver": [
+    "nic",
+    "knot_resolver"
+  ],
+  "krb5": [
+    "mit",
+    "kerberos_5"
+  ],
+  "ksh93": [
+    "ksh_project",
+    "ksh"
+  ],
+  "lcms2": [
+    "littlecms",
+    "little_cms"
+  ],
+  "ldns": [
+    "nlnetlabs",
+    "ldns"
+  ],
+  "leptonica": [
+    "leptonica",
+    "leptonica"
+  ],
+  "lib60870": [
+    "mz-automation",
+    "lib60870"
+  ],
+  "lib60870 (iec 60870-5-101/104)": [
+    "mz-automation",
+    "lib60870"
+  ],
+  "libarchive": [
+    "libarchive",
+    "libarchive"
+  ],
+  "libass": [
+    "libass_project",
+    "libass"
+  ],
+  "libavif": [
+    "aomedia",
+    "libavif"
+  ],
+  "libbpf": [
+    "libbpf_project",
+    "libbpf"
+  ],
+  "libcap-ng": [
+    "libcap-ng_project",
+    "libcap-ng"
+  ],
+  "libcoap": [
+    "libcoap",
+    "libcoap"
+  ],
+  "libcomps": [
+    "rpm",
+    "libcomps"
+  ],
+  "libcsp": [
+    "libcsp",
+    "libcsp"
+  ],
+  "libcsp (cubesat space protocol)": [
+    "libcsp",
+    "libcsp"
+  ],
+  "libcue": [
+    "lipnitsk",
+    "libcue"
+  ],
+  "libcupsfilters": [
+    "openprinting",
+    "libcupsfilters"
+  ],
+  "libde265": [
+    "struktur",
+    "libde265"
+  ],
+  "libdnf": [
+    "rpm",
+    "libdnf"
+  ],
+  "libebml": [
+    "matroska",
+    "libebml"
+  ],
+  "libevent": [
+    "libevent_project",
+    "libevent"
+  ],
+  "libexif": [
+    "libexif_project",
+    "libexif"
+  ],
+  "libffi": [
+    "libffi_project",
+    "libffi"
+  ],
+  "libfuse": [
+    "libfuse_project",
+    "libfuse"
+  ],
+  "libgcrypt": [
+    "gnupg",
+    "libgcrypt"
+  ],
+  "libgd": [
+    "libgd",
+    "libgd"
+  ],
+  "libgit2": [
+    "libgit2",
+    "libgit2"
+  ],
+  "libheif": [
+    "struktur",
+    "libheif"
+  ],
+  "libhtp": [
+    "oisf",
+    "libhtp"
+  ],
+  "libhv": [
+    "ithewei",
+    "libhv"
+  ],
+  "libical": [
+    "libical_project",
+    "libical"
+  ],
+  "libidn": [
+    "gnu",
+    "libidn"
+  ],
+  "libidn2": [
+    "gnu",
+    "libidn2"
+  ],
+  "libiec61850": [
+    "mz-automation",
+    "libiec61850"
+  ],
+  "libimobiledevice": [
+    "libimobiledevice",
+    "libimobiledevice"
+  ],
+  "libinput": [
+    "freedesktop",
+    "libinput"
+  ],
+  "libjpeg-turbo": [
+    "libjpeg-turbo",
+    "libjpeg-turbo"
+  ],
+  "libjwt": [
+    "libjwt",
+    "libjwt"
+  ],
+  "libjxl": [
+    "libjxl_project",
+    "libjxl"
+  ],
+  "libkcapi": [
+    "smuellerdd",
+    "libkcapi"
+  ],
+  "libksba": [
+    "gnupg",
+    "libksba"
+  ],
+  "libmatroska": [
+    "matroska",
+    "libmatroska"
+  ],
+  "libmicrohttpd": [
+    "gnu",
+    "libmicrohttpd"
+  ],
+  "libmnl": [
+    "netfilter",
+    "libmnl"
+  ],
+  "libmodbus": [
+    "libmodbus",
+    "libmodbus"
+  ],
+  "libmspack": [
+    "libmspack_project",
+    "libmspack"
+  ],
+  "libmtp": [
+    "libmtp_project",
+    "libmtp"
+  ],
+  "libnet": [
+    "libnet_project",
+    "libnet"
+  ],
+  "libnetfilter-conntrack": [
+    "netfilter",
+    "libnetfilter_conntrack"
+  ],
+  "libnetfilter-queue": [
+    "netfilter",
+    "libnetfilter_queue"
+  ],
+  "libnfnetlink": [
+    "netfilter",
+    "libnfnetlink"
+  ],
+  "libnftnl": [
+    "netfilter",
+    "libnftnl"
+  ],
+  "libnl": [
+    "libnl_project",
+    "libnl"
+  ],
+  "libnsl": [
+    "libnsl_project",
+    "libnsl"
+  ],
+  "libocpp": [
+    "linuxfoundation",
+    "libocpp"
+  ],
+  "liboqs": [
+    "openquantumsafe",
+    "liboqs"
+  ],
+  "libpcap": [
+    "tcpdump",
+    "libpcap"
+  ],
+  "libplist": [
+    "libimobiledevice",
+    "libplist"
+  ],
+  "libpng": [
+    "libpng",
+    "libpng"
+  ],
+  "libppd": [
+    "openprinting",
+    "libppd"
+  ],
+  "libqb": [
+    "clusterlabs",
+    "libqb"
+  ],
+  "libraw": [
+    "libraw",
+    "libraw"
+  ],
+  "librepo": [
+    "redhat",
+    "librepo"
+  ],
+  "libressl": [
+    "openbsd",
+    "libressl"
+  ],
+  "libreswan": [
+    "libreswan",
+    "libreswan"
+  ],
+  "librsvg": [
+    "gnome",
+    "librsvg"
+  ],
+  "librsync": [
+    "librsync_project",
+    "librsync"
+  ],
+  "libsamplerate": [
+    "mega-nerd",
+    "secret_rabbit_code"
+  ],
+  "libseccomp": [
+    "libseccomp_project",
+    "libseccomp"
+  ],
+  "libsixel": [
+    "saitoha",
+    "libsixel"
+  ],
+  "libslirp": [
+    "libslirp_project",
+    "libslirp"
+  ],
+  "libsndfile": [
+    "libsndfile_project",
+    "libsndfile"
+  ],
+  "libsolv": [
+    "opensuse",
+    "libsolv"
+  ],
+  "libsoup": [
+    "gnome",
+    "libsoup"
+  ],
+  "libsrtp": [
+    "cisco",
+    "libsrtp"
+  ],
+  "libssh": [
+    "libssh",
+    "libssh"
+  ],
+  "libssh2": [
+    "libssh2",
+    "libssh2"
+  ],
+  "libtasn1": [
+    "gnu",
+    "libtasn1"
+  ],
+  "libtiff": [
+    "libtiff",
+    "libtiff"
+  ],
+  "libtomcrypt": [
+    "libtom",
+    "libtomcrypt"
+  ],
+  "libtommath": [
+    "libtom",
+    "libtommath"
+  ],
+  "libtorrent": [
+    "rasterbar_software",
+    "libtorrent"
+  ],
+  "libtpms": [
+    "libtpms_project",
+    "libtpms"
+  ],
+  "libucl": [
+    "vstakhov",
+    "libucl"
+  ],
+  "libunwind": [
+    "libunwind_project",
+    "libunwind"
+  ],
+  "libusb": [
+    "libusb",
+    "libusb"
+  ],
+  "libusbmuxd": [
+    "libimobiledevice",
+    "libusbmuxd"
+  ],
+  "libuv": [
+    "libuv",
+    "libuv"
+  ],
+  "libuvc": [
+    "libuvc",
+    "libuvc"
+  ],
+  "libvips": [
+    "libvips",
+    "libvips"
+  ],
+  "libvncserver": [
+    "libvnc_project",
+    "libvncserver"
+  ],
+  "libvorbis": [
+    "xiph.org",
+    "libvorbis"
+  ],
+  "libvpx": [
+    "webmproject",
+    "libvpx"
+  ],
+  "libwebp": [
+    "webmproject",
+    "libwebp"
+  ],
+  "libx11": [
+    "x.org",
+    "libx11"
+  ],
+  "libxkbcommon": [
+    "xkbcommon",
+    "libxkbcommon"
+  ],
+  "libxml2": [
+    "xmlsoft",
+    "libxml2"
+  ],
+  "libxmp": [
+    "extended_module_player_project",
+    "extended_module_player"
+  ],
+  "libxslt": [
+    "xmlsoft",
+    "libxslt"
+  ],
+  "libyaml": [
+    "pyyaml",
+    "libyaml"
+  ],
+  "libyang": [
+    "cesnet",
+    "libyang"
+  ],
+  "libzip": [
+    "libzip",
+    "libzip"
+  ],
+  "libzmq": [
+    "zeromq",
+    "libzmq"
+  ],
+  "lighttpd": [
+    "lighttpd",
+    "lighttpd"
+  ],
+  "linux-pam": [
+    "linux-pam",
+    "linux-pam"
+  ],
+  "linuxptp": [
+    "linuxptp_project",
+    "linuxptp"
+  ],
+  "lldpd": [
+    "lldpd_project",
+    "lldpd"
+  ],
+  "llhttp": [
+    "llhttp",
+    "llhttp"
+  ],
+  "lm-sensors": [
+    "lm_sensors",
+    "lm_sensors"
+  ],
+  "lodepng": [
+    "lodev",
+    "lodepng"
+  ],
+  "loramac-node": [
+    "semtech",
+    "loramac-node"
+  ],
+  "lrzsz": [
+    "lrzsz_project",
+    "lrzsz"
+  ],
+  "lsquic": [
+    "litespeedtech",
+    "lsquic"
+  ],
+  "lttng-ust": [
+    "lttng",
+    "ust"
+  ],
+  "lua": [
+    "lua",
+    "lua"
+  ],
+  "lua-nginx-module": [
+    "openresty",
+    "lua-nginx-module"
+  ],
+  "luajit2": [
+    "luajit",
+    "luajit"
+  ],
+  "lvm2": [
+    "heinz_mauelshagen",
+    "lvm2"
+  ],
+  "lwext4": [
+    "gkostka",
+    "lwext4"
+  ],
+  "lwext4 (ext2, ext3 and ext4 library)": [
+    "gkostka",
+    "lwext4"
+  ],
+  "lwip": [
+    "lwip_project",
+    "lwip"
+  ],
+  "lxc": [
+    "linuxcontainers",
+    "lxc"
+  ],
+  "lxcfs": [
+    "canonical",
+    "lxcfs"
+  ],
+  "lz4": [
+    "lz4_project",
+    "lz4"
+  ],
+  "mariadb-connector-c": [
+    "mariadb",
+    "connector\\/c"
+  ],
+  "marlin": [
+    "marlinfw",
+    "marlin_firmware"
+  ],
+  "matter-src": [
+    "csa-iot",
+    "matter"
+  ],
+  "mbed crypto (psa crypto reference implementation)": [
+    "arm",
+    "mbed_crypto"
+  ],
+  "mbed tls": [
+    "arm",
+    "mbed_tls"
+  ],
+  "mbed-coap": [
+    "arm",
+    "mbed-coap"
+  ],
+  "mbed-crypto": [
+    "arm",
+    "mbed_crypto"
+  ],
+  "mbed-os": [
+    "arm",
+    "mbed_os"
+  ],
+  "mbed-os-connectivity": [
+    "arm",
+    "mbed_os"
+  ],
+  "mbedtls": [
+    "arm",
+    "mbed_tls"
+  ],
+  "mc": [
+    "midnight_commander",
+    "midnight_commander"
+  ],
+  "md4c": [
+    "md4c_project",
+    "md4c"
+  ],
+  "mdnsresponder": [
+    "apple",
+    "mdnsresponder"
+  ],
+  "memcached": [
+    "memcached",
+    "memcached"
+  ],
+  "micro-ecc": [
+    "micro-ecc_project",
+    "micro-ecc"
+  ],
+  "micropython": [
+    "micropython",
+    "micropython"
+  ],
+  "mini-snmpd": [
+    "minisnmpd_project",
+    "minisnmpd"
+  ],
+  "miniaudio": [
+    "mackron",
+    "miniaudio"
+  ],
+  "miniupnpc": [
+    "miniupnp_project",
+    "miniupnpc"
+  ],
+  "miniupnpd": [
+    "miniupnp_project",
+    "miniupnpd"
+  ],
+  "miniz": [
+    "miniz_project",
+    "miniz"
+  ],
+  "minizip-ng": [
+    "zlib-ng",
+    "minizip-ng"
+  ],
+  "mit kerberos 5": [
+    "mit",
+    "kerberos_5"
+  ],
+  "mjs": [
+    "cesanta",
+    "mjs"
+  ],
+  "mjs (cesanta restricted javascript engine)": [
+    "cesanta",
+    "mjs"
+  ],
+  "mjson": [
+    "mjson_project",
+    "mjson"
+  ],
+  "moddable-xs": [
+    "moddable",
+    "moddable_sdk"
+  ],
+  "modsecurity": [
+    "owasp",
+    "modsecurity"
+  ],
+  "mongo-c-driver": [
+    "mongodb",
+    "c_driver"
+  ],
+  "mongoose": [
+    "cesanta",
+    "mongoose"
+  ],
+  "monit": [
+    "tildeslash",
+    "monit"
+  ],
+  "monkey": [
+    "monkey-project",
+    "monkey"
+  ],
+  "mosh": [
+    "keith_winstein",
+    "mosh"
+  ],
+  "mpd": [
+    "musicpd",
+    "music_player_daemon"
+  ],
+  "mpv": [
+    "mpv",
+    "mpv"
+  ],
+  "mrouted": [
+    "troglobit",
+    "mrouted"
+  ],
+  "mruby": [
+    "mruby",
+    "mruby"
+  ],
+  "mtd-utils": [
+    "mtd-utils_project",
+    "mtd-utils"
+  ],
+  "mtower": [
+    "samsung",
+    "mtower"
+  ],
+  "mujs": [
+    "artifex",
+    "mujs"
+  ],
+  "multipath-tools": [
+    "opensvc",
+    "multipath-tools"
+  ],
+  "mupdf": [
+    "artifex",
+    "mupdf"
+  ],
+  "music player daemon": [
+    "musicpd",
+    "music_player_daemon"
+  ],
+  "musl": [
+    "musl-libc",
+    "musl"
+  ],
+  "mxml": [
+    "mini-xml_project",
+    "mini-xml"
+  ],
+  "nagios-plugins": [
+    "nagios",
+    "plugins"
+  ],
+  "nanomq": [
+    "emqx",
+    "nanomq"
+  ],
+  "nanopb": [
+    "nanopb_project",
+    "nanopb"
+  ],
+  "nasa-cfe": [
+    "nasa",
+    "core_flight_system"
+  ],
+  "nasa-osal": [
+    "nasa",
+    "core_flight_system"
+  ],
+  "ncurses": [
+    "invisible-island",
+    "ncurses"
+  ],
+  "ndpi": [
+    "ntop",
+    "ndpi"
+  ],
+  "net-snmp": [
+    "net-snmp",
+    "net-snmp"
+  ],
+  "netatalk": [
+    "netatalk",
+    "netatalk"
+  ],
+  "nettle": [
+    "nettle_project",
+    "nettle"
+  ],
+  "netxduo": [
+    "eclipse",
+    "threadx_netx_duo"
+  ],
+  "neuron": [
+    "emqx",
+    "neuron"
+  ],
+  "newlib": [
+    "newlib_project",
+    "newlib"
+  ],
+  "nghttp2": [
+    "nghttp2",
+    "nghttp2"
+  ],
+  "ngiflib": [
+    "miniupnp_project",
+    "ngiflib"
+  ],
+  "nginx": [
+    "f5",
+    "nginx"
+  ],
+  "nginx-unit": [
+    "f5",
+    "nginx_unit"
+  ],
+  "ngtcp2": [
+    "tatsuhiro-t",
+    "ngtcp2"
+  ],
+  "nimble": [
+    "apache",
+    "nimble"
+  ],
+  "nix": [
+    "nixos",
+    "nix"
+  ],
+  "njs": [
+    "f5",
+    "njs"
+  ],
+  "nlohmann-json": [
+    "nlohmann",
+    "json"
+  ],
+  "nrpe": [
+    "nagios",
+    "remote_plug_in_executor"
+  ],
+  "nsd": [
+    "nlnetlabs",
+    "nsd"
+  ],
+  "ntfs-3g": [
+    "tuxera",
+    "ntfs-3g"
+  ],
+  "ntpsec": [
+    "ntpsec",
+    "ntpsec"
+  ],
+  "nuttx-apps": [
+    "apache",
+    "nuttx"
+  ],
+  "nuttx-kernel": [
+    "apache",
+    "nuttx"
+  ],
+  "ofono": [
+    "ofono_project",
+    "ofono"
+  ],
+  "oniguruma": [
+    "oniguruma_project",
+    "oniguruma"
+  ],
+  "onion": [
+    "onion_project",
+    "onion"
+  ],
+  "open-amp": [
+    "linaro",
+    "openamp"
+  ],
+  "open-iscsi": [
+    "open-iscsi_project",
+    "open-iscsi"
+  ],
+  "open5gs": [
+    "open5gs",
+    "open5gs"
+  ],
+  "open62541": [
+    "open62541",
+    "open62541"
+  ],
+  "openamp": [
+    "linaro",
+    "openamp"
+  ],
+  "opencryptoki": [
+    "opencryptoki_project",
+    "opencryptoki"
+  ],
+  "opendkim": [
+    "opendkim",
+    "opendkim"
+  ],
+  "opendoas": [
+    "opendoas_project",
+    "opendoas"
+  ],
+  "opener": [
+    "opener_project",
+    "opener"
+  ],
+  "openexr": [
+    "openexr",
+    "openexr"
+  ],
+  "openfpgaloader": [
+    "trabucayre",
+    "openfpgaloader"
+  ],
+  "openh264": [
+    "cisco",
+    "openh264"
+  ],
+  "openjpeg": [
+    "uclouvain",
+    "openjpeg"
+  ],
+  "openldap": [
+    "openldap",
+    "openldap"
+  ],
+  "openlitespeed": [
+    "litespeedtech",
+    "openlitespeed"
+  ],
+  "opennds": [
+    "opennds",
+    "opennds"
+  ],
+  "openntpd": [
+    "openntpd",
+    "openntpd"
+  ],
+  "openocd": [
+    "openocd",
+    "open_on-chip_debugger"
+  ],
+  "openrc": [
+    "openrc_project",
+    "openrc"
+  ],
+  "opensc": [
+    "opensc_project",
+    "opensc"
+  ],
+  "opensips": [
+    "opensips",
+    "opensips"
+  ],
+  "openssh": [
+    "openbsd",
+    "openssh"
+  ],
+  "openssl": [
+    "openssl",
+    "openssl"
+  ],
+  "openthread": [
+    "google",
+    "openthread"
+  ],
+  "openv2g": [
+    "siemens",
+    "openv2g"
+  ],
+  "openvpn": [
+    "openvpn",
+    "openvpn"
+  ],
+  "openzfs": [
+    "openzfs",
+    "openzfs"
+  ],
+  "optee_os": [
+    "trustedfirmware",
+    "op-tee"
+  ],
+  "opus": [
+    "opus-codec",
+    "opus"
+  ],
+  "opus audio codec": [
+    "opus-codec",
+    "opus"
+  ],
+  "opusfile": [
+    "xiph",
+    "opusfile"
+  ],
+  "ostree": [
+    "ostree_project",
+    "ostree"
+  ],
+  "ovs": [
+    "openvswitch",
+    "openvswitch"
+  ],
+  "p-net": [
+    "rt-labs",
+    "p-net"
+  ],
+  "p11-kit": [
+    "p11-kit_project",
+    "p11-kit"
+  ],
+  "pacemaker": [
+    "clusterlabs",
+    "pacemaker"
+  ],
+  "paho-mqtt-embedded-c": [
+    "eclipse",
+    "paho_mqtt_c\\/c\\+\\+_client"
+  ],
+  "pam_tacplus": [
+    "pam_tacplus_project",
+    "pam_tacplus"
+  ],
+  "pcre2": [
+    "pcre",
+    "pcre2"
+  ],
+  "pesign": [
+    "pesign_project",
+    "pesign"
+  ],
+  "php-src": [
+    "php",
+    "php"
+  ],
+  "picocom": [
+    "picocom_project",
+    "picocom"
+  ],
+  "picotcp": [
+    "altran",
+    "picotcp"
+  ],
+  "pigz": [
+    "zlib",
+    "pigz"
+  ],
+  "pimd": [
+    "troglobit",
+    "pimd"
+  ],
+  "pixman": [
+    "pixman",
+    "pixman"
+  ],
+  "pjproject": [
+    "teluu",
+    "pjsip"
+  ],
+  "pkcs11-provider": [
+    "latchset",
+    "pkcs11-provider"
+  ],
+  "poco": [
+    "pocoproject",
+    "poco"
+  ],
+  "poco c++ libraries": [
+    "pocoproject",
+    "poco"
+  ],
+  "polkit": [
+    "polkit_project",
+    "polkit"
+  ],
+  "ppp": [
+    "point-to-point_protocol_project",
+    "point-to-point_protocol"
+  ],
+  "procps-ng": [
+    "procps-ng_project",
+    "procps-ng"
+  ],
+  "proftpd": [
+    "proftpd",
+    "proftpd"
+  ],
+  "protobuf": [
+    "google",
+    "protobuf"
+  ],
+  "protobuf-c": [
+    "protobuf-c_project",
+    "protobuf-c"
+  ],
+  "proxychains-ng": [
+    "proxychains-ng_project",
+    "proxychains-ng"
+  ],
+  "pugixml": [
+    "pugixml_project",
+    "pugixml"
+  ],
+  "pulseaudio": [
+    "pulseaudio",
+    "pulseaudio"
+  ],
+  "pupnp": [
+    "libupnp_project",
+    "libupnp"
+  ],
+  "pure-ftpd": [
+    "pureftpd",
+    "pure-ftpd"
+  ],
+  "px4-src": [
+    "dronecode",
+    "px4_drone_autopilot"
+  ],
+  "qatzip": [
+    "intel",
+    "qatzip"
+  ],
+  "qpdf": [
+    "qpdf_project",
+    "qpdf"
+  ],
+  "qpid-proton": [
+    "apache",
+    "qpid_proton"
+  ],
+  "quickjs-ng": [
+    "quickjs-ng",
+    "quickjs"
+  ],
+  "rabbitmq-c": [
+    "rabbitmq-c_project",
+    "rabbitmq-c"
+  ],
+  "radvd": [
+    "litech",
+    "router_advertisement_daemon"
+  ],
+  "rapidjson": [
+    "tencent",
+    "rapidjson"
+  ],
+  "rauc": [
+    "pengutronix",
+    "rauc"
+  ],
+  "raylib": [
+    "raylib",
+    "raylib"
+  ],
+  "rdesktop": [
+    "rdesktop",
+    "rdesktop"
+  ],
+  "readline": [
+    "gnu",
+    "readline"
+  ],
+  "redis": [
+    "redis",
+    "redis"
+  ],
+  "relic": [
+    "relic_project",
+    "relic"
+  ],
+  "rhash": [
+    "rhash_project",
+    "rhash"
+  ],
+  "riot os core": [
+    "riot-os",
+    "riot"
+  ],
+  "riot os device drivers (drivers/)": [
+    "riot-os",
+    "riot"
+  ],
+  "riot os system libraries (sys/)": [
+    "riot-os",
+    "riot"
+  ],
+  "riot-core": [
+    "riot-os",
+    "riot"
+  ],
+  "riot-drivers": [
+    "riot-os",
+    "riot"
+  ],
+  "riot-sys": [
+    "riot-os",
+    "riot"
+  ],
+  "rizin": [
+    "rizin",
+    "rizin"
+  ],
+  "rlottie": [
+    "samsung",
+    "rlottie"
+  ],
+  "rng-tools": [
+    "rng-tools_project",
+    "rng-tools"
+  ],
+  "rpm": [
+    "rpm",
+    "rpm"
+  ],
+  "rspamd": [
+    "rspamd_project",
+    "rspamd"
+  ],
+  "rsync": [
+    "samba",
+    "rsync"
+  ],
+  "rsyslog": [
+    "rsyslog",
+    "rsyslog"
+  ],
+  "rt-thread": [
+    "rt-thread",
+    "rt-thread"
+  ],
+  "rt-thread-kernel": [
+    "rt-thread",
+    "rt-thread"
+  ],
+  "rtl_433": [
+    "rtl_433_project",
+    "rtl_433"
+  ],
+  "ruby": [
+    "ruby-lang",
+    "ruby"
+  ],
+  "samurai": [
+    "samurai_project",
+    "samurai"
+  ],
+  "scp-firmware": [
+    "arm",
+    "scp_firmware"
+  ],
+  "sdl": [
+    "libsdl",
+    "simple_directmedia_layer"
+  ],
+  "sdl-ttf": [
+    "libsdl",
+    "sdl_ttf"
+  ],
+  "shadow": [
+    "shadow_project",
+    "shadow"
+  ],
+  "shadowsocks-libev": [
+    "shadowsocks",
+    "shadowsocks-libev"
+  ],
+  "sipp": [
+    "sipp_project",
+    "sipp"
+  ],
+  "smartdns": [
+    "pymumu",
+    "smartdns"
+  ],
+  "smartmontools": [
+    "smartmontools",
+    "smartmontools"
+  ],
+  "smcroute": [
+    "troglobit",
+    "smcroute"
+  ],
+  "snappy": [
+    "google",
+    "snappy"
+  ],
+  "sngrep": [
+    "irontec",
+    "sngrep"
+  ],
+  "sofia-sip": [
+    "signalwire",
+    "sofia-sip"
+  ],
+  "softethervpn": [
+    "softether",
+    "vpn"
+  ],
+  "spdlog": [
+    "gabime",
+    "spdlog"
+  ],
+  "speex": [
+    "xiph",
+    "speex"
+  ],
+  "sqlcipher": [
+    "zetetic",
+    "sqlcipher"
+  ],
+  "sqlite": [
+    "sqlite",
+    "sqlite"
+  ],
+  "squashfs-tools": [
+    "squashfs-tools_project",
+    "squashfs-tools"
+  ],
+  "squid": [
+    "squid-cache",
+    "squid"
+  ],
+  "srt": [
+    "srtalliance",
+    "secure_reliable_transport"
+  ],
+  "sslh": [
+    "sslh_project",
+    "sslh"
+  ],
+  "strace": [
+    "paul_kranenburg",
+    "strace"
+  ],
+  "strongswan": [
+    "strongswan",
+    "strongswan"
+  ],
+  "stunnel": [
+    "stunnel",
+    "stunnel"
+  ],
+  "sudo": [
+    "sudo_project",
+    "sudo"
+  ],
+  "suricata": [
+    "oisf",
+    "suricata"
+  ],
+  "swtpm": [
+    "swtpm_project",
+    "swtpm"
+  ],
+  "swupdate": [
+    "swupdate",
+    "swupdate"
+  ],
+  "syslog-ng": [
+    "oneidentity",
+    "syslog-ng"
+  ],
+  "sysstat": [
+    "sysstat_project",
+    "sysstat"
+  ],
+  "systemd": [
+    "systemd_project",
+    "systemd"
+  ],
+  "taglib": [
+    "scott_wheeler",
+    "taglib"
+  ],
+  "tang": [
+    "tang_project",
+    "tang"
+  ],
+  "tasmota": [
+    "tasmota_project",
+    "tasmota"
+  ],
+  "tcl": [
+    "tcl",
+    "tcl"
+  ],
+  "tcmu-runner": [
+    "tcmu-runner_project",
+    "tcmu-runner"
+  ],
+  "tcpdump": [
+    "tcpdump",
+    "tcpdump"
+  ],
+  "tcpreplay": [
+    "broadcom",
+    "tcpreplay"
+  ],
+  "tcsh": [
+    "tcsh",
+    "tcsh"
+  ],
+  "tencentos-tiny": [
+    "tencent",
+    "tencentos-tiny"
+  ],
+  "tencentos-tiny-kernel": [
+    "tencent",
+    "tencentos-tiny"
+  ],
+  "tesseract": [
+    "tesseract-ocr",
+    "tesseract_ocr"
+  ],
+  "tf-psa-crypto": [
+    "trustedfirmware",
+    "tf-psa-crypto"
+  ],
+  "tftp-hpa": [
+    "h_peter_anvin",
+    "tftp-hpa"
+  ],
+  "theora": [
+    "xiph",
+    "theora"
+  ],
+  "threadx": [
+    "eclipse",
+    "threadx"
+  ],
+  "thrift": [
+    "apache",
+    "thrift"
+  ],
+  "tigervnc": [
+    "tigervnc",
+    "tigervnc"
+  ],
+  "timescaledb": [
+    "timescale",
+    "timescaledb"
+  ],
+  "tinc": [
+    "tinc-vpn",
+    "tinc"
+  ],
+  "tinydtls": [
+    "eclipse",
+    "tinydtls"
+  ],
+  "tinyexr": [
+    "tinyexr_project",
+    "tinyexr"
+  ],
+  "tinyobjloader": [
+    "tinyobjloader_project",
+    "tinyobjloader"
+  ],
+  "tinyproxy": [
+    "tinyproxy_project",
+    "tinyproxy"
+  ],
+  "tinyxml2": [
+    "tinyxml2_project",
+    "tinyxml2"
+  ],
+  "tmux": [
+    "tmux_project",
+    "tmux"
+  ],
+  "tor": [
+    "torproject",
+    "tor"
+  ],
+  "toybox": [
+    "toybox_project",
+    "toybox"
+  ],
+  "tpm2-tools": [
+    "tpm2-tools_project",
+    "tpm2-tools"
+  ],
+  "tpm2-tss": [
+    "tpm2_software_stack_project",
+    "tpm2_software_stack"
+  ],
+  "trafficserver": [
+    "apache",
+    "traffic_server"
+  ],
+  "transmission": [
+    "transmissionbt",
+    "transmission"
+  ],
+  "u-boot": [
+    "denx",
+    "u-boot"
+  ],
+  "uc-lib": [
+    "micrium",
+    "uc\\/lib"
+  ],
+  "uc-tcp-ip": [
+    "weston-embedded",
+    "uc-tcp-ip"
+  ],
+  "uclibc-ng": [
+    "uclibc-ng_project",
+    "uclibc-ng"
+  ],
+  "uftpd": [
+    "troglobit",
+    "uftpd"
+  ],
+  "ulfius": [
+    "ulfius_project",
+    "ulfius"
+  ],
+  "unbound": [
+    "nlnetlabs",
+    "unbound"
+  ],
+  "unicorn": [
+    "unicorn-engine",
+    "unicorn_engine"
+  ],
+  "upx": [
+    "upx",
+    "upx"
+  ],
+  "uriparser": [
+    "uriparser_project",
+    "uriparser"
+  ],
+  "usbmuxd": [
+    "nikias_bassen",
+    "usbmuxd"
+  ],
+  "usbx": [
+    "eclipse",
+    "threadx_usbx"
+  ],
+  "usrsctp": [
+    "usrsctp_project",
+    "usrsctp"
+  ],
+  "util-linux": [
+    "kernel",
+    "util-linux"
+  ],
+  "uwebsockets": [
+    "uwebsockets_project",
+    "uwebsockets"
+  ],
+  "valkey": [
+    "lfprojects",
+    "valkey"
+  ],
+  "varnish": [
+    "varnish_cache_project",
+    "varnish_cache"
+  ],
+  "veracrypt": [
+    "idrix",
+    "veracrypt"
+  ],
+  "vsftpd": [
+    "vsftpd_project",
+    "vsftpd"
+  ],
+  "wabt": [
+    "webassembly",
+    "wabt"
+  ],
+  "wakaama": [
+    "eclipse",
+    "wakaama"
+  ],
+  "wamr": [
+    "bytecodealliance",
+    "webassembly_micro_runtime"
+  ],
+  "wasm3": [
+    "wasm3_project",
+    "wasm3"
+  ],
+  "wavpack": [
+    "wavpack",
+    "wavpack"
+  ],
+  "wayland": [
+    "wayland",
+    "wayland"
+  ],
+  "wazuh-src": [
+    "wazuh",
+    "wazuh"
+  ],
+  "webassembly micro runtime (wamr)": [
+    "bytecodealliance",
+    "webassembly_micro_runtime"
+  ],
+  "weston embedded uc/lib": [
+    "micrium",
+    "uc\\/lib"
+  ],
+  "weston embedded uc/tcp-ip": [
+    "weston-embedded",
+    "uc-tcp-ip"
+  ],
+  "wget": [
+    "gnu",
+    "wget"
+  ],
+  "wget2": [
+    "gnu",
+    "wget2"
+  ],
+  "wolfboot": [
+    "wolfssl",
+    "wolfboot"
+  ],
+  "wolfboot secure bootloader": [
+    "wolfssl",
+    "wolfboot"
+  ],
+  "wolfmqtt": [
+    "wolfssl",
+    "wolfmqtt"
+  ],
+  "wolfprovider": [
+    "wolfssl",
+    "wolfprovider"
+  ],
+  "wolfssh": [
+    "wolfssh",
+    "wolfssh"
+  ],
+  "wolfssl": [
+    "wolfssl",
+    "wolfssl"
+  ],
+  "xdelta": [
+    "xdelta",
+    "xdelta3"
+  ],
+  "xrdp": [
+    "neutrinolabs",
+    "xrdp"
+  ],
+  "xz": [
+    "tukaani",
+    "xz"
+  ],
+  "yajl": [
+    "yajl_project",
+    "yajl"
+  ],
+  "yaml-cpp": [
+    "yaml-cpp_project",
+    "yaml-cpp"
+  ],
+  "yara": [
+    "virustotal",
+    "yara"
+  ],
+  "yubico-piv-tool": [
+    "yubico",
+    "libykpiv"
+  ],
+  "yyjson": [
+    "ibireme",
+    "yyjson"
+  ],
+  "zbar": [
+    "zbar_project",
+    "zbar"
+  ],
+  "zint": [
+    "zint",
+    "barcode_generator"
+  ],
+  "zlib": [
+    "zlib",
+    "zlib"
+  ],
+  "zlog": [
+    "zlog_project",
+    "zlog"
+  ],
+  "zrtpcpp": [
+    "wernerd",
+    "zrtpcpp"
+  ],
+  "zsh": [
+    "zsh",
+    "zsh"
+  ],
+  "zstandard (zstd)": [
+    "facebook",
+    "zstandard"
+  ],
+  "zstd": [
+    "facebook",
+    "zstandard"
+  ],
+  "zvbi": [
+    "zapping-vbi",
+    "zvbi"
+  ],
+  "zziplib": [
+    "gdraheim",
+    "zziplib"
+  ]
+}

@@ -275,7 +275,7 @@ def init_command():
 def vuln_scan(
     input_file: Path = typer.Argument(..., help="Firmware file or CycloneDX SBOM JSON to scan", exists=True),
     output: Optional[Path] = typer.Option(None, "-o", "--output", help="Output file or directory"),
-    format: Optional[list[str]] = typer.Option(None, "-f", "--format", help="Output formats: vuln-json, vuln-html (default: vuln-json)"),
+    format: Optional[list[str]] = typer.Option(None, "-f", "--format", help="Output formats: vuln-json, vuln-html, vex (default: vuln-json)"),
     rtos_hint: Optional[str] = typer.Option(None, "--rtos", help="Expected RTOS type (firmware mode only)"),
     arch_hint: Optional[str] = typer.Option(None, "--arch", help="Expected architecture (firmware mode only)"),
     timeout: int = typer.Option(300, "--timeout", help="Analysis timeout in seconds"),
@@ -294,6 +294,7 @@ def vuln_scan(
     Output formats (use -f, default vuln-json):
       vuln-json - Detailed JSON vulnerability report
       vuln-html - Standalone HTML vulnerability report
+      vex       - CycloneDX 1.6 SBOM with embedded VEX (vulnerabilities)
     """
     from ..vuln.matcher import VulnMatcher
     from ..vuln.osv_client import OSVClient
@@ -435,8 +436,10 @@ def _resolve_vuln_formats(format_list: list[str] | None, output: Path | None) ->
                     formats.append("vuln-json")
                 elif part in ("vuln-html", "vuln_html", "html"):
                     formats.append("vuln-html")
+                elif part in ("vex", "cyclonedx-vex", "cdx-vex"):
+                    formats.append("vex")
                 elif part == "all":
-                    return ["vuln-json", "vuln-html"]
+                    return ["vuln-json", "vuln-html", "vex"]
         return formats if formats else ["vuln-json"]
 
     if output:
@@ -452,6 +455,7 @@ def _export_vuln_results(vuln_result, formats: list[str], output: Path | None, i
     """Export vulnerability scan results."""
     from ..vuln.report_json import generate_vuln_json
     from ..vuln.report_html import generate_vuln_html
+    from ..vuln.report_vex import generate_cyclonedx_vex
 
     base_name = input_file.stem
 
@@ -482,6 +486,18 @@ def _export_vuln_results(vuln_result, formats: list[str], output: Path | None, i
                 continue
             out_path.write_text(content, encoding="utf-8")
             console.print(f"[green]Vulnerability HTML report written to {out_path}[/green]")
+
+        elif fmt in ("vex", "cyclonedx-vex"):
+            content = generate_cyclonedx_vex(vuln_result)
+            if output and len(formats) > 1:
+                out_path = (output / f"{base_name}_vex.json") if output.is_dir() else output.with_suffix(".vex.json")
+            elif output:
+                out_path = output
+            else:
+                print(content)
+                continue
+            out_path.write_text(content, encoding="utf-8")
+            console.print(f"[green]CycloneDX 1.6 VEX written to {out_path}[/green]")
 
 
 def _resolve_formats(format_list: list[str] | None, output: Path | None) -> list[str]:

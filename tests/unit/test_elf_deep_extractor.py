@@ -148,3 +148,52 @@ def test_crypto_magic_constants(extractor):
     """Test Layer 4: Cryptographic magic constants detection."""
     data = b"\x7fELF" + b"\x00" * 20 + AES_SBOX_PREFIX + b"\x00" * 20
     res = extractor._extract_crypto_constants(data, extractor.extract("libsec.so", b"\x7fELF" + b"\x00" * 60) or extractor.__class__())
+
+
+def test_anchored_signatures(extractor):
+    """Test Layer 2.5: Anchored format-string + version-shape extraction."""
+    # dnsmasq with separated format string and version string
+    dnsmasq_elf = b"\x7fELF" + b"\x00" * 20 + b"Dnsmasq version %s\x00some other data\x002.86\x00more data"
+    res = extractor.extract("dnsmasq", dnsmasq_elf)
+    assert res is not None
+    assert res.version == "2.86"
+    assert res.canonical_name == "dnsmasq"
+    assert "Anchored" in res.evidence
+
+    # hostapd
+    hostapd_elf = b"\x7fELF" + b"\x00" * 20 + b"hostapd v%s\x002.10\x00tail"
+    res_hapd = extractor.extract("hostapd", hostapd_elf)
+    assert res_hapd is not None
+    assert res_hapd.version == "2.10"
+    assert res_hapd.canonical_name == "hostapd"
+
+
+def test_symbol_sets_containment(extractor):
+    """Test Layer 3.5: Multi-symbol set containment matching."""
+    # libogg with 12 matching API symbols
+    ogg_syms = [
+        "ogg_stream_init", "ogg_stream_clear", "ogg_stream_packetin", "ogg_stream_pageout",
+        "ogg_stream_pagein", "ogg_stream_packetout", "ogg_stream_flush", "ogg_sync_init",
+        "ogg_sync_buffer", "ogg_sync_wrote", "ogg_sync_pageout", "ogg_sync_pageseek"
+    ]
+    ogg_data = b"\x7fELF" + b"\x00" * 20 + b"".join(f"\x00{s}\x00".encode("ascii") for s in ogg_syms)
+    res = extractor.extract("libcustom_audio.so", ogg_data)
+    assert res is not None
+    assert res.canonical_name == "ogg"
+    assert res.version == "detected"
+    assert "symbol set matched" in res.evidence
+
+
+def test_go_buildinfo(extractor):
+    """Test Layer 2.8: Go embedded buildinfo extraction."""
+    from firmware_scanner.extraction.elf_deep_extractor import GO_MAGIC
+    # build a small valid Go 1.18+ buildinfo header
+    # GO_MAGIC (14 bytes) + byte 14 (pointer size 8) + byte 15 (flags 2: inline strings)
+    # followed by 16 padding bytes to reach header 32, then uvarint length (6) + b"go1.22"
+    header = GO_MAGIC + bytes([8, 2]) + b"\x00" * 16 + bytes([6]) + b"go1.22"
+    go_elf = b"\x7fELF" + b"\x00" * 30 + header + b"\x00" * 20
+    res = extractor.extract("go_service", go_elf)
+    assert res is not None
+    assert res.canonical_name == "golang"
+    assert res.version == "1.22"
+    assert "Go embedded buildinfo" in res.evidence

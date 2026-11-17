@@ -62,6 +62,10 @@ LANDMARK_SYMBOLS: list[tuple[str, str, str, str]] = [
     ("hb_version_string", "harfbuzz", "1.0.0+", "HarfBuzz version API"),
     ("uv_version_string", "libuv", "1.0.0+", "libuv version API"),
     ("event_base_new", "libevent", "2.0.1+", "event_base_new introduced in libevent 2.0"),
+    ("ChildElementCount", "tinyxml2", "9.0.0+", "ChildElementCount API introduced in TinyXML-2 9.0.0"),
+    ("QueryUnsigned64Value", "tinyxml2", "8.0.0+", "QueryUnsigned64Value API introduced in TinyXML-2 8.0.0"),
+    ("hb_subset_plan_create_or_fail", "harfbuzz", "2.9.0+", "hb_subset_plan API introduced in HarfBuzz 2.9.0"),
+    ("ext2fs_open2", "e2fsprogs", "1.42.0+", "ext2fs_open2 API in e2fsprogs"),
 ]
 
 
@@ -300,6 +304,82 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
     ],
 }
 
+# Anchored format-string + version-shape extraction patterns (from gangmu)
+ANCHORED_PATTERNS: list[tuple[str, str, tuple[bytes, ...], bytes]] = [
+    ("dnsmasq", "dnsmasq", (b"Dnsmasq version %s", b"dnsmasq-"), rb"2\.\d{2,3}"),
+    ("dropbear", "dropbear", (b"SSH-2.0-dropbear", b"Dropbear SSH"), rb"20\d\d\.\d{2}"),
+    ("ppp", "ppp", (b"pppd version %s",), rb"2\.[45]\.\d{1,2}"),
+    ("musl", "musl", (b"musl libc (",), rb"1\.[0-2]\.\d{1,2}"),
+    ("hostapd", "hostapd", (b"hostapd v%s",), rb"2\.\d{1,2}(?:-devel)?"),
+    ("wpa_supplicant", "wpa_supplicant", (b"wpa_supplicant v%s",), rb"2\.\d{1,2}(?:-devel)?"),
+    ("iw", "iw", (b"iw version %s",), rb"[4-9]\.\d{1,2}"),
+    ("json-c", "json-c", (b"json_c_version_num", b"json-c version"), rb"0\.1\d(?:\.\d{1,2})?"),
+    ("busybox", "busybox", (b"BusyBox v%s",), rb"1\.\d{2}\.\d{1,2}"),
+]
+
+# Multi-symbol sets containment matching for stripped libraries (from gangmu)
+SYMBOL_SETS: list[tuple[str, str, int, tuple[str, ...]]] = [
+    ("libogg", "ogg", 12, (
+        "ogg_stream_init", "ogg_stream_clear", "ogg_stream_packetin", "ogg_stream_pageout",
+        "ogg_stream_pagein", "ogg_stream_packetout", "ogg_stream_flush", "ogg_sync_init",
+        "ogg_sync_buffer", "ogg_sync_wrote", "ogg_sync_pageout", "ogg_sync_pageseek",
+        "ogg_page_serialno", "ogg_page_granulepos", "ogg_page_checksum_set",
+        "oggpack_writeinit", "oggpack_read", "oggpack_write", "oggpackB_read")),
+    ("speexdsp", "speex", 8, (
+        "speex_echo_state_init", "speex_echo_cancellation", "speex_echo_capture",
+        "speex_echo_playback", "speex_preprocess_state_init", "speex_preprocess_run",
+        "speex_resampler_init", "speex_resampler_process_float", "jitter_buffer_init",
+        "jitter_buffer_put", "jitter_buffer_get", "speex_decorrelate_new",
+        "speex_buffer_init", "kiss_fft_alloc", "kiss_fftr_alloc", "filterbank_new")),
+    ("sonic", "sonic", 8, (
+        "sonicCreateStream", "sonicDestroyStream", "sonicFlushStream", "sonicSetSpeed",
+        "sonicSetPitch", "sonicSetRate", "sonicSetVolume", "sonicSetChordPitch",
+        "sonicWriteShortToStream", "sonicReadShortFromStream", "sonicWriteFloatToStream",
+        "sonicReadFloatFromStream", "sonicSamplesAvailable", "sonicChangeShortSpeed")),
+    ("pvmp3dec", "pvmp3dec", 5, (
+        "pvmp3_InitDecoder", "pvmp3_framedecoder", "pvmp3_decode_header",
+        "pvmp3_alias_reduction", "pvmp3_dct_9", "pvmp3_dct_16", "pvmp3_mdct_18",
+        "pvmp3_decode_huff_cw_tab0", "pvmp3_poly_phase_synthesis", "pvmp3_stereo_proc")),
+    ("pvmp4audiodecoder", "pvmp4audiodecoder", 5, (
+        "PVMP4AudioDecodeFrame", "PVMP4AudioDecoderConfig", "PVMP4AudioDecoderInitLibrary",
+        "PVMP4AudioDecoderGetMemRequirements", "PVMP4AudioDecoderResetBuffer",
+        "PVMP4SetAudioConfig", "PVMP4AudioDecoderDisableAacPlus")),
+    ("opencore-amrnb", "opencore-amr", 6, (
+        "GSMInitDecode", "GSMFrameDecode", "GSMDecodeFrameExit", "AMRDecode",
+        "Decoder_amr_init", "Decoder_amr", "Speech_Decode_Frame_reset", "Bgn_scd",
+        "Post_Filter", "D_plsf_3", "Lsp_Az")),
+    ("libplctag", "libplctag", 16, (
+        "plc_tag_create_ex", "plc_tag_destroy", "plc_tag_read", "plc_tag_write", "plc_tag_status",
+        "plc_tag_shutdown", "plc_tag_get_size", "plc_tag_set_raw_bytes", "plc_tag_get_raw_bytes",
+        "plc_tag_get_int8", "plc_tag_get_uint8", "plc_tag_get_int16", "plc_tag_get_uint16",
+        "plc_tag_get_int32", "plc_tag_get_uint32", "plc_tag_get_float32", "plc_tag_set_float32")),
+]
+
+GO_MAGIC = b"\xff Go buildinf:"
+
+
+def _uvarint(data: bytes, at: int) -> Optional[tuple[int, int]]:
+    value = shift = 0
+    for i in range(10):
+        if at + i >= len(data):
+            return None
+        b = data[at + i]
+        value |= (b & 0x7F) << shift
+        if not b & 0x80:
+            return value, at + i + 1
+        shift += 7
+    return None
+
+
+def _go_string(data: bytes, at: int) -> Optional[tuple[str, int]]:
+    got = _uvarint(data, at)
+    if got is None:
+        return None
+    size, at = got
+    if size > 4 * 1024 * 1024 or at + size > len(data):
+        return None
+    return data[at:at + size].decode("utf-8", "replace"), at + size
+
 
 class ELFDeepExtractor:
     """Multi-tier extractor combining ELF metadata, symbol versioning, and signatures."""
@@ -326,7 +406,7 @@ class ELFDeepExtractor:
             result.purl = f"pkg:generic/{clean_name}@{result.version}"
             return result
 
-        m_aidl = re.search(r'-V(\d+)-(?:ndk|cpp)(?:\.so)?$', clean_name)
+        m_aidl = re.search(r'-V(\d+(?:\.\d+)?)(?:-[a-z0-9_]+)?(?:\.so)?$', clean_name)
         if m_aidl:
             result.version = f"V{m_aidl.group(1)}"
             result.confidence = 0.95
@@ -347,10 +427,34 @@ class ELFDeepExtractor:
         self._extract_rodata_signatures(clean_name, data, result)
 
         # -------------------------------------------------------------
+        # Layer 2.2: Protobuf Integer Version Constant Extraction
+        # -------------------------------------------------------------
+        if not result.version:
+            self._extract_protobuf_version(clean_name, data, result)
+
+        # -------------------------------------------------------------
+        # Layer 2.5: Anchored Version Signatures (format string + shape)
+        # -------------------------------------------------------------
+        if not result.version:
+            self._extract_anchored_signatures(clean_name, data, result)
+
+        # -------------------------------------------------------------
+        # Layer 2.8: Go Runtime & Module Metadata
+        # -------------------------------------------------------------
+        if not result.version:
+            self._extract_go_buildinfo(data, result)
+
+        # -------------------------------------------------------------
         # Layer 3: Exported Symbol Milestones (Landmark APIs)
         # -------------------------------------------------------------
         if not result.version:
             self._extract_symbol_milestones(data, result)
+
+        # -------------------------------------------------------------
+        # Layer 3.5: Multi-Symbol Set Containment
+        # -------------------------------------------------------------
+        if not result.version:
+            self._extract_symbol_sets(clean_name, data, result)
 
         # -------------------------------------------------------------
         # Layer 4: Cryptographic Constants & Magic Numbers
@@ -542,13 +646,46 @@ class ELFDeepExtractor:
                     result.purl = f"pkg:generic/{filename}@BoringSSL"
                     return
 
+    def _extract_protobuf_version(self, filename: str, data: bytes, result: ELFExtractionResult):
+        """Extract Google Protobuf version from embedded integer constants in VerifyVersion."""
+        if not HAVE_ELFTOOLS or ("protobuf" not in filename.lower() and b"VerifyVersion" not in data):
+            return
+        try:
+            elffile = ELFFile(io.BytesIO(data))
+            for s in elffile.iter_sections():
+                if s.name in ('.dynsym', '.symtab'):
+                    for sym in s.iter_symbols():
+                        if 'VerifyVersion' in sym.name:
+                            func_addr = sym['st_value']
+                            for sec in elffile.iter_sections():
+                                if sec['sh_addr'] <= func_addr < sec['sh_addr'] + sec['sh_size']:
+                                    func_offset = sec['sh_offset'] + (func_addr - sec['sh_addr'])
+                                    func_bytes = data[func_offset:func_offset + min(sym['st_size'] or 256, 512)]
+                                    for i in range(len(func_bytes) - 4):
+                                        val = struct.unpack_from('<I', func_bytes, i)[0]
+                                        if 3000000 <= val <= 6050050:
+                                            major = val // 1000000
+                                            minor = (val % 1000000) // 1000
+                                            patch = val % 1000
+                                            if 3 <= major <= 6 and 0 <= minor <= 50 and 0 <= patch <= 50:
+                                                result.version = f"{major}.{minor}.{patch}"
+                                                result.confidence = 0.95
+                                                result.canonical_name = "protobuf"
+                                                result.method = ExtractionMethod.BINARY_SIGNATURE
+                                                result.evidence = f"Protobuf VerifyVersion constant {val} ({result.version})"
+                                                result.purl = f"pkg:generic/protobuf@{result.version}"
+                                                return
+        except Exception:
+            pass
+
     def _extract_symbol_milestones(self, data: bytes, result: ELFExtractionResult):
         """Check for landmark exported symbols indicating minimum version."""
         for sym, comp_name, min_ver, reason in LANDMARK_SYMBOLS:
-            sym_bytes = sym.encode('ascii') + b'\x00'
+            sym_bytes = sym.encode('ascii')
             if sym_bytes in data:
                 result.version = min_ver
                 result.confidence = 0.80
+                result.canonical_name = comp_name
                 result.method = ExtractionMethod.SYMBOL_TABLE
                 result.evidence = f"Landmark symbol: {reason}"
                 result.purl = f"pkg:generic/{result.canonical_name}@{min_ver}"
@@ -562,3 +699,68 @@ class ELFDeepExtractor:
             result.evidence = "ChaCha20 magic constant ('expand 32-byte k') detected"
         elif SHA256_IV in data:
             result.evidence = "SHA-256 initial constant vector detected"
+
+    def _extract_anchored_signatures(self, filename: str, data: bytes, result: ELFExtractionResult):
+        """Extract anchored version patterns where format string and version string are separate."""
+        if result.version:
+            return
+        fn_lower = filename.lower()
+        search_chunk = data[:8 * 1024 * 1024]
+        for name, canonical, anchors, shape in ANCHORED_PATTERNS:
+            if name in fn_lower or any(a in search_chunk for a in anchors):
+                anchor = next((a for a in anchors if a in search_chunk), None)
+                if not anchor:
+                    continue
+                shape_re = re.compile(rb"(?<![0-9A-Za-z._-])(" + shape + rb")(?:-g?[0-9a-f]{7,12})?(?=\x00)")
+                tokens = {m.group(1).decode("ascii", errors="replace") for m in shape_re.finditer(search_chunk)}
+                if len(tokens) == 1:
+                    raw_ver = tokens.pop()
+                    if raw_ver.endswith("-devel"):
+                        parts = raw_ver[:-6].split(".")
+                        ver = f"{parts[0]}.{int(parts[1]) - 1}" if len(parts) > 1 and parts[1].isdigit() and int(parts[1]) > 0 else raw_ver
+                    else:
+                        ver = raw_ver
+                    result.version = ver
+                    result.canonical_name = canonical
+                    result.confidence = 0.90
+                    result.method = ExtractionMethod.STRING_PATTERN
+                    result.evidence = f"Anchored signature '{anchor.decode('ascii', errors='replace')}' with version {ver}"
+                    result.purl = f"pkg:generic/{canonical}@{ver}"
+                    return
+
+    def _extract_symbol_sets(self, filename: str, data: bytes, result: ELFExtractionResult):
+        """Match whole NUL-delimited exported API symbol sets for stripped binaries."""
+        if result.version:
+            return
+        search_chunk = data[:8 * 1024 * 1024]
+        for name, canonical, need, syms in SYMBOL_SETS:
+            hits = 0
+            for s in syms:
+                if f"\0{s}\0".encode("ascii") in search_chunk:
+                    hits += 1
+            if hits >= need:
+                result.version = "detected"
+                result.canonical_name = canonical
+                result.confidence = 0.85
+                result.method = ExtractionMethod.SYMBOL_TABLE
+                result.evidence = f"Exported symbol set matched: {hits}/{len(syms)} APIs of {name}"
+                result.purl = f"pkg:generic/{canonical}"
+                return
+
+    def _extract_go_buildinfo(self, data: bytes, result: ELFExtractionResult):
+        """Extract Go runtime version and dependencies from embedded debug/buildinfo."""
+        if result.version:
+            return
+        at = data.find(GO_MAGIC)
+        if at >= 0 and at + 32 <= len(data):
+            if data[at + 14] in (4, 8) and (data[at + 15] & 0x2):
+                res = _go_string(data, at + 32)
+                if res and res[0].startswith("go"):
+                    go_ver = res[0].replace("go", "")
+                    result.version = go_ver
+                    result.canonical_name = "golang"
+                    result.confidence = 0.98
+                    result.method = ExtractionMethod.MANIFEST_BINARY
+                    result.evidence = f"Go embedded buildinfo: {res[0]}"
+                    result.purl = f"pkg:golang/go@{go_ver}"
+                    return

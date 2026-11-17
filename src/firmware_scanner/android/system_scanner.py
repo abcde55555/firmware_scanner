@@ -132,6 +132,14 @@ class AndroidSystemScanner:
         self._axml_parser = AXMLParser()
         self._build_prop_parser = BuildPropParser()
 
+        from ..extraction.cbom import CBOMScanner, DiscoveredCryptoAsset
+        from ..extraction.aibom import AIBOMScanner, DiscoveredAIModel, DiscoveredAIRuntime
+        self._cbom_scanner = CBOMScanner()
+        self._aibom_scanner = AIBOMScanner()
+        self._crypto_assets_map: dict[str, DiscoveredCryptoAsset] = {}
+        self._ai_models: list[DiscoveredAIModel] = []
+        self._ai_runtimes: list[DiscoveredAIRuntime] = []
+
     def scan(self) -> AndroidScanResult:
         """Perform full Android system scan."""
         result = AndroidScanResult()
@@ -184,13 +192,39 @@ class AndroidSystemScanner:
         framework_components = self._scan_framework_jars()
         result.components.extend(framework_components)
 
-        # 7. Apply AOSP baseline metadata annotation without mass fake 16 versions
+        # 7. Scan common directories for AI/ML models
+        ai_model_components = self._scan_ai_models()
+        result.components.extend(ai_model_components)
+
+        # 8. Apply AOSP baseline metadata annotation
         self._apply_os_version_fallback(result)
 
-        # 8. Synthesize canonical NVD CPE 2.3 for components with valid upstream versions
+        # 9. Cryptographic Bill of Materials (CBOM)
+        if self._crypto_assets_map:
+            cbom_comps = self._cbom_scanner.to_components(list(self._crypto_assets_map.values()))
+            result.components.extend(cbom_comps)
+
+        # 10. AI Bill of Materials (AIBOM) runtimes
+        if self._ai_runtimes:
+            # Deduplicate runtimes
+            seen_rts = set()
+            unique_rts = []
+            for rt in self._ai_runtimes:
+                k = (rt.runtime_key, rt.binary_path)
+                if k not in seen_rts:
+                    seen_rts.add(k)
+                    unique_rts.append(rt)
+            aibom_comps = self._aibom_scanner.to_components([], unique_rts)
+            result.components.extend(aibom_comps)
+
+        # 11. Synthesize canonical NVD CPE 2.3 for components with valid upstream versions
         from ..extraction.cpe_synthesizer import synthesize_cpe
+        from ..extraction.models import ExtractionMethod
         for c in result.components:
             if c.resolved_version and not c.cpe:
+                # Do not synthesize third-party upstream CPEs for AOSP OS fallback versions!
+                if any(v.method == ExtractionMethod.BUILD_METADATA for v in c.versions):
+                    continue
                 cpe_str = synthesize_cpe(c.name, c.resolved_version)
                 if cpe_str:
                     c.cpe = cpe_str
@@ -225,12 +259,7 @@ class AndroidSystemScanner:
         target.all_properties.update(source.all_properties)
 
     def _apply_os_version_fallback(self, result: AndroidScanResult):
-        """Annotate unversioned system components with AOSP baseline and SPL watermark.
-
-        Instead of falsely stamping OS release (e.g. '16') as upstream package versions,
-        we attach the AOSP platform baseline, build ID, and Security Patch Level (SPL)
-        metadata to descriptions and evidence.
-        """
+        """Annotate unversioned system components with AOSP baseline and SPL watermark."""
         os_version = result.build_info.android_version or ""
         spl = result.build_info.security_patch or ""
         build_id = result.build_info.build_id or ""
@@ -244,6 +273,13 @@ class AndroidSystemScanner:
             baseline_parts.append(f"build {build_id}")
         baseline_desc = f"AOSP platform component | Baseline: {', '.join(baseline_parts)}" if baseline_parts else "AOSP platform component"
 
+        # Third-party libraries that should never be stamped with OS version
+        third_party_blacklist = {
+            "ssl", "crypto", "sqlite", "sqlite3", "curl", "z", "zlib", "png", "png16", "jpeg",
+            "expat", "freetype", "harfbuzz", "xml2", "vpx", "opus", "pcre", "pcre2",
+            "boringssl", "openssl", "toybox", "busybox", "protobuf", "tinyxml2"
+        }
+
         for comp in result.components:
             # The Android OS component keeps the OS version
             if comp.component_type == "operating-system" or comp.name.lower() == "android":
@@ -255,12 +291,51 @@ class AndroidSystemScanner:
             if comp.resolved_version == "detected":
                 comp.resolved_version = ""
 
-            # If component has no version, annotate description with AOSP platform baseline
-            if not comp.resolved_version:
-                if not comp.description:
-                    comp.description = baseline_desc
-                elif "Baseline:" not in comp.description and "AOSP" not in comp.description:
-                    comp.description = f"{comp.description} | {baseline_desc}"
+            # Check if this component has no version yet
+            if not comp.resolved_version and os_version:
+                name_clean = comp.name.lower()
+                if name_clean.startswith("lib"):
+                    name_clean = name_clean[3:]
+                if name_clean.endswith(".so"):
+                    name_clean = name_clean[:-3]
+
+                # If it's a known third-party library, don't stamp with OS version
+                from ..extraction.cpe_synthesizer import _CANONICAL_CPE_MAP
+                is_third_party = (
+                    name_clean in third_party_blacklist
+                    or name_clean in _CANONICAL_CPE_MAP
+                    or f"lib{name_clean}" in _CANONICAL_CPE_MAP
+                    or any(tp in name_clean for tp in ("ssl", "crypto", "boring", "lzma", "jsoncpp", "exif", "heif"))
+                )
+                if is_third_party:
+                    if not comp.description:
+                        comp.description = baseline_desc
+                    continue
+
+                # Determine if this is a first-party AOSP platform component
+                is_aosp = (
+                    comp.name.startswith("android.")
+                    or comp.name.startswith("com.android.")
+                    or comp.name.startswith("framework/")
+                    or comp.name.startswith("aaudio")
+                    or comp.name.startswith("aconfig")
+                    or "AOSP" in comp.description
+                    or "/system/" in comp.description
+                    or comp.component_type in ("application", "framework")
+                )
+
+                if is_aosp:
+                    comp.resolved_version = os_version
+                    comp.versions.append(VersionConfidence(
+                        version=os_version,
+                        confidence=0.85,
+                        method=ExtractionMethod.BUILD_METADATA,
+                        evidence=f"AOSP platform build metadata ({', '.join(baseline_parts)})",
+                    ))
+                    if not comp.description:
+                        comp.description = baseline_desc
+                    elif "Baseline:" not in comp.description:
+                        comp.description = f"{comp.description} | {baseline_desc}"
 
     def _extract_embedded_maven_libs(self, zf: zipfile.ZipFile, origin_path: str) -> list[Component]:
         """Extract third-party Java/Kotlin libraries from embedded pom.properties in APK/JAR."""
@@ -632,6 +707,27 @@ class AndroidSystemScanner:
         if not data:
             return None
 
+        # Collect CBOM cryptographic algorithms / assets
+        try:
+            crypto_assets = self._cbom_scanner.scan_binary(path, data)
+            for ca in crypto_assets:
+                if ca.algorithm_key in self._crypto_assets_map:
+                    existing = self._crypto_assets_map[ca.algorithm_key]
+                    existing.hit_count += ca.hit_count
+                    if path not in existing.matched_locations:
+                        existing.matched_locations.append(path)
+                else:
+                    self._crypto_assets_map[ca.algorithm_key] = ca
+        except Exception:
+            pass
+
+        # Collect AIBOM inference runtimes
+        try:
+            rts = self._aibom_scanner.scan_binary_for_runtimes(path, data)
+            self._ai_runtimes.extend(rts)
+        except Exception:
+            pass
+
         # Extract library name from filename
         lib_name = filename
         if lib_name.startswith('lib'):
@@ -914,6 +1010,27 @@ class AndroidSystemScanner:
                 if data[:4] != b'\x7fELF':
                     continue
 
+                # Collect CBOM cryptographic algorithms / assets
+                try:
+                    crypto_assets = self._cbom_scanner.scan_binary(full_path, data)
+                    for ca in crypto_assets:
+                        if ca.algorithm_key in self._crypto_assets_map:
+                            existing = self._crypto_assets_map[ca.algorithm_key]
+                            existing.hit_count += ca.hit_count
+                            if full_path not in existing.matched_locations:
+                                existing.matched_locations.append(full_path)
+                        else:
+                            self._crypto_assets_map[ca.algorithm_key] = ca
+                except Exception:
+                    pass
+
+                # Collect AIBOM inference runtimes
+                try:
+                    rts = self._aibom_scanner.scan_binary_for_runtimes(full_path, data)
+                    self._ai_runtimes.extend(rts)
+                except Exception:
+                    pass
+
                 # Check if executable dynamically links to a library with known exact version (e.g. sqlite3 -> libsqlite.so)
                 linked_lib_ver = lib_versions.get(entry.name)
 
@@ -1082,3 +1199,58 @@ class AndroidSystemScanner:
                     pass
 
         return components
+
+    def _scan_ai_models(self) -> list[Component]:
+        """Scan common firmware directories for AI/ML model files."""
+        model_dirs = [
+            "/system/etc",
+            "/system/vendor/etc",
+            "/vendor/etc",
+            "/product/etc",
+            "/system_ext/etc",
+            "/system/usr",
+            "/etc",
+        ]
+        discovered_models = []
+        seen_paths: set[str] = set()
+
+        for dir_path in model_dirs:
+            if not self._fs.exists(dir_path):
+                continue
+            try:
+                entries = self._fs.list_directory(dir_path)
+            except Exception:
+                continue
+
+            for entry in entries:
+                if entry.is_dir:
+                    sub_path = f"{dir_path.rstrip('/')}/{entry.name}"
+                    try:
+                        sub_entries = self._fs.list_directory(sub_path)
+                    except Exception:
+                        continue
+                    for sub_entry in sub_entries:
+                        if sub_entry.is_file:
+                            full_sub = f"{sub_path}/{sub_entry.name}"
+                            if full_sub not in seen_paths:
+                                seen_paths.add(full_sub)
+                                head = self._fs.read_file(full_sub, max_size=4096)
+                                if head:
+                                    sz = self._fs.file_size(full_sub)
+                                    m = self._aibom_scanner.scan_file_header(full_sub, head, sz)
+                                    if m:
+                                        discovered_models.append(m)
+                elif entry.is_file:
+                    full_path = f"{dir_path.rstrip('/')}/{entry.name}"
+                    if full_path not in seen_paths:
+                        seen_paths.add(full_path)
+                        head = self._fs.read_file(full_path, max_size=4096)
+                        if head:
+                            sz = self._fs.file_size(full_path)
+                            m = self._aibom_scanner.scan_file_header(full_path, head, sz)
+                            if m:
+                                discovered_models.append(m)
+
+        self._ai_models.extend(discovered_models)
+        return self._aibom_scanner.to_components(discovered_models, [])
+

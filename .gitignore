@@ -53,6 +53,7 @@ camera_test.*
 
 # Logs
 logs/*.json
+logs/scans/2026*.json
 
 # Cache
 .rtos-analyzer/

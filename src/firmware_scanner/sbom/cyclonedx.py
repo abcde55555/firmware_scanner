@@ -21,6 +21,7 @@ class CycloneDXGenerator:
         arch_info: str = "",
         detected_rtos: str = "",
         analysis_warnings: list[str] | None = None,
+        vulnerabilities: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         bom: dict[str, Any] = {
             "bomFormat": "CycloneDX",
@@ -37,6 +38,9 @@ class CycloneDXGenerator:
             bom["properties"] = [
                 {"name": "analysis:warnings", "value": "; ".join(analysis_warnings[:10])}
             ]
+
+        if vulnerabilities:
+            bom["vulnerabilities"] = vulnerabilities
 
         return bom
 
@@ -119,8 +123,18 @@ class CycloneDXGenerator:
             if evidences:
                 evidence_props.append({"name": "analysis:evidence", "value": " | ".join(evidences)})
 
-        if evidence_props:
-            cdx_comp["properties"] = evidence_props
+        combined_props = []
+        if getattr(comp, "properties", None):
+            combined_props.extend(comp.properties)
+        combined_props.extend(evidence_props)
+        if combined_props:
+            cdx_comp["properties"] = combined_props
+
+        if getattr(comp, "crypto_properties", None):
+            cdx_comp["cryptoProperties"] = comp.crypto_properties
+
+        if getattr(comp, "model_card", None):
+            cdx_comp["modelCard"] = comp.model_card
 
         return cdx_comp
 
@@ -132,6 +146,8 @@ class CycloneDXGenerator:
             "firmware": "firmware",
             "framework": "framework",
             "device": "device",
+            "cryptographic-asset": "cryptographic-asset",
+            "machine-learning-model": "machine-learning-model",
         }
         return mapping.get(comp_type, "library")
 
