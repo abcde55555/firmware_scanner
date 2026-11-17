@@ -4,6 +4,7 @@ import json
 import re
 import urllib.request
 import urllib.error
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from packaging.version import parse as parse_version, InvalidVersion
 
@@ -397,9 +398,34 @@ class OSVClient:
         return [r.get("vulns", []) for r in results]
 
     def _fetch_batch_from_api(self, queries: list[dict]) -> list[list[dict]]:
-        """Fetch multiple queries using /v1/query to obtain complete vulnerability objects."""
-        all_results: list[list[dict]] = []
-        for q in queries:
+        """Fetch multiple queries using a fast two-phase strategy:
+        1. Fast batch pre-filter via /v1/querybatch (chunks of 100) to find packages with candidate vulns.
+        2. Parallel detail fetch via ThreadPoolExecutor against /v1/query ONLY for vulnerable candidates.
+        """
+        all_results: list[list[dict]] = [[] for _ in queries]
+        if not queries:
+            return all_results
+
+        candidate_indices: list[int] = []
+        chunk_size = 100
+
+        try:
+            for i in range(0, len(queries), chunk_size):
+                chunk = queries[i : i + chunk_size]
+                batch_res = self._post_batch(chunk)
+                for local_idx, r in enumerate(batch_res):
+                    global_idx = i + local_idx
+                    if r:  # Has candidate vulnerabilities
+                        candidate_indices.append(global_idx)
+        except Exception:
+            # Fallback: if querybatch fails, treat all as candidates
+            candidate_indices = list(range(len(queries)))
+
+        if not candidate_indices:
+            return all_results
+
+        def _fetch_one(idx: int) -> tuple[int, list[dict]]:
+            q = queries[idx]
             payload = self._build_query(
                 purl=q.get("purl", ""),
                 name=q.get("name", ""),
@@ -408,9 +434,15 @@ class OSVClient:
             )
             try:
                 vulns = self._post_query(payload)
-                all_results.append(vulns)
+                return idx, vulns
             except Exception:
-                all_results.append([])
+                return idx, []
+
+        max_workers = min(15, max(4, len(candidate_indices)))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for idx, vulns in executor.map(_fetch_one, candidate_indices):
+                all_results[idx] = vulns
+
         return all_results
 
     def _extract_severity(self, vuln: dict) -> tuple[Severity, float | None, str]:
