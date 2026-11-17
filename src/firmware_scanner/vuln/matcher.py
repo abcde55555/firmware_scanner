@@ -125,7 +125,11 @@ def _is_scannable(component: Component) -> bool:
         return False
     # Skip single-integer versions (e.g. '16' from OS platform fallback) - open source C/C++ libs always have major.minor
     if "." not in ver and component.component_type != "operating-system":
-        return False
+        # CalVer (e.g. 20260522) or package with non-generic purl is valid
+        is_calver = ver.isdigit() and len(ver) >= 6
+        has_real_purl = bool(component.purl and not component.purl.startswith("pkg:generic/"))
+        if not (is_calver or has_real_purl):
+            return False
     # Skip AOSP internal platform versions (e.g. '16 (AOSP ...)')
     if "aosp" in ver or "bp2a" in ver:
         return False

@@ -61,7 +61,7 @@ def extract_canonical_id(vuln: dict) -> str:
 
 
 def is_version_affected(comp_ver_str: str, vuln: dict) -> bool:
-    """Verify client-side whether comp_ver_str falls within the vulnerability's affected ranges."""
+    """Verify client-side whether comp_ver_str falls within any of the vulnerability's affected ranges."""
     target_clean = clean_version(comp_ver_str)
     if not target_clean:
         return True
@@ -70,68 +70,78 @@ def is_version_affected(comp_ver_str: str, vuln: dict) -> bool:
     except InvalidVersion:
         return True
 
-    all_fixed = []
-    all_last_affected = []
-    all_intro = []
-    has_exact = False
-    in_exact = False
+    affected_entries = vuln.get("affected", [])
+    if not affected_entries:
+        return True
 
-    for aff in vuln.get("affected", []):
-        vers = aff.get("versions", [])
-        if vers:
-            has_exact = True
-            for ev in vers:
-                if clean_version(ev) == target_clean:
-                    in_exact = True
-                    break
-
+    # Collect all known fixed versions across all ranges to guard against open-ended introduced: 0 ranges
+    all_fixed_versions = []
+    for aff in affected_entries:
         for r in aff.get("ranges", []):
             for ev in r.get("events", []):
                 if "fixed" in ev:
                     cf = clean_version(ev["fixed"])
                     if cf:
                         try:
-                            all_fixed.append(parse_version(cf))
+                            all_fixed_versions.append(parse_version(cf))
                         except InvalidVersion:
                             pass
-                if "last_affected" in ev:
-                    cla = clean_version(ev["last_affected"])
-                    if cla:
-                        try:
-                            all_last_affected.append(parse_version(cla))
-                        except InvalidVersion:
-                            pass
+
+    # A vulnerability can affect multiple independent branches (e.g. 5.x, 6.1.x, 6.2.x, 7.x).
+    # If the version matches ANY affected entry/range, it is affected.
+    for aff in affected_entries:
+        # 1. Exact version list match
+        vers = [clean_version(v) for v in aff.get("versions", [])]
+        if target_clean in vers:
+            return True
+
+        # 2. SemVer / Ecosystem range evaluation
+        ranges = aff.get("ranges", [])
+        for r in ranges:
+            events = r.get("events", [])
+            current_intro = None
+            for ev in events:
                 if "introduced" in ev:
-                    ci = clean_version(ev["introduced"])
-                    if ci:
-                        try:
-                            all_intro.append(parse_version(ci))
-                        except InvalidVersion:
-                            pass
+                    intro_str = clean_version(ev["introduced"])
+                    try:
+                        current_intro = parse_version(intro_str) if intro_str else parse_version("0")
+                    except InvalidVersion:
+                        current_intro = parse_version("0")
 
-    # If any fixed version is <= comp_v, it is already fixed in this version or earlier!
-    if all_fixed:
-        min_fixed = min(all_fixed)
-        if comp_v >= min_fixed:
-            return False
+                if "fixed" in ev:
+                    fixed_str = clean_version(ev["fixed"])
+                    try:
+                        fixed_v = parse_version(fixed_str) if fixed_str else None
+                    except InvalidVersion:
+                        fixed_v = None
 
-    # If all_last_affected is given and comp_v > max(all_last_affected), not affected
-    if all_last_affected:
-        max_la = max(all_last_affected)
-        if comp_v > max_la:
-            return False
+                    intro_v = current_intro if current_intro is not None else parse_version("0")
+                    if fixed_v is not None and comp_v >= intro_v and comp_v < fixed_v:
+                        return True
+                    current_intro = None
 
-    # If introduced is given and comp_v < min_intro, not affected
-    valid_intros = [i for i in all_intro if i != parse_version("0")]
-    if valid_intros:
-        min_intro = min(valid_intros)
-        if comp_v < min_intro:
-            return False
+                if "last_affected" in ev:
+                    la_str = clean_version(ev["last_affected"])
+                    try:
+                        la_v = parse_version(la_str) if la_str else None
+                    except InvalidVersion:
+                        la_v = None
 
-    # If only exact versions were given (no ranges), must be in exact list
-    if has_exact and not all_fixed and not all_last_affected:
-        if not in_exact:
-            return False
+                    intro_v = current_intro if current_intro is not None else parse_version("0")
+                    if la_v is not None and comp_v >= intro_v and comp_v <= la_v:
+                        return True
+                    current_intro = None
+
+            # Open-ended range (introduced without fixed or last_affected, e.g. Debian 12 open report)
+            if current_intro is not None and comp_v >= current_intro:
+                has_higher_fix = any(fv <= comp_v for fv in all_fixed_versions)
+                if not has_higher_fix:
+                    return True
+
+    # If ranges or versions were specified and none matched, it's not affected
+    has_criteria = any(aff.get("versions") or aff.get("ranges") for aff in affected_entries)
+    if has_criteria:
+        return False
 
     return True
 

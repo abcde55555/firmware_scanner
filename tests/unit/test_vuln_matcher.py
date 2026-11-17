@@ -93,6 +93,40 @@ def test_is_scannable():
     c4 = Component(name="android.hardware.camera.device@3.2.so", resolved_version="3.2")
     assert _is_scannable(c4) is False
 
+    # CalVer version (e.g. 20260522) with purl -> scannable
+    c5 = Component(name="json", resolved_version="20260522", purl="pkg:maven/org.json/json@20260522")
+    assert _is_scannable(c5) is True
+
+
+def test_is_version_affected_multi_branch():
+    # Advisory that has multiple branches: 5.3.x (fixed in 5.3.39), 6.1.x (fixed in 6.1.21), 6.2.x (fixed in 6.2.19)
+    multi_branch_vuln = {
+        "id": "GHSA-test-multi-branch",
+        "affected": [
+            {
+                "package": {"name": "spring-webflux", "ecosystem": "Maven"},
+                "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "5.3.0"}, {"fixed": "5.3.39"}]}],
+            },
+            {
+                "package": {"name": "spring-webflux", "ecosystem": "Maven"},
+                "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "6.1.0"}, {"fixed": "6.1.21"}]}],
+            },
+            {
+                "package": {"name": "spring-webflux", "ecosystem": "Maven"},
+                "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "6.2.0"}, {"fixed": "6.2.19"}]}],
+            },
+        ],
+    }
+
+    # 6.2.14 is affected (in [6.2.0, 6.2.19))
+    assert is_version_affected("6.2.14", multi_branch_vuln) is True
+    # 6.2.20 is fixed
+    assert is_version_affected("6.2.20", multi_branch_vuln) is False
+    # 6.1.10 is affected
+    assert is_version_affected("6.1.10", multi_branch_vuln) is True
+    # 6.1.22 is fixed
+    assert is_version_affected("6.1.22", multi_branch_vuln) is False
+
 
 def test_cpe_synthesizer():
     from firmware_scanner.extraction.cpe_synthesizer import synthesize_cpe
