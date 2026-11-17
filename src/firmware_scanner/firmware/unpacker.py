@@ -12,6 +12,7 @@ from .formats.uboot import UBootFormat
 from .formats.compressed import CompressedFirmwareFormat
 from .formats.apk import APKFormat, GenericZIPFormat
 from .formats.generic_img import GenericImageFormat
+from .formats.allwinner import AllwinnerImageFormat
 from .formats.android_system import AndroidSystemImageFormat
 from .formats.android_ota import AndroidPayloadFormat, AndroidBlockOTAFormat
 from ..extraction.models import UnpackResult
@@ -22,6 +23,7 @@ FORMAT_HANDLERS: list[type[FirmwareFormat]] = [
     AndroidSystemImageFormat,
     AndroidPayloadFormat,
     AndroidBlockOTAFormat,
+    AllwinnerImageFormat,
     GenericZIPFormat,
     UBootFormat,
     CompressedFirmwareFormat,
