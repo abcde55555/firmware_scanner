@@ -81,8 +81,72 @@ _CANONICAL_CPE_MAP: dict[str, tuple[str, str]] = {
 
     # Audio/Video codecs
     "ffmpeg": ("ffmpeg", "ffmpeg"),
+    "libavcodec": ("ffmpeg", "ffmpeg"),
+    "libavformat": ("ffmpeg", "ffmpeg"),
+    "libavutil": ("ffmpeg", "ffmpeg"),
     "libopus": ("xiph", "opus"),
+    "opus": ("xiph", "opus"),
     "libvpx": ("webmproject", "libvpx"),
+    "vpx": ("webmproject", "libvpx"),
+    "libwebp": ("webmproject", "libwebp"),
+    "libtiff": ("libtiff", "libtiff"),
+
+    # Other Cryptographic libraries
+    "mbedtls": ("arm", "mbed_tls"),
+    "libmbedtls": ("arm", "mbed_tls"),
+    "libmbedcrypto": ("arm", "mbed_tls"),
+    "libmbedx509": ("arm", "mbed_tls"),
+    "polarssl": ("polarssl", "polarssl"),
+    "wolfssl": ("wolfssl", "wolfssl"),
+    "libwolfssl": ("wolfssl", "wolfssl"),
+    "gnutls": ("gnu", "gnutls"),
+    "libgnutls": ("gnu", "gnutls"),
+    "libssh": ("libssh", "libssh"),
+    "libssh2": ("libssh2", "libssh2"),
+
+    # Compression formats
+    "xz": ("tukaani", "xz"),
+    "liblzma": ("tukaani", "xz"),
+    "lz4": ("yann_collet", "lz4"),
+    "liblz4": ("yann_collet", "lz4"),
+    "zstd": ("facebook", "zstandard"),
+    "libzstd": ("facebook", "zstandard"),
+    "brotli": ("google", "brotli"),
+    "libbrotli": ("google", "brotli"),
+
+    # Fonts & Rendering
+    "freetype": ("freetype", "freetype"),
+    "libfreetype": ("freetype", "freetype"),
+    "harfbuzz": ("harfbuzz_project", "harfbuzz"),
+    "libharfbuzz": ("harfbuzz_project", "harfbuzz"),
+    "libharfbuzz_ng": ("harfbuzz_project", "harfbuzz"),
+
+    # Networking & Events
+    "libevent": ("libevent_project", "libevent"),
+    "libev": ("libev_project", "libev"),
+    "libuv": ("libuv", "libuv"),
+    "libpcap": ("tcpdump", "libpcap"),
+    "tcpdump": ("tcpdump", "tcpdump"),
+    "nghttp2": ("nghttp2", "nghttp2"),
+    "libnghttp2": ("nghttp2", "nghttp2"),
+    "c-ares": ("c-ares_project", "c-ares"),
+    "cares": ("c-ares_project", "c-ares"),
+    "mosquitto": ("eclipse", "mosquitto"),
+    "libmosquitto": ("eclipse", "mosquitto"),
+
+    # JSON & XML
+    "cjson": ("cjson_project", "cjson"),
+    "jansson": ("jansson_project", "jansson"),
+    "json-c": ("json-c_project", "json-c"),
+    "json_c": ("json-c_project", "json-c"),
+    "libxslt": ("xmlsoft", "libxslt"),
+
+    # C Libraries
+    "glibc": ("gnu", "glibc"),
+    "libc": ("gnu", "glibc"),
+    "musl": ("musl-libc", "musl"),
+    "uclibc": ("uclibc", "uclibc"),
+    "uclibc-ng": ("uclibc-ng", "uclibc-ng"),
 
     # BoringSSL (Google fork - distinct from OpenSSL)
     "boringssl": ("google", "boringssl"),
