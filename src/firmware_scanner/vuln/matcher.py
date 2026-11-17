@@ -112,7 +112,7 @@ def _normalize_name(name: str) -> str:
 
 
 # Versions that aren't real version numbers
-_INVALID_VERSIONS = {"detected", "unknown", "n/a", ""}
+_INVALID_VERSIONS = {"detected", "unknown", "n/a", "boringssl", ""}
 
 
 def _is_scannable(component: Component) -> bool:
