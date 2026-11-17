@@ -40,23 +40,11 @@ class CycloneDXGenerator:
             "specVersion": spec_version,
             "serialNumber": f"urn:uuid:{uuid.uuid4()}",
             "version": 1,
-            # Dual-layer platform compatibility fields (in case platforms inspect root-level or metadata)
-            "name": meta.get("name", ""),
-            "type": meta.get("type", "firmware"),
-            "lifecycles": meta.get("lifecycles", [{"phase": "build"}]),
             "metadata": meta,
             "components": [
                 self._component_to_cdx(c, spec_version=spec_version) for c in components
             ],
         }
-
-        root_props = list(meta.get("properties", []))
-        if analysis_warnings:
-            root_props.append(
-                {"name": "analysis:warnings", "value": "; ".join(analysis_warnings[:10])}
-            )
-        if root_props:
-            bom["properties"] = root_props
 
         if vulnerabilities:
             bom["vulnerabilities"] = vulnerabilities
@@ -138,6 +126,7 @@ class CycloneDXGenerator:
                 ]
             },
             "component": {
+                "bom-ref": f"firmware-{target_product}-{build_id}",
                 "type": "firmware",
                 "name": target_product,
                 "version": build_id,
@@ -168,6 +157,8 @@ class CycloneDXGenerator:
             props.append({"name": "android:build_fingerprint", "value": str(info["build_fingerprint"])})
 
         metadata["properties"] = props
+        # Also populate properties on metadata.component for platforms inspecting the root component
+        metadata["component"]["properties"] = list(props)
         return metadata
 
     def _component_to_cdx(self, comp: Component, spec_version: str = "1.5") -> dict[str, Any]:
@@ -199,7 +190,15 @@ class CycloneDXGenerator:
             cdx_comp["cpe"] = comp.cpe
 
         if comp.licenses:
-            cdx_comp["licenses"] = [{"license": {"id": lic}} for lic in comp.licenses]
+            cdx_lics = []
+            for lic in comp.licenses:
+                if any(op in lic for op in (" AND ", " OR ", " WITH ", " ")):
+                    cdx_lics.append({"expression": lic})
+                elif lic.lower() in ("proprietary", "unknown", "custom", "commercial"):
+                    cdx_lics.append({"license": {"name": lic}})
+                else:
+                    cdx_lics.append({"license": {"id": lic}})
+            cdx_comp["licenses"] = cdx_lics
 
         if comp.description:
             cdx_comp["description"] = comp.description

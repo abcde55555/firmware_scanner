@@ -173,10 +173,15 @@ def test_asrock_atv_sbom_metadata():
         assert "bom-ref" in c
         assert "version" in c and c["version"]
 
-    # 4. Top-level platform compatibility fields
-    assert data["name"] == "waydroid_tv_x86_64"
-    assert data["type"] == "firmware"
-    assert data["lifecycles"] == [{"phase": "build"}]
-    top_props = {p["name"]: p["value"] for p in data.get("properties", [])}
-    assert top_props["asrock:chip-model"] == "x86_64"
+    # 4. Strict CycloneDX 1.5 root compliance: no illegal additionalProperties at root
+    assert "name" not in data
+    assert "type" not in data
+    assert "lifecycles" not in data
+    assert "properties" not in data
+
+    # 5. Metadata component contains properties and bom-ref
+    assert "bom-ref" in meta["component"]
+    comp_props = {p["name"]: p["value"] for p in meta["component"]["properties"]}
+    assert comp_props["asrock:chip-model"] == "x86_64"
+    assert comp_props["asrock:target-product"] == "waydroid_tv_x86_64"
 
