@@ -18,8 +18,8 @@ def family(name):
 
 def counts(payload):
     components = payload['components']
-    native = [c for c in components if 'Native library' in c.get('description', '') or '.so' in c['name']]
-    refs = [c.get('bom-ref') for c in payload.get('sbom_components', [])]
+    native = [c for c in components if c.get('component_type') == 'library'
+              and 'native library' in c.get('description', '').lower()]
     return {'components': len(components), 'native': len(native),
             'native_with_version_candidate': sum(bool(c['resolved_version']) for c in native),
             'all_nonempty_version_fields': sum(bool(c['resolved_version']) for c in components),
@@ -88,6 +88,7 @@ def main():
                            'pass': c is not None and c['resolved_version'] == case['expected']}
         checkpoints.append(case)
     result = {'scope': 'fixed two-image product-core comparison; candidate counts and deliberately selected checkpoints only',
+              'native_count_definition': 'library records from native-library scan descriptions; never a .so substring in a package name',
               'images': results, 'findings_summary': {kind: sum(r['kind'] == kind for r in findings)
                                                      for kind in sorted({r['kind'] for r in findings})},
               'checkpoints': {'oracle_refinement': 'two old unknown-policy labels replaced by newly confirmed API versions for BOTH phases',
