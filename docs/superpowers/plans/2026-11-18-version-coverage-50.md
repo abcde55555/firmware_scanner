@@ -15,6 +15,10 @@
 on both inputs. Implementation steps being checked below do not mean that the
 user's coverage objective has passed.
 
+Follow-up evidence and the next production scan are recorded in
+`docs/version-coverage-next-results-2026-11-18.md`. The same frozen denominators
+remain in force. A partial implementation commit does not complete this goal.
+
 ## Global Constraints
 
 - Inputs: the original Allwinner image and `system.img` under `/home/kali/Desktop/work/project/vulnscan/`; preserve original hashes and extraction provenance.

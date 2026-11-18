@@ -125,7 +125,8 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
         (rb'libpcap version (\d+\.\d+\.\d+)', "libpcap version string"),
     ],
     "event": [
-        (rb'(\d+\.\d+\.\d+)-stable', "libevent version string"),
+        (rb'(\d+\.\d+\.\d+-(?:stable|beta|alpha)(?:[-+][A-Za-z0-9._+-]+)?)(?=\x00|\s)',
+         "libevent version string"),
     ],
     "ext2fs": [
         (rb'\x00(1\.\d{1,2}\.\d+)\x00Test_io', "libext2fs version string"),
@@ -164,7 +165,8 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
         (rb'dnsmasq(?: version)? (\d+\.\d+(?:\.\d+)?)', "dnsmasq version string"),
     ],
     "wpa_supplicant": [
-        (rb'wpa_supplicant v(\d+\.\d+(?:\.\d+)?)', "wpa_supplicant version string"),
+        (rb'(?:^|[\x00\n])wpa_supplicant v(\d+\.\d+(?:\.\d+)*[A-Za-z0-9._+-]*)(?=[\x00\s])',
+         "wpa_supplicant version string"),
     ],
     "busybox": [
         (rb'BusyBox v(\d+\.\d+\.\d+)', "BusyBox version string"),
@@ -305,8 +307,8 @@ ANCHORED_PATTERNS: list[tuple[str, str, tuple[bytes, ...], bytes]] = [
     ("dropbear", "dropbear", (b"SSH-2.0-dropbear", b"Dropbear SSH"), rb"20\d\d\.\d{2}"),
     ("ppp", "ppp", (b"pppd version %s",), rb"2\.[45]\.\d{1,2}"),
     ("musl", "musl", (b"musl libc (",), rb"1\.[0-2]\.\d{1,2}"),
-    ("hostapd", "hostapd", (b"hostapd v%s",), rb"2\.\d{1,2}(?:-devel)?"),
-    ("wpa_supplicant", "wpa_supplicant", (b"wpa_supplicant v%s",), rb"2\.\d{1,2}(?:-devel)?"),
+    ("hostapd", "hostapd", (b"hostapd v%s",), rb"2\.\d{1,2}(?:[-+_][A-Za-z0-9][A-Za-z0-9._+-]*)?"),
+    ("wpa_supplicant", "wpa_supplicant", (b"wpa_supplicant v%s",), rb"2\.\d{1,2}(?:[-+_][A-Za-z0-9][A-Za-z0-9._+-]*)?"),
     ("iw", "iw", (b"iw version %s",), rb"[4-9]\.\d{1,2}"),
     ("json-c", "json-c", (b"json_c_version_num", b"json-c version"), rb"0\.1\d(?:\.\d{1,2})?"),
     ("busybox", "busybox", (b"BusyBox v%s",), rb"1\.\d{2}\.\d{1,2}"),
@@ -586,7 +588,7 @@ class ELFDeepExtractor:
                 anchor = next((a for a in anchors if a in search_chunk), None)
                 if not anchor:
                     continue
-                shape_re = re.compile(rb"(?<![0-9A-Za-z._-])(" + shape + rb")(?:-g?[0-9a-f]{7,12})?(?=\x00)")
+                shape_re = re.compile(rb"(?<![0-9A-Za-z._+-])(" + shape + rb"(?:-g?[0-9a-f]{7,12})?)(?=\x00)")
                 tokens = {m.group(1).decode("ascii", errors="replace") for m in shape_re.finditer(search_chunk)}
                 if len(tokens) == 1:
                     raw_ver = tokens.pop()

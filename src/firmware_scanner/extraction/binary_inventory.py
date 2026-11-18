@@ -9,6 +9,11 @@ from .elf_deep_extractor import ELFDeepExtractor
 from .emba_rules import scan_binary_with_rules
 from .binary_reference import openssl_compatibility_only
 
+_DEVELOPMENT = re.compile(
+    r'dev|git|snapshot|alpha|beta|rc\d|-(?:\d+-)?g[0-9a-f]{7,40}(?:$|-dirty)',
+    re.IGNORECASE,
+)
+
 
 def identity_key(name: str) -> str:
     name = name.rsplit('/', 1)[-1].lower().split('.so', 1)[0]
@@ -26,6 +31,7 @@ def identity_key(name: str) -> str:
         'resize2fs': 'e2fsprogs', 'sh': 'mksh', 'asound': 'alsalib',
         'lzma': 'xzutils', 'openwrtuclient': 'uclient',
         'icuuc': 'icu', 'icui18n': 'icu',
+        'busyboxsmp': 'busybox', 'pppd': 'ppp',
     }.get(name, name)
 
 
@@ -67,6 +73,15 @@ class BinaryInventory:
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
         for hit in self._semantic.extract(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        from .protobuf_version import extract_protobuf_versions
+        for hit in extract_protobuf_versions(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        from .tflite_version import extract_tflite_runtime
+        for hit in extract_tflite_runtime(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        from .object_version import extract_object_versions
+        for hit in extract_object_versions(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
         if b'u_getVersion' in data and b'u_versionFromString' in data:
             from .icu_version import extract_icu
             for hit in extract_icu(data):
@@ -97,8 +112,31 @@ class BinaryInventory:
                 tokens = re.findall(r'[A-Za-z][A-Za-z0-9_+-]*', observed)
                 if not any(identity_key(token) == identity_key(hit.name) for token in tokens):
                     continue
-                claims.append((hit.name, hit.resolved_version, min(claim.confidence, .85),
-                               ExtractionMethod.STATIC_RULE, claim.evidence, 'https://github.com/e-m-b-a/emba'))
+                # BusyBox's DHCP vendor class is "udhcp " BB_VER. It is
+                # evidence of its applet, not another native library release.
+                applet_banners = re.findall(
+                    rb'(?:^|[\x00\r\n])udhcp(?:c|d)? ([0-9][A-Za-z0-9.+_@-]*)(?=[\x00\r\n\t ])',
+                    data,
+                ) if hit.name.lower() in ('udhcp', 'udhcpc', 'udhcpd') else []
+                applet_versions = {value.decode('ascii') for value in applet_banners}
+                if (component_type == 'application' and identity_key(filename) == 'busybox'
+                        and hit.name.lower() in ('udhcp', 'udhcpc', 'udhcpd')
+                        and len(applet_versions) == 1 and applet_versions.issubset({
+                            version for name, version, *_ in claims
+                            if identity_key(name) == 'busybox' and version
+                        })):
+                    properties.extend([
+                        {'name': 'firmware:busybox:applet', 'value': hit.name},
+                        {'name': 'firmware:busybox:applet:evidence',
+                         'value': 'udhcp ' + next(iter(applet_versions))},
+                    ])
+                    continue
+                # The converted supplementary rule may capture a numeric
+                # prefix. Prefer complete applet banners, preserving conflicts.
+                for version in sorted(applet_versions) or [hit.resolved_version]:
+                    claims.append((hit.name, version, min(claim.confidence, .85),
+                                   ExtractionMethod.STATIC_RULE, claim.evidence,
+                                   'https://github.com/e-m-b-a/emba'))
 
         groups = defaultdict(list)
         for name, version, confidence, method, evidence, source in claims:
@@ -147,8 +185,8 @@ class BinaryInventory:
                         metadata = json.loads(evidence)
                         if metadata.get('encoding'):
                             numeric_api_values.add(version)
-                        if metadata.get('version_kind') == 'vendor-build':
-                            explicit_kinds.add('vendor-build')
+                        if metadata.get('version_kind') in ('vendor-build', 'runtime'):
+                            explicit_kinds.add(metadata['version_kind'])
                     except (ValueError, TypeError, AttributeError):
                         pass
             claim = VersionConfidence(version=version, confidence=confidence, method=method, evidence=evidence)
@@ -170,7 +208,8 @@ class BinaryInventory:
             properties.append({'name': 'firmware:version:conflict', 'value': ', '.join(sorted(observed))})
         if version:
             kind = ('vendor-build' if explicit_kinds == {'vendor-build'} else
-                    'development' if re.search(r'dev|git|snapshot|alpha|beta|rc\d', version, re.I) else 'observed-release')
+                    'runtime' if explicit_kinds == {'runtime'} else
+                    'development' if _DEVELOPMENT.search(version) else 'observed-release')
             properties.append({'name': 'firmware:version:kind', 'value': kind})
         if not versions:
             versions = [VersionConfidence(version='', confidence=.5, method=ExtractionMethod.BINARY_SIGNATURE,

@@ -64,6 +64,8 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "cJSON_Version": ("cJSON", "direct"),
     "uv_version_string": ("libuv", "direct"),
     "opus_get_version_string": ("Opus", "prefixed"),
+    "vpx_codec_version_str": ("libvpx", "vpx"),
+    "event_get_version": ("libevent", "direct"),
 }
 _VERSION = re.compile(r"v?(\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)\Z")
 
@@ -86,6 +88,11 @@ def _vaddr_to_offset(
 
 def _version_from_text(name: str, style: str, text: str) -> str | None:
     value = text.strip()
+    if style == "vpx":
+        # VERSION_STRING_NOSP starts with 'v'; the integer API encodes the
+        # same release without it. Preserve all development/vendor suffixes.
+        match = _VERSION.fullmatch(value)
+        return match.group(1) if match and value.startswith("v") else None
     if style == "prefixed":
         prefixes = {
             "libpcap": r"libpcap version\s+",

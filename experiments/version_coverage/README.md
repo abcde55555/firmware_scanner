@@ -38,6 +38,24 @@ An omitted verification map means unverified, not that every output is wrong.
 Native rows are libraries described as native libraries, not names containing
 `.so`. Range/candidate claims do not pass the exact-version gate.
 
+## Independent checker candidate scout
+
+Use the Python environment containing an installed `cve-bin-tool`:
+
+```sh
+PYTHONPATH=src <cve-bin-tool-python> \
+  experiments/version_coverage/compare_cve_checkers.py \
+  <ext4-image> <locations.json> <candidate-output.json>
+```
+
+The locations file is a JSON list of strings, or objects with `location`/`path`.
+The script calls local binary checkers without a CVE database or target execution.
+It supports direct files and one ZIP member level, caps each ELF at 64 MiB and
+reports skips. Results are candidates, including compiler and compatibility
+versions; they are not imported into the product BOM. Tool/checker/source hashes
+are recorded. See `docs/version-checker-comparison-2026-11-18.md` for the measured
+scope and original frozen scout scripts.
+
 ## Pinned reference artifacts
 
 ```sh
@@ -93,7 +111,44 @@ distinct features. It does **not** implement weighted BSim similarity/significan
 prove exact versions, or update the product's version claims. The real query
 matches eight vectors in four distinct releases; ties remain candidates.
 
-The separate FreeType paired-function prototype is also experimental. Its four
-optional host-path tests skip when `/system/...` is not mounted. The reported
-0/4 actual result was obtained by reading the four files from the image, not from
-those skipped tests. It is not integrated into `BinaryInventory`.
+The section comparison extends this finite experiment to the nine indexed target
+locations, without Ghidra or target execution:
+
+```sh
+PYTHONPATH=src python experiments/version_coverage/compare_sections.py \
+  /home/kali/Desktop/work/project/vulnscan/system.img \
+  reports/version-coverage-50-20261118/references \
+  reports/version-coverage-50-20261118/aar-target-matches.json \
+  reports/version-coverage-next-20261118/section-candidates-reproduction.json
+```
+
+It validates AAR/member checksums, then compares architecture and all bytes,
+virtual addresses and flags of `.text`, `.rodata`, `.data.rel.ro` and
+`.note.android.ident`. Missing sections are unsupported. On the measured inputs,
+five Graphics Path files each match the same four reference releases; the four
+TensorFlow Lite files have no matching profile. All exact versions remain unset.
+In-memory controls change a code byte and append an unreferenced trailer; the
+former changes the profile and the latter changes only the whole-file hash.
+This is candidate evidence, not general cross-compiler matching or a product
+version-coverage gain.
+
+Protobuf's bounded ELF32 ARM/Thumb and i386 proof is now in
+`extraction/protobuf_version.py`; its experiment CLI delegates to that module.
+TensorFlow Lite's JNI runtime proof is in `extraction/tflite_version.py`. It emits
+an independently attributed runtime identifier, marked `runtime`, and leaves the
+JNI/Maven artifact version unknown. Both are called by `BinaryInventory`.
+
+The separate FreeType paired-function prototype remains experimental. Its
+optional image tests use read-only `debugfs` extraction and assert input hashes:
+
+```sh
+FREETYPE_SYSTEM_IMAGE=/home/kali/Desktop/work/project/vulnscan/system.img \
+  PYTHONPATH=src python -m pytest tests/unit/test_freetype_version.py -q
+```
+
+The tightened proof currently matches two of the four real system libraries
+(x86-64 and AArch64, 2.13.2); i386/ARM and the Allwinner library are refused.
+Unknown memory writes, field overlaps and getter branches are negative controls.
+The old generic fallback is disabled. This is not integrated into
+`BinaryInventory` and adds no product version coverage. The previous 0/4 result
+in the earlier report describes the earlier prototype, not the current one.

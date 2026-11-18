@@ -69,7 +69,7 @@ def test_rodata_signatures(extractor):
     event_data = b"\x7fELF" + b"\x00" * 20 + b"2.1.8-stable\x00" + b"\x00" * 20
     res = extractor.extract("libevent.so", event_data)
     assert res is not None
-    assert res.version == "2.1.8"
+    assert res.version == "2.1.8-stable"
 
     # zlib
     zlib_data = b"\x7fELF" + b"\x00" * 20 + b"deflate 1.3.0.1" + b"\x00" * 20

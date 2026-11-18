@@ -2,6 +2,53 @@
   "schema_version": 1,
   "references": [
     {
+      "name": "CryptoAuthLib",
+      "source": "https://github.com/MicrochipTech/cryptoauthlib",
+      "version_policy": "identity_only",
+      "identity_symbols": [["atcab_init", "atcab_version", "atcab_release"]],
+      "filename_patterns": ["atca", "atsha"]
+    },
+    {
+      "name": "dhcpcd",
+      "source": "https://android.googlesource.com/platform/external/dhcpcd/+/refs/heads/main/dhcpcd.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])dhcpcd ([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "dhcpcd ",
+      "filename_patterns": ["dhcpcd"]
+    },
+    {
+      "name": "hostapd",
+      "source": "https://w1.fi/cgit/hostap/tree/hostapd/main.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])hostapd v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "hostapd v",
+      "filename_patterns": ["hostapd"]
+    },
+    {
+      "name": "hostapd_cli",
+      "source": "https://w1.fi/cgit/hostap/tree/hostapd/hostapd_cli.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])hostapd_cli v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "hostapd_cli v",
+      "filename_patterns": ["hostapd_cli"]
+    },
+    {
+      "name": "wpa_supplicant",
+      "source": "https://w1.fi/cgit/hostap/tree/wpa_supplicant/wpa_supplicant.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])wpa_supplicant v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "wpa_supplicant v",
+      "filename_patterns": ["wpa_supplicant"]
+    },
+    {
+      "name": "wpa_cli",
+      "source": "https://w1.fi/cgit/hostap/tree/wpa_supplicant/wpa_cli.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])wpa_cli v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "wpa_cli v",
+      "filename_patterns": ["wpa_cli"]
+    },
+    {
       "name": "SQLite",
       "source": "https://github.com/sqlite/sqlite",
       "version_policy": "banner",
@@ -189,7 +236,8 @@
       "name": "libevent",
       "source": "https://github.com/libevent/libevent",
       "version_policy": "banner",
-      "banner_regex": "libevent ([0-9]+\\.[0-9]+\\.[0-9]+-stable)",
+      "banner_regex": "libevent ([0-9]+\\.[0-9]+\\.[0-9]+-(?:stable|beta|alpha)(?:[-+][A-Za-z0-9._+-]+)?)(?=\\x00|\\s)",
+      "identity_banner": "libevent using: %s",
       "filename_patterns": [
         "event"
       ]
@@ -233,8 +281,8 @@
     {
       "name": "libvpx",
       "source": "https://chromium.googlesource.com/webm/libvpx",
-      "version_policy": "banner",
-      "banner_regex": "vpx_codec_version_str[^\\x00]{0,32}([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "version_policy": "identity_only",
+      "identity_symbols": [["vpx_codec_version", "vpx_codec_version_str", "vpx_codec_get_caps"]],
       "filename_patterns": [
         "vpx"
       ]

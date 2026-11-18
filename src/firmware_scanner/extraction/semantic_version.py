@@ -46,6 +46,7 @@ INTEGER_GETTERS = {
     'BrotliDecoderVersion': ('Brotli', 'brotli'),
     'BrotliEncoderVersion': ('Brotli', 'brotli'),
     'uv_version': ('libuv', 'packed8'),
+    'vpx_codec_version': ('libvpx', 'packed8'),
 }
 STRING_GETTERS = {
     'hb_version_string': ('HarfBuzz', ''),
@@ -58,9 +59,13 @@ STRING_GETTERS = {
     'opus_get_version_string': ('Opus', 'libopus '),
     'uv_version_string': ('libuv', ''),
     'lzma_version_string': ('XZ Utils', ''),
+    'vpx_codec_version_str': ('libvpx', 'v'),
+    'event_get_version': ('libevent', ''),
 }
 X86_32_STRING_GETTERS = {
     'Cronet_Engine_GetVersionString': ('Cronet', ''),
+    'event_get_version': ('libevent', ''),
+    'vpx_codec_version_str': ('libvpx', 'v'),
 }
 
 
@@ -125,7 +130,7 @@ class SemanticVersionExtractor:
                         continue
                     instructions = image.instructions(*function)
                     pointer = self._arm_return(image, instructions, bool(function[0] & 1))
-                    text = image.c_string(pointer) if pointer is not None else None
+                    text = image.c_string(pointer, readonly=True) if pointer is not None else None
                     if text is None or not text.startswith(prefix):
                         continue
                     version = text[len(prefix):]
@@ -144,7 +149,7 @@ class SemanticVersionExtractor:
                         continue
                     instructions = image.instructions(*function)
                     pointer = self._x86_32_return(image, instructions)
-                    text = image.c_string(pointer) if pointer is not None else None
+                    text = image.c_string(pointer, readonly=True) if pointer is not None else None
                     if text is None or not text.startswith(prefix):
                         continue
                     version = text[len(prefix):]
@@ -298,7 +303,7 @@ class SemanticVersionExtractor:
                 pointer = ((pc & ~3) if thumb else pc) if base == 'pc' else registers.get(base)
                 if pointer is None:
                     return None
-                raw = image.read((pointer + int(memory.disp)) & 0xffffffff, 4)
+                raw = image.read((pointer + int(memory.disp)) & 0xffffffff, 4, readonly=True)
                 if raw is None:
                     return None
                 name = insn.reg_name(ops[0].reg)
@@ -478,9 +483,12 @@ class ELFView:
             raise ValueError('unsupported architecture')
         self.disassembler.detail = True
 
-    def read(self, address: int, size: int, executable: bool = False) -> bytes | None:
+    def read(self, address: int, size: int, executable: bool = False,
+             readonly: bool = False) -> bytes | None:
         for segment in self.loads:
             if executable and not int(segment['p_flags']) & 1:
+                continue
+            if readonly and int(segment['p_flags']) & 2:
                 continue
             if segment['p_vaddr'] <= address and address + size <= segment['p_vaddr'] + segment['p_filesz']:
                 offset = int(segment['p_offset']) + address - int(segment['p_vaddr'])
@@ -499,11 +507,11 @@ class ELFView:
         instructions = list(self.disassembler.disasm(code, address))
         return instructions if self.machine == 'EM_ARM' or sum(i.size for i in instructions) == size else []
 
-    def c_string(self, address: int) -> str | None:
+    def c_string(self, address: int, readonly: bool = False) -> str | None:
         for segment in self.loads:
             if segment['p_vaddr'] <= address < segment['p_vaddr'] + segment['p_filesz']:
                 size = min(512, int(segment['p_vaddr'] + segment['p_filesz']) - address)
-                raw = self.read(address, size)
+                raw = self.read(address, size, readonly=readonly)
                 if raw is None or b'\0' not in raw:
                     return None
                 raw = raw.split(b'\0', 1)[0]
