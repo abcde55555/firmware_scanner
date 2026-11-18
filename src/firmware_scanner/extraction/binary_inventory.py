@@ -1,4 +1,5 @@
 """Attribute binary evidence to a file or an independently identified embedded library."""
+import json
 import re
 from collections import defaultdict
 from urllib.parse import quote
@@ -6,6 +7,7 @@ from urllib.parse import quote
 from .models import Component, ExtractionMethod, VersionConfidence
 from .elf_deep_extractor import ELFDeepExtractor
 from .emba_rules import scan_binary_with_rules
+from .binary_reference import openssl_compatibility_only
 
 
 def identity_key(name: str) -> str:
@@ -23,6 +25,7 @@ def identity_key(name: str) -> str:
         'e2fsck': 'e2fsprogs', 'mke2fs': 'e2fsprogs', 'tune2fs': 'e2fsprogs',
         'resize2fs': 'e2fsprogs', 'sh': 'mksh', 'asound': 'alsalib',
         'lzma': 'xzutils', 'openwrtuclient': 'uclient',
+        'icuuc': 'icu', 'icui18n': 'icu',
     }.get(name, name)
 
 
@@ -32,8 +35,12 @@ class BinaryInventory:
     def __init__(self):
         from .binary_reference import BinaryReferenceMatcher
         from .static_version import StaticVersionExtractor
+        from .semantic_version import SemanticVersionExtractor
+        from .binary_samples import BinarySampleMatcher
         self._reference = BinaryReferenceMatcher()
         self._static = StaticVersionExtractor()
+        self._semantic = SemanticVersionExtractor()
+        self._samples = BinarySampleMatcher()
         self._deep = ELFDeepExtractor()
 
     def extract(self, data: bytes, filename: str, location: str,
@@ -58,6 +65,21 @@ class BinaryInventory:
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.STATIC_RULE, hit.evidence, hit.source))
         for hit in self._static.extract(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        for hit in self._semantic.extract(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        if b'u_getVersion' in data and b'u_versionFromString' in data:
+            from .icu_version import extract_icu
+            for hit in extract_icu(data):
+                claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        for hit in self._samples.match(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.BINARY_SIGNATURE, hit.evidence, ''))
+        from .vendor_version import extract_vendor_versions
+        for hit in extract_vendor_versions(data, filename):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        sample_candidates = self._samples.candidates(data)
+        if sample_candidates:
+            properties.append({'name': 'firmware:reference:exact-file-candidates',
+                               'value': json.dumps(sample_candidates, sort_keys=True)})
 
         # EMBA remains a supplementary source, attributed to its identified
         # product instead of assigning the first match to the containing ELF.
@@ -80,6 +102,11 @@ class BinaryInventory:
 
         groups = defaultdict(list)
         for name, version, confidence, method, evidence, source in claims:
+            if identity_key(name) == 'openssl' and version and openssl_compatibility_only(data, version):
+                prop = {'name': 'firmware:compatibility:openssl', 'value': version}
+                if prop not in properties:
+                    properties.append(prop)
+                continue
             if version.lower() in ('unknown', 'detected', 'boringssl') or version.endswith('+'):
                 version = ''
             key = identity_key(name)
@@ -110,9 +137,20 @@ class BinaryInventory:
     def _component(name, component_type, location, matches, properties):
         versions = []
         observed = set()
+        numeric_api_values = set()
+        explicit_kinds = set()
         for identity, version, confidence, method, evidence, source in matches:
             if version:
                 observed.add(version)
+                if method == ExtractionMethod.DISASSEMBLY and evidence.startswith('{'):
+                    try:
+                        metadata = json.loads(evidence)
+                        if metadata.get('encoding'):
+                            numeric_api_values.add(version)
+                        if metadata.get('version_kind') == 'vendor-build':
+                            explicit_kinds.add('vendor-build')
+                    except (ValueError, TypeError, AttributeError):
+                        pass
             claim = VersionConfidence(version=version, confidence=confidence, method=method, evidence=evidence)
             if claim not in versions:
                 versions.append(claim)
@@ -120,11 +158,19 @@ class BinaryInventory:
                 prop = {'name': key, 'value': value}
                 if value and prop not in properties:
                     properties.append(prop)
+        # An integer API cannot encode a vendor/development suffix. Keep its
+        # evidence, but prefer an independently observed complete string.
+        for numeric in numeric_api_values:
+            if any(full.startswith(numeric + separator)
+                   for full in observed for separator in ('-', '+')):
+                observed.discard(numeric)
+                properties.append({'name': 'firmware:version:numeric-base', 'value': numeric})
         version = next(iter(observed)) if len(observed) == 1 else ''
         if len(observed) > 1:
             properties.append({'name': 'firmware:version:conflict', 'value': ', '.join(sorted(observed))})
         if version:
-            kind = 'development' if re.search(r'dev|git|snapshot|alpha|beta|rc\d', version, re.I) else 'observed-release'
+            kind = ('vendor-build' if explicit_kinds == {'vendor-build'} else
+                    'development' if re.search(r'dev|git|snapshot|alpha|beta|rc\d', version, re.I) else 'observed-release')
             properties.append({'name': 'firmware:version:kind', 'value': kind})
         if not versions:
             versions = [VersionConfidence(version='', confidence=.5, method=ExtractionMethod.BINARY_SIGNATURE,

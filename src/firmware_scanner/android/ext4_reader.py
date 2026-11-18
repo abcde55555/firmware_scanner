@@ -133,6 +133,10 @@ class Ext4Reader:
         blocks_lo = struct.unpack_from('<I', sb_data, 4)[0]
         self._sb.first_data_block = struct.unpack_from('<I', sb_data, 20)[0]
         self._sb.log_block_size = struct.unpack_from('<I', sb_data, 24)[0]
+        # ext4 block sizes range from 1 KiB to 64 KiB. Check before shifting
+        # untrusted superblock fields (including nested APEX payloads).
+        if self._sb.log_block_size > 6:
+            return
         self._sb.blocks_per_group = struct.unpack_from('<I', sb_data, 32)[0]
         self._sb.inodes_per_group = struct.unpack_from('<I', sb_data, 40)[0]
         self._sb.inode_size = struct.unpack_from('<H', sb_data, 88)[0]
@@ -155,6 +159,12 @@ class Ext4Reader:
         if self._sb.inode_size < 128:
             self._sb.inode_size = 128
 
+        if (not self._sb.inodes_count or not self._sb.blocks_count
+                or not self._sb.blocks_per_group or not self._sb.inodes_per_group
+                or self._sb.inodes_per_group > self._sb.block_size * 8
+                or self._sb.inode_size > self._sb.block_size
+                or self._sb.inode_size & (self._sb.inode_size - 1)):
+            return
         self._valid = True
 
     def _block_offset(self, block_num: int) -> int:
@@ -194,7 +204,7 @@ class Ext4Reader:
         return gd
 
     def _read_inode(self, inode_num: int) -> Ext4Inode | None:
-        if inode_num < 1 or inode_num > self._sb.inodes_count:
+        if not self._valid or inode_num < 1 or inode_num > self._sb.inodes_count:
             return None
 
         group = (inode_num - 1) // self._sb.inodes_per_group
@@ -509,6 +519,110 @@ class Ext4Reader:
             return 0
         inode = self._read_inode(inode_num)
         return inode.size if inode else 0
+
+    def read_file_range(self, path: str, offset: int, size: int) -> bytes | None:
+        """Read a byte range without allocating or reading the preceding file data.
+
+        Holes and unwritten extents read as zero. Invalid or truncated mapped
+        extents raise OSError so a ZIP parser cannot silently consume bad bytes.
+        """
+        if offset < 0 or size < 0:
+            raise ValueError('negative file range')
+        if not self._valid:
+            return None
+        number = self._resolve_path(path)
+        inode = self._read_inode(number) if number is not None else None
+        if inode is None or not S_ISREG(inode.mode):
+            return None
+        size = min(size, max(0, inode.size - offset))
+        if not size:
+            return b''
+        if inode.flags & EXT4_INLINE_DATA_FL:
+            inline = inode.block_data + inode.inline_data
+            if inode.size > len(inline):
+                raise OSError('extended ext4 inline data is not supported')
+            return inline[offset:offset + size]
+        result = bytearray(size)
+        bs = self._sb.block_size
+        if inode.flags & EXT4_EXTENTS_FL:
+            for logical, length, physical, unwritten in self._range_extents(
+                    inode.block_data, offset, offset + size):
+                start = max(offset, logical * bs)
+                end = min(offset + size, (logical + length) * bs)
+                if end <= start or unwritten:
+                    continue
+                source = physical * bs + start - logical * bs
+                chunk = self._checked_range_bytes(source, end - start)
+                result[start - offset:end - offset] = chunk
+        else:
+            for block in range(offset // bs, (offset + size - 1) // bs + 1):
+                physical = self._range_block_pointer(inode.block_data, block)
+                if not physical:
+                    continue
+                start = max(offset, block * bs)
+                end = min(offset + size, (block + 1) * bs)
+                source = physical * bs + start - block * bs
+                result[start - offset:end - offset] = self._checked_range_bytes(source, end - start)
+        return bytes(result)
+
+    def _checked_range_bytes(self, offset: int, size: int) -> bytes:
+        if offset < 0 or offset + size > len(self._data):
+            raise OSError('truncated ext4 file extent')
+        return self._data[offset:offset + size]
+
+    def _range_extents(self, node: bytes, start: int, end: int,
+                       depth: int = 0, visited: frozenset = frozenset()):
+        if depth > 3 or len(node) < 12:
+            raise OSError('unsupported or truncated ext4 extent tree')
+        magic, entries, _maximum, level = struct.unpack_from('<HHHH', node)
+        if magic != 0xF30A or level > 3 or entries > (len(node) - 12) // 12:
+            raise OSError('invalid ext4 extent header')
+        bs = self._sb.block_size
+        for index in range(entries):
+            pos = 12 + index * 12
+            logical = struct.unpack_from('<I', node, pos)[0]
+            if level == 0:
+                raw_length, high, low = struct.unpack_from('<HHI', node, pos + 4)
+                length = raw_length - 32768 if raw_length > 32768 else raw_length
+                if not length:
+                    raise OSError('empty ext4 extent')
+                if logical * bs < end and (logical + length) * bs > start:
+                    yield logical, length, (high << 32) | low, raw_length > 32768
+            else:
+                following = (struct.unpack_from('<I', node, pos + 12)[0]
+                             if index + 1 < entries else None)
+                if logical * bs >= end or (following is not None and following * bs <= start):
+                    continue
+                low, high = struct.unpack_from('<IH', node, pos + 4)
+                child = (high << 32) | low
+                if not child or child in visited:
+                    raise OSError('cyclic or invalid ext4 extent tree')
+                data = self._checked_range_bytes(child * bs, bs)
+                if len(data) < 12 or struct.unpack_from('<H', data, 6)[0] != level - 1:
+                    raise OSError('invalid ext4 extent tree depth')
+                yield from self._range_extents(data, start, end, depth + 1, visited | {child})
+
+    def _range_block_pointer(self, block_data: bytes, logical: int) -> int:
+        """Resolve one traditional direct/indirect block, keeping sparse holes."""
+        count = self._sb.block_size // 4
+        if logical < 12:
+            return struct.unpack_from('<I', block_data, logical * 4)[0]
+        logical -= 12
+        for slot, levels in ((12, 1), (13, 2), (14, 3)):
+            capacity = count ** levels
+            if logical >= capacity:
+                logical -= capacity
+                continue
+            pointer = struct.unpack_from('<I', block_data, slot * 4)[0]
+            for remaining in range(levels - 1, -1, -1):
+                if not pointer:
+                    return 0
+                divisor = count ** remaining
+                index, logical = divmod(logical, divisor)
+                raw = self._checked_range_bytes(pointer * self._sb.block_size + index * 4, 4)
+                pointer = struct.unpack('<I', raw)[0]
+            return pointer
+        raise OSError('ext4 block index exceeds indirect map')
 
     def walk(self, root: str = "/", max_depth: int = 10) -> Iterator[tuple[str, list[str], list[str]]]:
         """Walk the filesystem tree (like os.walk).

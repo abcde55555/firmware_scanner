@@ -33,6 +33,24 @@ def _load_catalog() -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def openssl_compatibility_only(data: bytes, version: str) -> bool:
+    """BoringSSL's OPENSSL_VERSION_TEXT advertises compatibility, not its release."""
+    # https://boringssl.googlesource.com/boringssl/+/refs/heads/main/include/openssl/crypto.h
+    if b'BoringSSL' not in data:
+        return False
+    try:
+        encoded = version.encode('ascii')
+    except UnicodeEncodeError:
+        return False
+    pattern = rb'OpenSSL\s+' + re.escape(encoded) + rb'(?![A-Za-z0-9._+-])'
+    found = False
+    for match in re.finditer(pattern, data, re.I):
+        found = True
+        if not re.match(rb'\s*\(compatible;\s*BoringSSL\)', data[match.end():match.end() + 96], re.I):
+            return False
+    return found
+
+
 class BinaryReferenceMatcher:
     """Match curated upstream banners and defined ELF symbol combinations."""
 
@@ -74,6 +92,9 @@ class BinaryReferenceMatcher:
                     text = data.decode('latin-1')
                 seen_versions: set[str] = set()
                 for found in re.finditer(pattern, text, re.IGNORECASE):
+                    if name == 'OpenSSL' and re.match(r'\s*\(compatible;\s*BoringSSL\)',
+                                                     text[found.end():found.end() + 96], re.I):
+                        continue
                     version = next((group for group in found.groups() if group is not None), "")
                     if version and version in seen_versions:
                         continue
@@ -90,6 +111,8 @@ class BinaryReferenceMatcher:
                 candidates.append(("", f"explicit identity banner: {identity_banner}", True))
 
             if not candidates:
+                if name == 'OpenSSL' and b'boringssl' in lowered:
+                    continue
                 for group in rule.get("identity_symbols", []):
                     present = [symbol for symbol in group if symbol in defined_symbols]
                     if len(group) >= 2 and len(present) == len(group):

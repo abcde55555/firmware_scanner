@@ -182,3 +182,60 @@ def test_libcurl_space_banner_is_not_curl_tool_version():
     from firmware_scanner.extraction.binary_inventory import BinaryInventory
     result = BinaryInventory().extract(b'\x7fELF'+b'\0'*60+b'CLIENT libcurl 7.24.0\0', 'curl', '/bin/curl', 'application')
     assert result[0].resolved_version == ''
+
+
+def test_product_inventory_uses_integer_version_api_without_versioning_host(tmp_path):
+    from firmware_scanner.extraction.binary_inventory import BinaryInventory
+    cc = shutil.which('cc')
+    if not cc:
+        pytest.skip('C compiler needed')
+    source = tmp_path / 'api.c'
+    source.write_text('unsigned XXH_versionNumber(void) { return 605; }')
+    output = tmp_path / 'host.so'
+    subprocess.run([cc, '-shared', '-fPIC', '-O2', '-o', str(output), str(source)], check=True)
+    result = BinaryInventory().extract(output.read_bytes(), 'libhost.so', '/lib/libhost.so')
+    assert result[0].resolved_version == ''
+    assert any(c.name == 'xxHash' and c.resolved_version == '0.6.5' for c in result)
+
+
+def test_product_inventory_uses_source_backed_whole_file_index(tmp_path):
+    import hashlib
+    import json
+    from firmware_scanner.extraction.binary_inventory import BinaryInventory
+    from firmware_scanner.extraction.binary_samples import BinarySampleMatcher
+    cc = shutil.which('cc')
+    if not cc:
+        pytest.skip('C compiler needed')
+    source = tmp_path / 'opaque.c'
+    source.write_text('unsigned opaque_value(void) { return 17; }')
+    output = tmp_path / 'libopaque.so'
+    subprocess.run([cc, '-shared', '-fPIC', '-O2', '-o', str(output), str(source)], check=True)
+    data = output.read_bytes()
+    row = {'name': 'libopaque.so', 'version': '7.8.9', 'sha256': hashlib.sha256(data).hexdigest(),
+           'source': 'https://repo.maven.apache.org/maven2/', 'upstream_source': 'https://www.kernel.org/',
+           'artifact_path': 'jni/x86_64/libopaque.so', 'architecture': 'x86_64', 'version_kind': 'release'}
+    index = tmp_path / 'samples.json'
+    index.write_text(json.dumps({'schema_version': 1, 'samples': [row]}))
+    inventory = BinaryInventory()
+    inventory._samples = BinarySampleMatcher(index)
+    result = inventory.extract(data, output.name, '/lib/libopaque.so')
+    assert len(result) == 1
+    assert result[0].resolved_version == '7.8.9'
+    assert any('whole_file_sha256' in v.evidence for v in result[0].versions)
+
+
+def test_boringssl_compatibility_string_is_not_an_openssl_release():
+    from firmware_scanner.extraction.binary_inventory import BinaryInventory
+    raw = b'\x7fELF' + bytes(60) + b'android.openssl.version=OpenSSL 1.1.1 (compatible; BoringSSL)\0'
+    components = BinaryInventory().extract(raw, 'libopenjdk.so', '/apex/lib/libopenjdk.so')
+    assert any(c.name == 'BoringSSL' and not c.resolved_version for c in components)
+    assert not any(c.name.lower() == 'openssl' for c in components)
+
+
+def test_real_openssl_release_survives_boringssl_compatibility_text():
+    from firmware_scanner.extraction.binary_inventory import BinaryInventory
+    raw = (b'\x7fELF' + bytes(60) + b'OpenSSL 1.1.1 (compatible; BoringSSL)\0'
+           + b'OpenSSL 1.1.1w  11 Sep 2023\0')
+    components = BinaryInventory().extract(raw, 'libvendor.so', '/lib/libvendor.so')
+    assert any(c.name == 'OpenSSL' and c.resolved_version == '1.1.1w' for c in components)
+    assert not any(c.name == 'OpenSSL' and c.resolved_version == '1.1.1' for c in components)

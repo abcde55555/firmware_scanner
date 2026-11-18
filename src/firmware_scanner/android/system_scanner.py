@@ -5,6 +5,7 @@ components (APKs, native libraries, executables) with their versions.
 """
 
 import zipfile
+import zlib
 import io
 import re
 from dataclasses import dataclass, field
@@ -158,7 +159,11 @@ class AndroidSystemScanner:
         # 2. Scan APEX mainline modules
         apex_components = self._scan_apex_modules()
         result.components.extend(apex_components)
-        result.apex_count = len(apex_components)
+        result.apex_count = sum(
+            any(p.get('name') == 'firmware:version:kind'
+                and p.get('value') == 'android-version-code' for p in c.properties)
+            for c in apex_components
+        )
 
         # 3. Scan APKs and embedded Maven libraries
         apk_components = self._scan_apks()
@@ -278,43 +283,13 @@ class AndroidSystemScanner:
                     comp.properties.append(prop)
 
     def _extract_embedded_maven_libs(self, zf: zipfile.ZipFile, origin_path: str) -> list[Component]:
-        """Extract third-party Java/Kotlin libraries from embedded pom.properties in APK/JAR."""
-        components: list[Component] = []
-        seen: set[str] = set()
-        for name in zf.namelist():
-            if name.endswith("pom.properties"):
-                try:
-                    data = zf.read(name).decode("utf-8", errors="ignore")
-                    props = {}
-                    for line in data.splitlines():
-                        line = line.strip()
-                        if line and not line.startswith("#") and "=" in line:
-                            k, v = line.split("=", 1)
-                            props[k.strip()] = v.strip()
-                    group_id = props.get("groupId", "")
-                    artifact_id = props.get("artifactId", "")
-                    version = props.get("version", "")
-                    if artifact_id and version:
-                        comp_name = f"{group_id}:{artifact_id}" if group_id else artifact_id
-                        if comp_name in seen:
-                            continue
-                        seen.add(comp_name)
-                        purl = f"pkg:maven/{group_id}/{artifact_id}@{version}" if group_id else f"pkg:generic/{artifact_id}@{version}"
-                        components.append(Component(
-                            name=comp_name,
-                            component_type="library",
-                            resolved_version=version,
-                            purl=purl,
-                            description=f"Embedded Java/Kotlin library in {origin_path}",
-                            versions=[VersionConfidence(
-                                version=version,
-                                confidence=0.98,
-                                method=ExtractionMethod.MANIFEST_BINARY,
-                                evidence=f"{name} in {origin_path}",
-                            )],
-                        ))
-                except Exception:
-                    continue
+        """Read bounded, explicitly attributed dependency declarations."""
+        from ..extraction.archive_metadata import extract_archive_metadata
+        from ..extraction.sdk_metadata import extract_sdk_metadata
+        warnings = []
+        components = extract_archive_metadata(zf, origin_path, warnings)
+        components.extend(extract_sdk_metadata(zf, origin_path, warnings))
+        self._coverage_warnings.update(warnings)
         return components
 
     def _scan_apex_modules(self) -> list[Component]:
@@ -327,33 +302,42 @@ class AndroidSystemScanner:
                 continue
             entries = self._fs.list_directory(dir_path)
             for entry in entries:
-                if not entry.name.endswith(".apex"):
+                if not entry.name.endswith((".apex", ".capex")):
                     continue
                 if entry.name in seen_names:
                     continue
                 seen_names.add(entry.name)
 
                 full_path = f"{dir_path.rstrip('/')}/{entry.name}"
+                if self._fs.file_size(full_path) > 64 * 1024 * 1024:
+                    self._coverage_warnings.add(f'APEX archive exceeds the 64 MiB read limit: {full_path}')
+                    continue
                 data = self._fs.read_file(full_path, max_size=64 * 1024 * 1024)
                 if not data or data[:2] != b'PK':
                     continue
+
+                from .apex_payload import scan_apex_payload
+                payload_result = scan_apex_payload(data, full_path, self._binary_inventory())
+                components.extend(payload_result.components)
+                self._coverage_warnings.update(payload_result.warnings)
 
                 try:
                     zf = zipfile.ZipFile(io.BytesIO(data))
                     manifest_info = None
                     if "AndroidManifest.xml" in zf.namelist():
-                        manifest_data = zf.read("AndroidManifest.xml")
-                        manifest_info = self._axml_parser.get_manifest_info(manifest_data)
+                        if zf.getinfo('AndroidManifest.xml').file_size <= 8 * 1024 * 1024:
+                            manifest_data = zf.read("AndroidManifest.xml")
+                            manifest_info = self._axml_parser.get_manifest_info(manifest_data)
 
                     bundled_libs = []
-                    if "apex_manifest.pb" in zf.namelist():
+                    if "apex_manifest.pb" in zf.namelist() and zf.getinfo('apex_manifest.pb').file_size <= 1024 * 1024:
                         pb_data = zf.read("apex_manifest.pb")
                         so_matches = re.findall(rb'([a-zA-Z0-9_\-\.]+\.so)', pb_data)
                         bundled_libs = [m.decode('ascii', errors='ignore') for m in so_matches]
 
                     zf.close()
 
-                    pkg_name = manifest_info.package_name if manifest_info and manifest_info.package_name else entry.name[:-5]
+                    pkg_name = manifest_info.package_name if manifest_info and manifest_info.package_name else entry.name.rsplit('.', 1)[0]
                     version_str = ""
                     if manifest_info and manifest_info.version_code:
                         version_str = str(manifest_info.version_code)
@@ -373,6 +357,8 @@ class AndroidSystemScanner:
                         resolved_version=version_str,
                         purl=purl,
                         description=" | ".join(desc_parts),
+                        properties=[{'name': 'firmware:evidence:location', 'value': full_path},
+                                    {'name': 'firmware:version:kind', 'value': 'android-version-code'}],
                         versions=[VersionConfidence(
                             version=version_str if version_str else "",
                             confidence=0.95 if version_str else 0.70,
@@ -380,7 +366,8 @@ class AndroidSystemScanner:
                             evidence=f"APEX package at {full_path}",
                         )],
                     ))
-                except Exception:
+                except (OSError, ValueError, zipfile.BadZipFile, RuntimeError, EOFError, zlib.error) as exc:
+                    self._coverage_warnings.add(f'Cannot parse APEX module manifest: {full_path}: {exc}')
                     continue
 
         return components
@@ -432,6 +419,13 @@ class AndroidSystemScanner:
 
     def _scan_single_apk(self, apk_path: str) -> list[Component]:
         """Scan a single APK file to extract its manifest info and embedded libraries."""
+        if callable(getattr(self._fs, 'read_file_range', None)):
+            from .archive_reader import FilesystemFile
+            try:
+                with FilesystemFile(self._fs, apk_path) as handle, zipfile.ZipFile(handle) as archive:
+                    return self._analyze_apk_archive(archive, apk_path)
+            except (OSError, ValueError, RuntimeError, zipfile.BadZipFile) as error:
+                self._coverage_warnings.add(f'Cannot read complete APK archive: {apk_path}: {type(error).__name__}')
         limit = 128 * 1024 * 1024
         if hasattr(self._fs, 'file_size') and self._fs.file_size(apk_path) > limit:
             self._coverage_warnings.add(f'APK exceeds 128 MiB scan limit: {apk_path}; embedded libraries may be unavailable')
@@ -455,29 +449,38 @@ class AndroidSystemScanner:
 
     def _analyze_apk_data(self, apk_data: bytes, apk_path: str) -> list[Component]:
         """Analyze APK data (ZIP format) to extract manifest info and embedded libraries."""
-        manifest_info = None
-        embedded_libs: list[Component] = []
-
-        # Try standard ZIP parsing if data starts with PK signature
         if apk_data[:2] == b'PK':
             try:
-                zf = zipfile.ZipFile(io.BytesIO(apk_data))
-                try:
-                    if 'AndroidManifest.xml' in zf.namelist():
-                        manifest_data = zf.read('AndroidManifest.xml')
-                        manifest_info = self._axml_parser.get_manifest_info(manifest_data)
-                    embedded_libs = self._extract_embedded_maven_libs(zf, apk_path)
-                except Exception:
-                    pass
-                embedded_libs.extend(self._extract_embedded_native_libs(zf, apk_path))
-                zf.close()
-            except Exception:
+                with zipfile.ZipFile(io.BytesIO(apk_data)) as archive:
+                    return self._analyze_apk_archive(archive, apk_path, apk_data)
+            except (OSError, ValueError, RuntimeError, zipfile.BadZipFile):
                 pass
+        manifest_info = self._extract_manifest_from_raw(apk_data)
+        return self._components_from_apk_manifest(manifest_info, apk_path, [])
 
-        # If ZIP parsing didn't yield manifest, try raw local header extraction
-        if not manifest_info:
-            manifest_info = self._extract_manifest_from_raw(apk_data)
+    def _analyze_apk_archive(self, archive, apk_path, raw_data=None):
+        """Analyse selected archive entries, keeping APK size independent of RAM."""
+        manifest_info = None
+        try:
+            entry = archive.getinfo('AndroidManifest.xml')
+            if entry.file_size > 8 * 1024 * 1024:
+                self._coverage_warnings.add(f'APK manifest exceeds 8 MiB budget: {apk_path}')
+            else:
+                with archive.open(entry) as stream:
+                    manifest = stream.read(8 * 1024 * 1024 + 1)
+                if len(manifest) <= 8 * 1024 * 1024:
+                    manifest_info = self._axml_parser.get_manifest_info(manifest)
+        except KeyError:
+            pass
+        except (OSError, ValueError, RuntimeError, zipfile.BadZipFile, zlib.error, EOFError):
+            self._coverage_warnings.add(f'Cannot read APK manifest: {apk_path}')
+        if not manifest_info and raw_data is not None:
+            manifest_info = self._extract_manifest_from_raw(raw_data)
+        embedded_libs = self._extract_embedded_maven_libs(archive, apk_path)
+        embedded_libs.extend(self._extract_embedded_native_libs(archive, apk_path))
+        return self._components_from_apk_manifest(manifest_info, apk_path, embedded_libs)
 
+    def _components_from_apk_manifest(self, manifest_info, apk_path, embedded_libs):
         if not manifest_info or not manifest_info.package_name:
             name = Path(apk_path).stem
             apk_comp = Component(
@@ -533,19 +536,29 @@ class AndroidSystemScanner:
         for entry in archive.infolist():
             if not re.fullmatch(r'lib/[^/]+/[^/]+\.so', entry.filename):
                 continue
-            if count >= 100 or entry.file_size > 32 * 1024 * 1024 or total + entry.file_size > 96 * 1024 * 1024:
+            # Chromium and speech runtimes routinely exceed 32 MiB. Bound each
+            # binary and the archive total, while streaming compressed members.
+            limit = 256 * 1024 * 1024
+            if count >= 1000 or entry.file_size > limit or total + entry.file_size > 512 * 1024 * 1024:
                 self._coverage_warnings.add(f'Embedded native library scan limit reached: {origin}!/{entry.filename}')
                 continue
             try:
                 with archive.open(entry) as stream:
-                    data = stream.read(32 * 1024 * 1024 + 1)
-                if len(data) > 32 * 1024 * 1024:
+                    buffer = io.BytesIO()
+                    while buffer.tell() <= entry.file_size:
+                        chunk = stream.read(min(1024 * 1024, entry.file_size + 1 - buffer.tell()))
+                        if not chunk:
+                            break
+                        buffer.write(chunk)
+                    data = buffer.getvalue()
+                if len(data) != entry.file_size or len(data) > limit:
+                    self._coverage_warnings.add(f'Truncated or oversized embedded native library: {origin}!/{entry.filename}')
                     continue
                 total += len(data)
                 count += 1
                 path = f'{origin}!/{entry.filename}'
                 components.extend(self._binary_inventory().extract(data, Path(entry.filename).name, path))
-            except (OSError, ValueError, zipfile.BadZipFile, RuntimeError):
+            except (OSError, ValueError, zipfile.BadZipFile, RuntimeError, zlib.error, EOFError):
                 self._coverage_warnings.add(f'Cannot read embedded native library: {origin}!/{entry.filename}')
         return components
 

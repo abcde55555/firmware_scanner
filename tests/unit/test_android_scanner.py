@@ -71,6 +71,17 @@ def test_embedded_maven_extraction():
     assert maven_comps[0].purl == "pkg:maven/com.google.guava/listenablefuture@1.0"
 
 
+def test_sdk_artifact_properties_reach_android_product_scan():
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, 'w') as archive:
+        archive.writestr('play-services-base.properties',
+                         'version=18.1.0\nclient=play-services-base\nplay-services-base_client=18.1.0\n')
+    scanner = AndroidSystemScanner(MockFilesystem({'/system/app/Test/Test.apk': data.getvalue()}))
+    result = scanner._scan_apks()
+    assert any(c.name == 'com.google.android.gms:play-services-base' and c.resolved_version == '18.1.0'
+               for c in result)
+
+
 def test_known_bin_patterns():
     """Verify regex extraction of toybox, curl, e2fsck versions."""
     scanner = AndroidSystemScanner(MockFilesystem({}))
