@@ -41,6 +41,8 @@ class ELFExtractionResult:
     toolchain: str = ""
     target_sdk: int = 0
     is_platform_component: bool = False
+    version_kind: str = "release"
+    facts: list[dict[str, str]] = field(default_factory=list)
 
 
 # Milestone symbols mapping for landmark API fingerprinting
@@ -80,7 +82,6 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
     ],
     "jpeg": [
         (rb'libjpeg-turbo version (\d+\.\d+\.\d+(?:\.\d+)?)', "libjpeg-turbo version string"),
-        (rb'(\d+\.\d+)\x00.{0,16}JFIF', "JFIF version string"),
     ],
     "zlib": [
         (rb'deflate (\d+\.\d+\.\d+(?:\.\d+)?)', "zlib version string"),
@@ -102,11 +103,9 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
         (rb'(\d+\.\d+\.\d+)\x00.{0,16}expat', "expat version string"),
     ],
     "xml2": [
+        (rb'(\d+-GITv\d+\.\d+\.\d+(?:-[A-Za-z0-9_.]+)+)', "libxml2 development snapshot"),
         (rb'(?:GITv|libxml2-)(\d+\.\d+\.\d+)', "libxml2 version string"),
         (rb'(\d+\.\d+\.\d+)\x00.{0,16}libxml', "libxml2 version string"),
-    ],
-    "lz4": [
-        (rb'\x00(1\.\d{1,2}\.\d+)\x00(?:ERROR_)?', "lz4 version string"),
     ],
     "harfbuzz": [
         (rb'(\d{1,2}\.\d{1,2}\.\d{1,2})\x00end table', "HarfBuzz version string"),
@@ -128,9 +127,6 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
     "event": [
         (rb'(\d+\.\d+\.\d+)-stable', "libevent version string"),
     ],
-    "bpf": [
-        (rb'\x00(\d+\.\d+\.\d+)\x00Operation made no progress', "libbpf version string"),
-    ],
     "ext2fs": [
         (rb'\x00(1\.\d{1,2}\.\d+)\x00Test_io', "libext2fs version string"),
         (rb'version of e2fsck!\x00(1\.\d+\.\d+)', "e2fsck version string"),
@@ -140,8 +136,8 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
         (rb'version of e2fsck!\x00(1\.\d+\.\d+)', "e2fsck version string"),
     ],
     "curl": [
-        (rb'libcurl/(\d+\.\d+\.\d+)', "libcurl version string"),
-        (rb'curl (\d+\.\d+\.\d+)', "curl version string"),
+        (rb'libcurl/(\d+\.\d+\.\d+(?:[-+][A-Za-z0-9_.-]+)?)', "libcurl version string"),
+        (rb'(?<![A-Za-z0-9_])curl (\d+\.\d+\.\d+(?:[-+][A-Za-z0-9_.-]+)?)', "curl version string"),
     ],
     "toybox": [
         (rb'(\d+\.\d+\.\d+)-android', "Toybox Android version string"),
@@ -208,7 +204,6 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
     ],
     "icuuc": [
         (rb'ICU (\d+\.\d+(?:\.\d+)?)', "ICU version string"),
-        (rb'icudt(\d+)', "ICU data version"),
     ],
     "icui18n": [
         (rb'ICU (\d+\.\d+(?:\.\d+)?)', "ICU version string"),
@@ -403,6 +398,7 @@ class ELFDeepExtractor:
             result.confidence = 0.95
             result.method = ExtractionMethod.MANIFEST_BINARY
             result.evidence = f"Android HIDL HAL interface @{result.version}"
+            result.version_kind = "interface"
             result.purl = f"pkg:generic/{clean_name}@{result.version}"
             return result
 
@@ -412,6 +408,7 @@ class ELFDeepExtractor:
             result.confidence = 0.95
             result.method = ExtractionMethod.MANIFEST_BINARY
             result.evidence = f"Android AIDL HAL interface {result.version}"
+            result.version_kind = "interface"
             result.purl = f"pkg:generic/{clean_name}@{result.version}"
             return result
 
@@ -448,13 +445,14 @@ class ELFDeepExtractor:
         # Layer 3: Exported Symbol Milestones (Landmark APIs)
         # -------------------------------------------------------------
         if not result.version:
-            self._extract_symbol_milestones(data, result)
+            defined_symbols = self._defined_symbols(data)
+            self._extract_symbol_milestones(data, result, defined_symbols)
 
         # -------------------------------------------------------------
         # Layer 3.5: Multi-Symbol Set Containment
         # -------------------------------------------------------------
         if not result.version:
-            self._extract_symbol_sets(clean_name, data, result)
+            self._extract_symbol_sets(clean_name, data, result, defined_symbols)
 
         # -------------------------------------------------------------
         # Layer 4: Cryptographic Constants & Magic Numbers
@@ -462,137 +460,50 @@ class ELFDeepExtractor:
         if not result.version:
             self._extract_crypto_constants(data, result)
 
-        return result if result.version else None
+        return result if result.version or result.facts or result.evidence else None
 
     def _extract_elf_headers(self, data: bytes, result: ELFExtractionResult):
-        """Extract SONAME, RUNPATH, symbol versions (.gnu.version_d/.gnu.version_r), .comment, and Android ident."""
+        """Record ABI and build metadata without promoting it to a release."""
         try:
             elffile = ELFFile(io.BytesIO(data))
             for section in elffile.iter_sections():
-                # Dynamic section
                 if isinstance(section, DynamicSection):
                     for tag in section.iter_tags():
                         if tag.entry.d_tag == 'DT_SONAME':
-                            soname = tag.soname
-                            m = re.search(r'\.so\.(\d+(?:\.\d+)*)', soname)
-                            if m and not result.version:
-                                result.version = m.group(1)
-                                result.confidence = 0.90
-                                result.method = ExtractionMethod.BINARY_SIGNATURE
-                                result.evidence = f"DT_SONAME version: {soname}"
-                                result.purl = f"pkg:generic/{result.canonical_name}@{result.version}"
+                            result.facts.append({"name": "firmware:elf:soname", "value": tag.soname})
                         elif tag.entry.d_tag in ('DT_RPATH', 'DT_RUNPATH'):
-                            path_str = getattr(tag, 'runpath', '') or getattr(tag, 'rpath', '')
-                            m = re.search(r'/([a-zA-Z0-9_\-]+)[-_]v?(\d+\.\d+(?:\.\d+)?(?:[a-z]|[-_][a-z0-9]+)?)/', path_str)
-                            if m and not result.version:
-                                result.version = m.group(2)
-                                result.confidence = 0.85
-                                result.method = ExtractionMethod.STRING_PATTERN
-                                result.evidence = f"Build path version: {m.group(0)}"
-                                result.purl = f"pkg:generic/{m.group(1)}@{result.version}"
-
-                # Symbol Version Definition (.gnu.version_d)
+                            path = getattr(tag, 'runpath', '') or getattr(tag, 'rpath', '')
+                            result.facts.append({"name": "firmware:elf:runpath", "value": path})
                 elif section.name == '.gnu.version_d':
-                    best_ver = self._extract_best_symbol_version(section)
-                    if best_ver and not result.version:
-                        result.version = best_ver[0]
-                        result.confidence = 0.90
-                        result.method = ExtractionMethod.SYMBOL_TABLE
-                        result.evidence = f".gnu.version_d tag: {best_ver[1]}"
-                        result.purl = f"pkg:generic/{result.canonical_name}@{result.version}"
-
-                # Compiler and Toolchain (.comment)
+                    for version, aux in section.iter_versions():
+                        for entry in aux:
+                            if entry.name:
+                                result.facts.append({"name": "firmware:elf:abi_version", "value": entry.name})
                 elif section.name == '.comment':
-                    comment_text = section.data().decode('ascii', errors='ignore').replace('\x00', ' ').strip()
-                    if comment_text:
-                        result.toolchain = comment_text
-
-                # Android Ident (.note.android.ident)
+                    result.toolchain = section.data().decode('ascii', errors='ignore').replace('\x00', ' ').strip()
                 elif section.name == '.note.android.ident':
                     raw = section.data()
-                    if b'Android\x00' in raw:
-                        idx = raw.find(b'Android\x00') + 8
-                        if idx + 4 <= len(raw):
-                            result.target_sdk = struct.unpack_from('<I', raw, idx)[0]
+                    at = raw.find(b'Android\x00')
+                    if at >= 0 and at + 12 <= len(raw):
+                        result.target_sdk = struct.unpack_from('<I', raw, at + 8)[0]
         except Exception:
             return
 
-    def _extract_best_symbol_version(self, section) -> Optional[tuple[str, str]]:
-        """Extract the highest version tag from .gnu.version_d."""
-        tags = []
+    @staticmethod
+    def _defined_symbols(data: bytes) -> set[str]:
+        if not HAVE_ELFTOOLS:
+            return set()
+        symbols = set()
         try:
-            for ver in section.iter_versions():
-                vname = ver[0].name
-                if vname:
-                    tags.append(vname)
+            elf = ELFFile(io.BytesIO(data))
+            for section in elf.iter_sections():
+                if section.name in ('.dynsym', '.symtab'):
+                    for sym in section.iter_symbols():
+                        if sym['st_shndx'] != 'SHN_UNDEF' and sym.name:
+                            symbols.add(sym.name)
         except Exception:
-            return None
-
-        # Check OpenSSL tags (OPENSSL_1_1_1e, OPENSSL_3_0_0)
-        openssl_tags = [t for t in tags if t.startswith('OPENSSL_')]
-        if openssl_tags:
-            # Sort by version
-            openssl_tags.sort()
-            latest = openssl_tags[-1]
-            ver_part = latest.replace('OPENSSL_', '').replace('_', '.')
-            return (ver_part, latest)
-
-        # Check GLIBC tags (GLIBC_2.34)
-        glibc_tags = [t for t in tags if t.startswith('GLIBC_')]
-        if glibc_tags:
-            glibc_tags.sort()
-            latest = glibc_tags[-1]
-            ver_part = latest.replace('GLIBC_', '')
-            return (ver_part, latest)
-
-        # Check ZLIB tags (ZLIB_1.2.9)
-        zlib_tags = [t for t in tags if t.startswith('ZLIB_')]
-        if zlib_tags:
-            zlib_tags.sort()
-            latest = zlib_tags[-1]
-            ver_part = latest.replace('ZLIB_', '')
-            return (ver_part, latest)
-
-        # Check Libstdc++ tags (GLIBCXX_3.4.29)
-        cxx_tags = [t for t in tags if t.startswith('GLIBCXX_')]
-        if cxx_tags:
-            cxx_tags.sort()
-            latest = cxx_tags[-1]
-            ver_part = latest.replace('GLIBCXX_', '')
-            return (ver_part, latest)
-
-        # Check Libxml2 tags (LIBXML2_2.9.0)
-        xml2_tags = [t for t in tags if t.startswith('LIBXML2_')]
-        if xml2_tags:
-            xml2_tags.sort()
-            latest = xml2_tags[-1]
-            ver_part = latest.replace('LIBXML2_', '').replace('_', '.')
-            return (ver_part, latest)
-
-        # Check XZ tags (XZ_5.2)
-        xz_tags = [t for t in tags if t.startswith('XZ_')]
-        if xz_tags:
-            xz_tags.sort()
-            latest = xz_tags[-1]
-            ver_part = latest.replace('XZ_', '').replace('_', '.')
-            return (ver_part, latest)
-
-        # Check GnuTLS tags (GNUTLS_3_6_14)
-        gnutls_tags = [t for t in tags if t.startswith('GNUTLS_')]
-        if gnutls_tags:
-            gnutls_tags.sort()
-            latest = gnutls_tags[-1]
-            ver_part = latest.replace('GNUTLS_', '').replace('_', '.')
-            return (ver_part, latest)
-
-        # Check Libpng tags (PNG16_0)
-        png_tags = [t for t in tags if t.startswith('PNG16_') or t.startswith('PNG12_')]
-        if png_tags:
-            latest = sorted(png_tags)[-1]
-            ver_part = "1.6" if "PNG16" in latest else "1.2"
-            return (ver_part, latest)
-
-        return None
+            pass
+        return symbols
 
     def _extract_rodata_signatures(self, filename: str, data: bytes, result: ELFExtractionResult):
         """Match .rodata banner signatures and error strings."""
@@ -617,17 +528,12 @@ class ELFDeepExtractor:
             patterns = KNOWN_RODATA_PATTERNS.get(clean_name)
 
         if not patterns:
-            fn_lower = filename.lower()
-            for k, pats in KNOWN_RODATA_PATTERNS.items():
-                if len(k) >= 3 and (k in lib_key or k in fn_lower):
-                    patterns = pats
-                    break
-
-        if not patterns:
             return
 
         search_chunk = data[:4 * 1024 * 1024]
         for pattern, desc in patterns:
+            if lib_key == 'curl' and '.so' not in filename and desc.startswith('libcurl'):
+                continue
             match = re.search(pattern, search_chunk)
             if match:
                 if match.groups():
@@ -639,57 +545,26 @@ class ELFDeepExtractor:
                     result.purl = f"pkg:generic/{filename}@{ver}"
                     return
                 elif b"BoringSSL" in match.group(0):
-                    result.version = "BoringSSL"
+                    result.version = ""
+                    result.canonical_name = "boringssl"
                     result.confidence = 0.85
                     result.method = ExtractionMethod.STRING_PATTERN
                     result.evidence = "BoringSSL identifier in binary"
-                    result.purl = f"pkg:generic/{filename}@BoringSSL"
+                    result.purl = "pkg:generic/boringssl"
                     return
 
     def _extract_protobuf_version(self, filename: str, data: bytes, result: ELFExtractionResult):
-        """Extract Google Protobuf version from embedded integer constants in VerifyVersion."""
-        if not HAVE_ELFTOOLS or ("protobuf" not in filename.lower() and b"VerifyVersion" not in data):
-            return
-        try:
-            elffile = ELFFile(io.BytesIO(data))
-            for s in elffile.iter_sections():
-                if s.name in ('.dynsym', '.symtab'):
-                    for sym in s.iter_symbols():
-                        if 'VerifyVersion' in sym.name:
-                            func_addr = sym['st_value']
-                            for sec in elffile.iter_sections():
-                                if sec['sh_addr'] <= func_addr < sec['sh_addr'] + sec['sh_size']:
-                                    func_offset = sec['sh_offset'] + (func_addr - sec['sh_addr'])
-                                    func_bytes = data[func_offset:func_offset + min(sym['st_size'] or 256, 512)]
-                                    for i in range(len(func_bytes) - 4):
-                                        val = struct.unpack_from('<I', func_bytes, i)[0]
-                                        if 3000000 <= val <= 6050050:
-                                            major = val // 1000000
-                                            minor = (val % 1000000) // 1000
-                                            patch = val % 1000
-                                            if 3 <= major <= 6 and 0 <= minor <= 50 and 0 <= patch <= 50:
-                                                result.version = f"{major}.{minor}.{patch}"
-                                                result.confidence = 0.95
-                                                result.canonical_name = "protobuf"
-                                                result.method = ExtractionMethod.BINARY_SIGNATURE
-                                                result.evidence = f"Protobuf VerifyVersion constant {val} ({result.version})"
-                                                result.purl = f"pkg:generic/protobuf@{result.version}"
-                                                return
-        except Exception:
-            pass
+        # Arbitrary four-byte windows in instructions are not protobuf version
+        # constants. Only a proven instruction-level data flow may establish one.
+        return
 
-    def _extract_symbol_milestones(self, data: bytes, result: ELFExtractionResult):
-        """Check for landmark exported symbols indicating minimum version."""
+    def _extract_symbol_milestones(self, data: bytes, result: ELFExtractionResult, defined=None):
+        """Keep observed APIs as identity evidence, never as exact releases."""
+        if defined is None:
+            defined = self._defined_symbols(data)
         for sym, comp_name, min_ver, reason in LANDMARK_SYMBOLS:
-            sym_bytes = sym.encode('ascii')
-            if sym_bytes in data:
-                result.version = min_ver
-                result.confidence = 0.80
-                result.canonical_name = comp_name
-                result.method = ExtractionMethod.SYMBOL_TABLE
-                result.evidence = f"Landmark symbol: {reason}"
-                result.purl = f"pkg:generic/{result.canonical_name}@{min_ver}"
-                return
+            if sym in defined:
+                result.facts.append({"name": "firmware:elf:defined_api", "value": sym})
 
     def _extract_crypto_constants(self, data: bytes, result: ELFExtractionResult):
         """Check for cryptographic magic numbers & lookup tables (S-Box, SHA256)."""
@@ -715,11 +590,7 @@ class ELFDeepExtractor:
                 tokens = {m.group(1).decode("ascii", errors="replace") for m in shape_re.finditer(search_chunk)}
                 if len(tokens) == 1:
                     raw_ver = tokens.pop()
-                    if raw_ver.endswith("-devel"):
-                        parts = raw_ver[:-6].split(".")
-                        ver = f"{parts[0]}.{int(parts[1]) - 1}" if len(parts) > 1 and parts[1].isdigit() and int(parts[1]) > 0 else raw_ver
-                    else:
-                        ver = raw_ver
+                    ver = raw_ver
                     result.version = ver
                     result.canonical_name = canonical
                     result.confidence = 0.90
@@ -728,18 +599,19 @@ class ELFDeepExtractor:
                     result.purl = f"pkg:generic/{canonical}@{ver}"
                     return
 
-    def _extract_symbol_sets(self, filename: str, data: bytes, result: ELFExtractionResult):
+    def _extract_symbol_sets(self, filename: str, data: bytes, result: ELFExtractionResult, defined=None):
         """Match whole NUL-delimited exported API symbol sets for stripped binaries."""
         if result.version:
             return
-        search_chunk = data[:8 * 1024 * 1024]
+        if defined is None:
+            defined = self._defined_symbols(data)
         for name, canonical, need, syms in SYMBOL_SETS:
             hits = 0
             for s in syms:
-                if f"\0{s}\0".encode("ascii") in search_chunk:
+                if s in defined:
                     hits += 1
             if hits >= need:
-                result.version = "detected"
+                result.version = ""
                 result.canonical_name = canonical
                 result.confidence = 0.85
                 result.method = ExtractionMethod.SYMBOL_TABLE
@@ -759,6 +631,7 @@ class ELFDeepExtractor:
                     go_ver = res[0].replace("go", "")
                     result.version = go_ver
                     result.canonical_name = "golang"
+                    result.version_kind = "runtime"
                     result.confidence = 0.98
                     result.method = ExtractionMethod.MANIFEST_BINARY
                     result.evidence = f"Go embedded buildinfo: {res[0]}"

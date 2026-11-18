@@ -139,6 +139,7 @@ class AndroidSystemScanner:
         self._crypto_assets_map: dict[str, DiscoveredCryptoAsset] = {}
         self._ai_models: list[DiscoveredAIModel] = []
         self._ai_runtimes: list[DiscoveredAIRuntime] = []
+        self._coverage_warnings: set[str] = set()
 
     def scan(self) -> AndroidScanResult:
         """Perform full Android system scan."""
@@ -229,6 +230,7 @@ class AndroidSystemScanner:
                 if cpe_str:
                     c.cpe = cpe_str
 
+        result.warnings.extend(sorted(self._coverage_warnings))
         return result
 
     def _scan_build_props(self) -> AndroidBuildInfo:
@@ -259,83 +261,21 @@ class AndroidSystemScanner:
         target.all_properties.update(source.all_properties)
 
     def _apply_os_version_fallback(self, result: AndroidScanResult):
-        """Annotate unversioned system components with AOSP baseline and SPL watermark."""
-        os_version = result.build_info.android_version or ""
-        spl = result.build_info.security_patch or ""
-        build_id = result.build_info.build_id or ""
-
-        baseline_parts = []
-        if os_version:
-            baseline_parts.append(f"Android {os_version}")
-        if spl:
-            baseline_parts.append(f"SPL {spl}")
-        if build_id:
-            baseline_parts.append(f"build {build_id}")
-        baseline_desc = f"AOSP platform component | Baseline: {', '.join(baseline_parts)}" if baseline_parts else "AOSP platform component"
-
-        # Third-party libraries that should never be stamped with OS version
-        third_party_blacklist = {
-            "ssl", "crypto", "sqlite", "sqlite3", "curl", "z", "zlib", "png", "png16", "jpeg",
-            "expat", "freetype", "harfbuzz", "xml2", "vpx", "opus", "pcre", "pcre2",
-            "boringssl", "openssl", "toybox", "busybox", "protobuf", "tinyxml2"
-        }
-
+        """Attach the Android build context; unknown library releases stay unknown."""
+        info = result.build_info
+        context = [("release", info.android_version), ("security_patch", info.security_patch),
+                   ("build_id", info.build_id), ("fingerprint", info.build_fingerprint)]
         for comp in result.components:
-            # The Android OS component keeps the OS version
-            if comp.component_type == "operating-system" or comp.name.lower() == "android":
-                if not comp.resolved_version and os_version:
-                    comp.resolved_version = os_version
+            if comp.component_type == "operating-system":
+                if not comp.resolved_version and info.android_version:
+                    comp.resolved_version = info.android_version
                 continue
-
-            # Clear any placeholder 'detected' version
-            if comp.resolved_version == "detected":
+            if comp.resolved_version in ("detected", "unknown", "BoringSSL"):
                 comp.resolved_version = ""
-
-            # Check if this component has no version yet
-            if not comp.resolved_version and os_version:
-                name_clean = comp.name.lower()
-                if name_clean.startswith("lib"):
-                    name_clean = name_clean[3:]
-                if name_clean.endswith(".so"):
-                    name_clean = name_clean[:-3]
-
-                # If it's a known third-party library, don't stamp with OS version
-                from ..extraction.cpe_synthesizer import _CANONICAL_CPE_MAP
-                is_third_party = (
-                    name_clean in third_party_blacklist
-                    or name_clean in _CANONICAL_CPE_MAP
-                    or f"lib{name_clean}" in _CANONICAL_CPE_MAP
-                    or any(tp in name_clean for tp in ("ssl", "crypto", "boring", "lzma", "jsoncpp", "exif", "heif"))
-                )
-                if is_third_party:
-                    if not comp.description:
-                        comp.description = baseline_desc
-                    continue
-
-                # Determine if this is a first-party AOSP platform component
-                is_aosp = (
-                    comp.name.startswith("android.")
-                    or comp.name.startswith("com.android.")
-                    or comp.name.startswith("framework/")
-                    or comp.name.startswith("aaudio")
-                    or comp.name.startswith("aconfig")
-                    or "AOSP" in comp.description
-                    or "/system/" in comp.description
-                    or comp.component_type in ("application", "framework")
-                )
-
-                if is_aosp:
-                    comp.resolved_version = os_version
-                    comp.versions.append(VersionConfidence(
-                        version=os_version,
-                        confidence=0.85,
-                        method=ExtractionMethod.BUILD_METADATA,
-                        evidence=f"AOSP platform build metadata ({', '.join(baseline_parts)})",
-                    ))
-                    if not comp.description:
-                        comp.description = baseline_desc
-                    elif "Baseline:" not in comp.description:
-                        comp.description = f"{comp.description} | {baseline_desc}"
+            for name, value in context:
+                prop = {"name": f"firmware:android:{name}", "value": str(value)}
+                if value and prop not in comp.properties:
+                    comp.properties.append(prop)
 
     def _extract_embedded_maven_libs(self, zf: zipfile.ZipFile, origin_path: str) -> list[Component]:
         """Extract third-party Java/Kotlin libraries from embedded pom.properties in APK/JAR."""
@@ -492,7 +432,10 @@ class AndroidSystemScanner:
 
     def _scan_single_apk(self, apk_path: str) -> list[Component]:
         """Scan a single APK file to extract its manifest info and embedded libraries."""
-        apk_data = self._fs.read_file(apk_path, max_size=32 * 1024 * 1024)
+        limit = 128 * 1024 * 1024
+        if hasattr(self._fs, 'file_size') and self._fs.file_size(apk_path) > limit:
+            self._coverage_warnings.add(f'APK exceeds 128 MiB scan limit: {apk_path}; embedded libraries may be unavailable')
+        apk_data = self._fs.read_file(apk_path, max_size=limit)
         if not apk_data:
             name = Path(apk_path).stem
             return [Component(
@@ -526,6 +469,7 @@ class AndroidSystemScanner:
                     embedded_libs = self._extract_embedded_maven_libs(zf, apk_path)
                 except Exception:
                     pass
+                embedded_libs.extend(self._extract_embedded_native_libs(zf, apk_path))
                 zf.close()
             except Exception:
                 pass
@@ -581,6 +525,29 @@ class AndroidSystemScanner:
         )
 
         return [apk_comp] + embedded_libs
+
+    def _extract_embedded_native_libs(self, archive, origin):
+        components = []
+        total = 0
+        count = 0
+        for entry in archive.infolist():
+            if not re.fullmatch(r'lib/[^/]+/[^/]+\.so', entry.filename):
+                continue
+            if count >= 100 or entry.file_size > 32 * 1024 * 1024 or total + entry.file_size > 96 * 1024 * 1024:
+                self._coverage_warnings.add(f'Embedded native library scan limit reached: {origin}!/{entry.filename}')
+                continue
+            try:
+                with archive.open(entry) as stream:
+                    data = stream.read(32 * 1024 * 1024 + 1)
+                if len(data) > 32 * 1024 * 1024:
+                    continue
+                total += len(data)
+                count += 1
+                path = f'{origin}!/{entry.filename}'
+                components.extend(self._binary_inventory().extract(data, Path(entry.filename).name, path))
+            except (OSError, ValueError, zipfile.BadZipFile, RuntimeError):
+                self._coverage_warnings.add(f'Cannot read embedded native library: {origin}!/{entry.filename}')
+        return components
 
     def _extract_manifest_from_raw(self, apk_data: bytes) -> AndroidManifestInfo | None:
         """Extract AndroidManifest.xml directly from ZIP local file headers.
@@ -644,179 +611,68 @@ class AndroidSystemScanner:
 
         return self._axml_parser.get_manifest_info(manifest_data)
 
-    def _scan_native_libs(self) -> list[Component]:
-        """Scan native library directories for .so files with partition path isolation."""
-        components: list[Component] = []
-        scanned = 0
-        seen_keys: set[tuple[str, str]] = set()
+    def _binary_inventory(self):
+        if not hasattr(self, '_inventory'):
+            from ..extraction.binary_inventory import BinaryInventory
+            self._inventory = BinaryInventory()
+        return self._inventory
 
-        for dir_path in LIB_DIRECTORIES:
+    def _read_elf_bytes(self, path):
+        limit = 32 * 1024 * 1024
+        if hasattr(self._fs, 'file_size') and self._fs.file_size(path) > limit:
+            self._coverage_warnings.add(f'ELF exceeds 32 MiB scan limit: {path}; symbol and version extraction may be incomplete')
+        return self._fs.read_file(path, max_size=limit)
+
+    def _collect_binary_assets(self, path, data):
+        for ca in self._cbom_scanner.scan_binary(path, data):
+            existing = self._crypto_assets_map.get(ca.algorithm_key)
+            if existing:
+                existing.hit_count += ca.hit_count
+                if path not in existing.matched_locations:
+                    existing.matched_locations.append(path)
+            else:
+                self._crypto_assets_map[ca.algorithm_key] = ca
+        self._ai_runtimes.extend(self._aibom_scanner.scan_binary_for_runtimes(path, data))
+
+    def _walk_binary_directories(self, roots, max_depth=3):
+        seen = set()
+        pending = [(root, 0) for root in roots]
+        while pending:
+            directory, depth = pending.pop(0)
+            if directory in seen or not self._fs.exists(directory):
+                continue
+            seen.add(directory)
+            for entry in sorted(self._fs.list_directory(directory), key=lambda e: e.name):
+                path = f"{directory.rstrip('/')}/{entry.name}"
+                if entry.is_dir and depth < max_depth:
+                    pending.append((path, depth + 1))
+                elif entry.is_file:
+                    yield path, entry.name
+
+    def _scan_native_libs(self) -> list[Component]:
+        components = []
+        seen_paths = set()
+        scanned = 0
+        for path, filename in self._walk_binary_directories(LIB_DIRECTORIES):
             if scanned >= self._max_libs:
                 break
-            if not self._fs.exists(dir_path):
+            if path in seen_paths or not re.search(r'\.so(?:\.\d[\d.]*)?$', filename, re.I):
                 continue
-
-            parts = dir_path.strip('/').split('/')
-            partition = parts[0] if parts else "system"
-
-            entries = list(self._fs.list_directory(dir_path))
-            from ..extraction.elf_deep_extractor import KNOWN_RODATA_PATTERNS
-
-            def _lib_priority(entry_name: str) -> tuple[int, str]:
-                nl = entry_name.lower()
-                clean = nl.replace("lib", "").replace(".so", "")
-                for k in KNOWN_RODATA_PATTERNS.keys():
-                    if len(k) >= 3 and (k in clean or k in nl):
-                        return (0, nl)
-                if "@" in nl or "-v" in nl:
-                    return (1, nl)
-                return (2, nl)
-
-            entries.sort(key=lambda e: _lib_priority(e.name))
-            for entry in entries:
-                if scanned >= self._max_libs:
-                    break
-
-                name_lower = entry.name.lower()
-                if not name_lower.endswith('.so') and '.so.' not in name_lower:
-                    continue
-
-                # Skip checksum files (e.g., libbcc.so.sha1)
-                checksum_exts = ('.sha1', '.sha256', '.md5', '.sig', '.hash')
-                if any(name_lower.endswith(ext) for ext in checksum_exts):
-                    continue
-
-                # Path isolation: preserve (partition, filename)
-                key = (partition, entry.name)
-                if key in seen_keys:
-                    continue
-                seen_keys.add(key)
-
-                full_path = f"{dir_path.rstrip('/')}/{entry.name}"
-                comp = self._analyze_native_lib(full_path, entry.name, partition)
-                if comp:
-                    components.append(comp)
-                    scanned += 1
-
+            seen_paths.add(path)
+            data = self._read_elf_bytes(path)
+            if not data or not data.startswith(b'\x7fELF'):
+                continue
+            self._collect_binary_assets(path, data)
+            components.extend(self._binary_inventory().extract(data, filename, path))
+            scanned += 1
         return components
 
     def _analyze_native_lib(self, path: str, filename: str, partition: str = "system") -> Component | None:
-        """Analyze a native .so library."""
-        # Read first 8MB for symbol analysis
-        data = self._fs.read_file(path, max_size=8 * 1024 * 1024)
+        data = self._read_elf_bytes(path)
         if not data:
             return None
-
-        # Collect CBOM cryptographic algorithms / assets
-        try:
-            crypto_assets = self._cbom_scanner.scan_binary(path, data)
-            for ca in crypto_assets:
-                if ca.algorithm_key in self._crypto_assets_map:
-                    existing = self._crypto_assets_map[ca.algorithm_key]
-                    existing.hit_count += ca.hit_count
-                    if path not in existing.matched_locations:
-                        existing.matched_locations.append(path)
-                else:
-                    self._crypto_assets_map[ca.algorithm_key] = ca
-        except Exception:
-            pass
-
-        # Collect AIBOM inference runtimes
-        try:
-            rts = self._aibom_scanner.scan_binary_for_runtimes(path, data)
-            self._ai_runtimes.extend(rts)
-        except Exception:
-            pass
-
-        # Extract library name from filename
-        lib_name = filename
-        if lib_name.startswith('lib'):
-            lib_name = lib_name[3:]
-        # Remove .so suffix and version suffix (e.g., .so.1.2.3)
-        so_idx = lib_name.find('.so')
-        if so_idx > 0:
-            version_suffix = lib_name[so_idx + 3:]
-            lib_name = lib_name[:so_idx]
-        else:
-            version_suffix = ""
-
-        # Try to extract version from the .so version suffix
-        version = ""
-        if version_suffix.startswith('.'):
-            version = version_suffix[1:]
-
-        # 1. Multi-tier deep ELF extractor (SONAME, symbol versioning, rodata banners, landmark symbols, HAL interfaces)
-        from ..extraction.elf_deep_extractor import ELFDeepExtractor
-        deep_extractor = ELFDeepExtractor()
-        deep_res = deep_extractor.extract(filename, data)
-        if deep_res and deep_res.version:
-            evidence_str = deep_res.evidence or f"ELF deep extraction in {path}"
-            if deep_res.toolchain:
-                evidence_str += f" | Toolchain: {deep_res.toolchain[:60]}"
-            return Component(
-                name=filename,
-                component_type="library",
-                resolved_version=deep_res.version,
-                description=f"Native library in /{partition} at {path}",
-                purl=deep_res.purl or f"pkg:generic/{filename}@{deep_res.version}",
-                versions=[VersionConfidence(
-                    version=deep_res.version,
-                    confidence=deep_res.confidence,
-                    method=deep_res.method,
-                    evidence=evidence_str,
-                )],
-            )
-
-        # 2. Try EMBA static rules (529 patterns for known components)
-        emba_results = scan_binary_with_rules(data, filename)
-        if emba_results and emba_results[0].resolved_version:
-            best = emba_results[0]
-            best.description = f"Native library in /{partition} at {path}"
-            best.versions[0] = VersionConfidence(
-                version=best.resolved_version,
-                confidence=0.85,
-                method=ExtractionMethod.STATIC_RULE,
-                evidence=best.versions[0].evidence if best.versions else f"EMBA rule match in {path}",
-            )
-            return best
-
-        # 3. Try well-known library version extraction from binary strings
-        known_version = self._extract_known_lib_version(lib_name, data)
-        if known_version and known_version[0]:
-            return Component(
-                name=filename,
-                component_type="library",
-                resolved_version=known_version[0],
-                description=f"Native library in /{partition} at {path}",
-                purl=f"pkg:generic/{filename}@{known_version[0]}",
-                versions=[VersionConfidence(
-                    version=known_version[0],
-                    confidence=0.85,
-                    method=ExtractionMethod.STRING_PATTERN,
-                    evidence=known_version[1],
-                )],
-            )
-
-        # 4. Symbol table matching fallback via SmartSectionAnalyzer
-        from ..extraction.smart_analyzer import SmartSectionAnalyzer
-        analyzer = SmartSectionAnalyzer()
-        sub_components = analyzer.analyze_section(path, data)
-        if sub_components and sub_components[0].resolved_version and sub_components[0].resolved_version != "detected":
-            return sub_components[0]
-
-        # Fallback: create component from filename without fake version
-        return Component(
-            name=filename,
-            component_type="library",
-            resolved_version=version,
-            description=f"AOSP native library in /{partition} at {path}",
-            versions=[VersionConfidence(
-                version=version,
-                confidence=0.60 if version else 0.40,
-                method=ExtractionMethod.STRING_PATTERN,
-                evidence=f"Native library at {path}",
-            )],
-        )
+        components = self._binary_inventory().extract(data, filename, path)
+        return components[0] if components else None
 
     # Patterns for extracting versions from well-known libraries
     _KNOWN_LIB_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
@@ -978,163 +834,22 @@ class AndroidSystemScanner:
         return None
 
     def _scan_executables(self, lib_version_map: dict[str, str] | None = None) -> list[Component]:
-        """Scan binary directories for executables."""
-        components: list[Component] = []
+        # A similarly named library is not evidence for an executable's release.
+        components = []
+        seen_paths = set()
         scanned = 0
-        seen_names: set[str] = set()
-        lib_versions = lib_version_map or {}
-
-        for dir_path in BIN_DIRECTORIES:
+        for path, filename in self._walk_binary_directories(BIN_DIRECTORIES):
             if scanned >= self._max_bins:
                 break
-            if not self._fs.exists(dir_path):
+            if path in seen_paths:
                 continue
-
-            entries = self._fs.list_directory(dir_path)
-            for entry in entries:
-                if scanned >= self._max_bins:
-                    break
-                if not entry.is_file:
-                    continue
-                if entry.name in seen_names:
-                    continue
-                seen_names.add(entry.name)
-
-                full_path = f"{dir_path.rstrip('/')}/{entry.name}"
-                # Read small chunk to identify format
-                data = self._fs.read_file(full_path, max_size=1 * 1024 * 1024)
-                if not data or len(data) < 16:
-                    continue
-
-                # Only process ELF binaries
-                if data[:4] != b'\x7fELF':
-                    continue
-
-                # Collect CBOM cryptographic algorithms / assets
-                try:
-                    crypto_assets = self._cbom_scanner.scan_binary(full_path, data)
-                    for ca in crypto_assets:
-                        if ca.algorithm_key in self._crypto_assets_map:
-                            existing = self._crypto_assets_map[ca.algorithm_key]
-                            existing.hit_count += ca.hit_count
-                            if full_path not in existing.matched_locations:
-                                existing.matched_locations.append(full_path)
-                        else:
-                            self._crypto_assets_map[ca.algorithm_key] = ca
-                except Exception:
-                    pass
-
-                # Collect AIBOM inference runtimes
-                try:
-                    rts = self._aibom_scanner.scan_binary_for_runtimes(full_path, data)
-                    self._ai_runtimes.extend(rts)
-                except Exception:
-                    pass
-
-                # Check if executable dynamically links to a library with known exact version (e.g. sqlite3 -> libsqlite.so)
-                linked_lib_ver = lib_versions.get(entry.name)
-
-                # 1. Multi-tier deep ELF extractor for binaries
-                from ..extraction.elf_deep_extractor import ELFDeepExtractor
-                deep_extractor = ELFDeepExtractor()
-                deep_res = deep_extractor.extract(entry.name, data)
-                if deep_res and deep_res.version:
-                    bin_ver = deep_res.version
-                    bin_confidence = deep_res.confidence
-                    evidence_str = deep_res.evidence or f"ELF binary version in {full_path}"
-                    
-                    # If version is an API floor landmark (ends with +) and we have a linked lib exact version, use it!
-                    if (bin_ver.endswith("+") or bin_ver == "detected") and linked_lib_ver:
-                        bin_ver = linked_lib_ver
-                        bin_confidence = 0.95
-                        evidence_str = f"Derived from dynamically linked lib{entry.name}.so ({linked_lib_ver})"
-                    elif bin_ver.endswith("+"):
-                        # Keep evidence but do not propagate '+' to version string for semver compatibility
-                        bin_ver = bin_ver.rstrip("+")
-
-                    if deep_res.toolchain:
-                        evidence_str += f" | Toolchain: {deep_res.toolchain[:60]}"
-                    components.append(Component(
-                        name=entry.name,
-                        component_type="application",
-                        resolved_version=bin_ver,
-                        purl=f"pkg:generic/{entry.name}@{bin_ver}" if bin_ver else "",
-                        description=f"ELF binary at {full_path}",
-                        versions=[VersionConfidence(
-                            version=bin_ver,
-                            confidence=bin_confidence,
-                            method=deep_res.method,
-                            evidence=evidence_str,
-                        )],
-                    ))
-                    scanned += 1
-                    continue
-
-                # Check if linked lib version is available when no deep_res version was extracted
-                if linked_lib_ver:
-                    components.append(Component(
-                        name=entry.name,
-                        component_type="application",
-                        resolved_version=linked_lib_ver,
-                        purl=f"pkg:generic/{entry.name}@{linked_lib_ver}",
-                        description=f"ELF binary at {full_path}",
-                        versions=[VersionConfidence(
-                            version=linked_lib_ver,
-                            confidence=0.90,
-                            method=ExtractionMethod.STRING_PATTERN,
-                            evidence=f"Derived from dynamically linked library version ({linked_lib_ver})",
-                        )],
-                    ))
-                    scanned += 1
-                    continue
-
-                # Check known binary patterns next (e.g. toybox, curl, e2fsck)
-                known_bin = self._extract_known_bin_version(entry.name, data)
-                if known_bin:
-                    components.append(Component(
-                        name=entry.name,
-                        component_type="application",
-                        resolved_version=known_bin[0],
-                        purl=f"pkg:generic/{entry.name}@{known_bin[0]}",
-                        description=f"ELF binary at {full_path}",
-                        versions=[VersionConfidence(
-                            version=known_bin[0],
-                            confidence=0.90,
-                            method=ExtractionMethod.STRING_PATTERN,
-                            evidence=known_bin[1],
-                        )],
-                    ))
-                    scanned += 1
-                    continue
-
-                # Try EMBA rules to extract version from binary
-                emba_results = scan_binary_with_rules(data, entry.name)
-                if emba_results:
-                    best = emba_results[0]
-                    best.component_type = "application"
-                    best.description = f"ELF binary at {full_path}"
-                    best.versions[0] = VersionConfidence(
-                        version=best.resolved_version,
-                        confidence=0.82,
-                        method=ExtractionMethod.STATIC_RULE,
-                        evidence=best.versions[0].evidence if best.versions else f"EMBA rule match in {full_path}",
-                    )
-                    components.append(best)
-                else:
-                    components.append(Component(
-                        name=entry.name,
-                        component_type="application",
-                        resolved_version="",
-                        description=f"ELF binary at {full_path}",
-                        versions=[VersionConfidence(
-                            version="",
-                            confidence=0.50,
-                            method=ExtractionMethod.BINARY_SIGNATURE,
-                            evidence=f"ELF executable at {full_path}",
-                        )],
-                    ))
-                scanned += 1
-
+            seen_paths.add(path)
+            data = self._read_elf_bytes(path)
+            if not data or not data.startswith(b'\x7fELF'):
+                continue
+            self._collect_binary_assets(path, data)
+            components.extend(self._binary_inventory().extract(data, filename, path, 'application'))
+            scanned += 1
         return components
 
     def _scan_framework_jars(self) -> list[Component]:

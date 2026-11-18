@@ -375,31 +375,13 @@ class SmartSectionAnalyzer:
     # =========================================================================
 
     def _analyze_elf(self, name: str, data: bytes) -> list[Component]:
-        """Parse ELF symbol table and match against known library function databases."""
-        try:
-            import lief
-        except ImportError:
-            # Fallback: do raw string scan for known symbol names
-            return self._analyze_elf_fallback(name, data)
-
-        try:
-            binary = lief.parse(list(data))
-        except Exception:
-            return self._analyze_elf_fallback(name, data)
-
-        if binary is None:
-            return self._analyze_elf_fallback(name, data)
-
-        # Collect all symbol names
-        symbols: list[str] = []
-        if hasattr(binary, "symbols"):
-            symbols = [s.name for s in binary.symbols if s.name]
-        if hasattr(binary, "static_symbols"):
-            symbols.extend(s.name for s in binary.static_symbols if s.name)
-        if hasattr(binary, "dynamic_symbols"):
-            symbols.extend(s.name for s in binary.dynamic_symbols if s.name)
-
-        return self._match_elf_symbols(symbols, name)
+        """Use the same evidence attribution as the Android filesystem path."""
+        from .binary_inventory import BinaryInventory
+        if not hasattr(self, '_binary_inventory'):
+            self._binary_inventory = BinaryInventory()
+        basename = name.rsplit('/', 1)[-1]
+        component_type = 'library' if '.so' in basename or basename.endswith('.ko') else 'application'
+        return self._binary_inventory.extract(data, basename, name, component_type)
 
     def _analyze_elf_fallback(self, name: str, data: bytes) -> list[Component]:
         """Fallback ELF analysis when lief is not available - scan for symbol strings."""

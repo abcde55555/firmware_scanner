@@ -92,8 +92,7 @@ def test_known_bin_patterns():
 
 
 def test_no_fake_16_fallback():
-    """Verify that third-party components are NOT stamped with fake OS version 16,
-    while first-party AOSP components receive platform build metadata."""
+    """Android context must never invent a component's release version."""
     scanner = AndroidSystemScanner(MockFilesystem({}))
     result = AndroidScanResult(
         build_info=AndroidBuildInfo(android_version="16", security_patch="2025-08-05", build_id="BP2A.250805.005"),
@@ -111,12 +110,10 @@ def test_no_fake_16_fallback():
 
     # libcrypto.so (third-party blacklist) should remain unversioned (empty string), NOT "16"
     assert result.components[1].resolved_version == ""
-    assert "AOSP platform component" in result.components[1].description
-    assert "Baseline: Android 16, SPL 2025-08-05" in result.components[1].description
+    assert {"name": "firmware:android:release", "value": "16"} in result.components[1].properties
 
-    # libbinder.so (first-party AOSP) gets platform OS release 16 with BUILD_METADATA
-    assert result.components[2].resolved_version == "16"
-    assert "Baseline: Android 16, SPL 2025-08-05" in result.components[2].description
+    assert result.components[2].resolved_version == ""
+    assert {"name": "firmware:android:security_patch", "value": "2025-08-05"} in result.components[2].properties
 
     # curl keeps its real version
     assert result.components[3].resolved_version == "8.12.0"

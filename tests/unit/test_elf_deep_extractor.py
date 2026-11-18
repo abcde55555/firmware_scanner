@@ -81,7 +81,7 @@ def test_rodata_signatures(extractor):
 def test_rodata_binaries(extractor):
     """Test Layer 2: .rodata banner signatures for executables."""
     # curl
-    curl_data = b"\x7fELF" + b"\x00" * 20 + b"libcurl/8.12.0" + b"\x00" * 20
+    curl_data = b"\x7fELF" + b"\x00" * 20 + b"curl 8.12.0" + b"\x00" * 20
     res = extractor.extract("curl", curl_data)
     assert res is not None
     assert res.version == "8.12.0"
@@ -130,18 +130,15 @@ def test_rodata_binaries(extractor):
 
 
 def test_landmark_symbol_fingerprinting(extractor):
-    """Test Layer 3: Exported Landmark API milestone fingerprinting."""
+    """Bare API strings cannot establish an exact version or a defined export."""
     data = b"\x7fELF" + b"\x00" * 20 + b"TLS_method\x00" + b"\x00" * 20
     res = extractor.extract("libssl.so", data)
-    assert res is not None
-    assert res.version == "1.1+"
-    assert res.method == ExtractionMethod.SYMBOL_TABLE
+    assert res is None or not res.version
 
     # curl milestone
     curl_sym = b"\x7fELF" + b"\x00" * 20 + b"curl_ws_send\x00" + b"\x00" * 20
     res_curl = extractor.extract("libcurl.so", curl_sym)
-    assert res_curl is not None
-    assert res_curl.version == "7.86.0+"
+    assert res_curl is None or not res_curl.version
 
 
 def test_crypto_magic_constants(extractor):
@@ -178,10 +175,7 @@ def test_symbol_sets_containment(extractor):
     ]
     ogg_data = b"\x7fELF" + b"\x00" * 20 + b"".join(f"\x00{s}\x00".encode("ascii") for s in ogg_syms)
     res = extractor.extract("libcustom_audio.so", ogg_data)
-    assert res is not None
-    assert res.canonical_name == "ogg"
-    assert res.version == "detected"
-    assert "symbol set matched" in res.evidence
+    assert res is None
 
 
 def test_go_buildinfo(extractor):
@@ -196,4 +190,5 @@ def test_go_buildinfo(extractor):
     assert res is not None
     assert res.canonical_name == "golang"
     assert res.version == "1.22"
+    assert res.version_kind == "runtime"
     assert "Go embedded buildinfo" in res.evidence

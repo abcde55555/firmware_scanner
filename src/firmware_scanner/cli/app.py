@@ -1489,6 +1489,7 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
 
 def _store_android_build_info(context: AnalysisContext, result) -> None:
     """Store Android build info in context metadata."""
+    context.warnings.extend(w for w in result.warnings if w not in context.warnings)
     binfo = result.build_info
     all_props = binfo.all_properties or {}
 
@@ -1589,14 +1590,16 @@ def _store_android_build_info(context: AnalysisContext, result) -> None:
 
 def _deduplicate_components(components: list) -> list:
     """Final deduplication and filtering pass."""
-    seen: dict[str, any] = {}
+    seen: dict[tuple, any] = {}
     for comp in components:
-        key = _component_dedup_key(comp.name)
+        key = (_component_dedup_key(comp.name), comp.resolved_version,
+               comp.component_type, comp.vendor.lower())
         if key not in seen:
             seen[key] = comp
         else:
             existing = seen[key]
-            existing.versions.extend(comp.versions)
+            existing.versions.extend(v for v in comp.versions if v not in existing.versions)
+            existing.properties.extend(p for p in comp.properties if p not in existing.properties)
             if comp.resolved_version and (
                 not existing.resolved_version
                 or "unknown" in existing.resolved_version

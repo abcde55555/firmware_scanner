@@ -1,0 +1,801 @@
+{
+  "schema_version": 1,
+  "references": [
+    {
+      "name": "SQLite",
+      "source": "https://github.com/sqlite/sqlite",
+      "version_policy": "banner",
+      "banner_regex": "SQLite version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "sqlite"
+      ]
+    },
+    {
+      "name": "zlib",
+      "source": "https://github.com/madler/zlib",
+      "version_policy": "banner",
+      "banner_regex": "zlib version ([0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "filename_patterns": [
+        "libz"
+      ]
+    },
+    {
+      "name": "libpng",
+      "source": "https://github.com/pnggroup/libpng",
+      "version_policy": "banner",
+      "banner_regex": "libpng version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "libpng"
+      ]
+    },
+    {
+      "name": "libjpeg-turbo",
+      "source": "https://github.com/libjpeg-turbo/libjpeg-turbo",
+      "version_policy": "banner",
+      "banner_regex": "libjpeg-turbo version ([0-9]+\\.[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(?:[-+][A-Za-z0-9._-]+)?)",
+      "filename_patterns": [
+        "jpeg"
+      ]
+    },
+    {
+      "name": "libxml2",
+      "source": "https://gitlab.gnome.org/GNOME/libxml2",
+      "version_policy": "banner",
+      "banner_regex": "(?:libxml2[ ]+([0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.+_-]+)?)|([0-9]{5}-GITv[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+-g[0-9a-f]+))",
+      "filename_patterns": [
+        "xml2"
+      ]
+    },
+    {
+      "name": "curl",
+      "source": "https://github.com/curl/curl",
+      "version_policy": "banner",
+      "banner_regex": "(?<![A-Za-z0-9_])curl ([0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.+_-]+)?)",
+      "filename_patterns": [
+        "curl"
+      ],
+      "required_literal": "curl "
+    },
+    {
+      "name": "OpenSSL",
+      "source": "https://github.com/openssl/openssl",
+      "version_policy": "banner",
+      "banner_regex": "OpenSSL ([0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9.-]*)",
+      "filename_patterns": [
+        "ssl",
+        "crypto"
+      ]
+    },
+    {
+      "name": "BoringSSL",
+      "source": "https://boringssl.googlesource.com/boringssl/",
+      "version_policy": "identity_only",
+      "identity_banner": "BoringSSL",
+      "filename_patterns": [
+        "ssl",
+        "crypto",
+        "boring"
+      ]
+    },
+    {
+      "name": "mbed TLS",
+      "source": "https://github.com/Mbed-TLS/mbedtls",
+      "version_policy": "banner",
+      "banner_regex": "mbed TLS ([0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9.-]*)",
+      "filename_patterns": [
+        "mbed"
+      ]
+    },
+    {
+      "name": "wolfSSL",
+      "source": "https://github.com/wolfSSL/wolfssl",
+      "version_policy": "banner",
+      "banner_regex": "wolfSSL ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "wolfssl"
+      ]
+    },
+    {
+      "name": "Dropbear",
+      "source": "https://github.com/mkj/dropbear",
+      "version_policy": "banner",
+      "banner_regex": "Dropbear v([0-9]{4}\\.[0-9]+)",
+      "filename_patterns": [
+        "dropbear"
+      ]
+    },
+    {
+      "name": "OpenSSH",
+      "source": "https://github.com/openssh/openssh-portable",
+      "version_policy": "banner",
+      "banner_regex": "OpenSSH_([0-9]+\\.[0-9]+(?:p[0-9]+)?[A-Za-z0-9.-]*)",
+      "filename_patterns": [
+        "ssh"
+      ]
+    },
+    {
+      "name": "BusyBox",
+      "source": "https://git.busybox.net/busybox/",
+      "version_policy": "banner",
+      "banner_regex": "BusyBox v([0-9]+\\.[0-9]+\\.[0-9]+[A-Za-z0-9.-]*)",
+      "filename_patterns": [
+        "busybox"
+      ]
+    },
+    {
+      "name": "Toybox",
+      "source": "https://android.googlesource.com/platform/external/toybox/",
+      "version_policy": "banner",
+      "banner_regex": "Toybox ([0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?)",
+      "filename_patterns": [
+        "toybox"
+      ]
+    },
+    {
+      "name": "iproute2",
+      "source": "https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/",
+      "version_policy": "banner",
+      "banner_regex": "iproute2-([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "ip"
+      ]
+    },
+    {
+      "name": "iptables",
+      "source": "https://git.netfilter.org/iptables/",
+      "version_policy": "banner",
+      "banner_regex": "iptables v([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "iptables"
+      ]
+    },
+    {
+      "name": "nftables",
+      "source": "https://git.netfilter.org/nftables/",
+      "version_policy": "banner",
+      "banner_regex": "nftables v([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "nft"
+      ]
+    },
+    {
+      "name": "dnsmasq",
+      "source": "https://thekelleys.org.uk/dnsmasq/",
+      "version_policy": "banner",
+      "banner_regex": "Dnsmasq version ([0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "dnsmasq"
+      ]
+    },
+    {
+      "name": "libpcap",
+      "source": "https://github.com/the-tcpdump-group/libpcap",
+      "version_policy": "banner",
+      "banner_regex": "libpcap version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "pcap"
+      ]
+    },
+    {
+      "name": "tcpdump",
+      "source": "https://github.com/the-tcpdump-group/tcpdump",
+      "version_policy": "banner",
+      "banner_regex": "tcpdump version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "tcpdump"
+      ]
+    },
+    {
+      "name": "libevent",
+      "source": "https://github.com/libevent/libevent",
+      "version_policy": "banner",
+      "banner_regex": "libevent ([0-9]+\\.[0-9]+\\.[0-9]+-stable)",
+      "filename_patterns": [
+        "event"
+      ]
+    },
+    {
+      "name": "libcurl",
+      "source": "https://github.com/curl/curl",
+      "version_policy": "banner",
+      "banner_regex": "libcurl[ /]([0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?)",
+      "filename_patterns": [
+        "curl"
+      ]
+    },
+    {
+      "name": "FFmpeg",
+      "source": "https://github.com/FFmpeg/FFmpeg",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "avcodec_send_packet",
+          "avcodec_receive_frame"
+        ]
+      ],
+      "filename_patterns": [
+        "avcodec",
+        "avformat",
+        "avutil",
+        "ffmpeg"
+      ]
+    },
+    {
+      "name": "GStreamer",
+      "source": "https://gitlab.freedesktop.org/gstreamer/gstreamer",
+      "version_policy": "banner",
+      "banner_regex": "GStreamer ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "gstreamer",
+        "gst"
+      ]
+    },
+    {
+      "name": "libvpx",
+      "source": "https://chromium.googlesource.com/webm/libvpx",
+      "version_policy": "banner",
+      "banner_regex": "vpx_codec_version_str[^\\x00]{0,32}([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "vpx"
+      ]
+    },
+    {
+      "name": "Opus",
+      "source": "https://github.com/xiph/opus",
+      "version_policy": "banner",
+      "banner_regex": "Opus ([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "filename_patterns": [
+        "opus"
+      ]
+    },
+    {
+      "name": "FLAC",
+      "source": "https://github.com/xiph/flac",
+      "version_policy": "banner",
+      "banner_regex": "FLAC ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "flac"
+      ]
+    },
+    {
+      "name": "libvorbis",
+      "source": "https://github.com/xiph/vorbis",
+      "version_policy": "banner",
+      "banner_regex": "libvorbis ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "vorbis"
+      ]
+    },
+    {
+      "name": "libogg",
+      "source": "https://github.com/xiph/ogg",
+      "version_policy": "banner",
+      "banner_regex": "libogg ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "ogg"
+      ]
+    },
+    {
+      "name": "zstd",
+      "source": "https://github.com/facebook/zstd",
+      "version_policy": "banner",
+      "banner_regex": "Zstandard v([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "zstd"
+      ]
+    },
+    {
+      "name": "XZ Utils",
+      "source": "https://github.com/tukaani-project/xz",
+      "version_policy": "banner",
+      "banner_regex": "XZ Utils ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "lzma",
+        "xz"
+      ]
+    },
+    {
+      "name": "bzip2",
+      "source": "https://sourceware.org/git/bzip2.git",
+      "version_policy": "banner",
+      "banner_regex": "bzip2/libbzip2, Version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "bz2"
+      ]
+    },
+    {
+      "name": "LZ4",
+      "source": "https://github.com/lz4/lz4",
+      "version_policy": "banner",
+      "banner_regex": "LZ4 version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "lz4"
+      ]
+    },
+    {
+      "name": "libarchive",
+      "source": "https://github.com/libarchive/libarchive",
+      "version_policy": "banner",
+      "banner_regex": "libarchive ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "archive"
+      ]
+    },
+    {
+      "name": "minizip",
+      "source": "https://github.com/zlib-ng/minizip-ng",
+      "version_policy": "banner",
+      "banner_regex": "minizip-ng ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "zip"
+      ]
+    },
+    {
+      "name": "SQLite3",
+      "source": "https://github.com/sqlite/sqlite",
+      "version_policy": "banner",
+      "banner_regex": "SQLite ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "sqlite"
+      ]
+    },
+    {
+      "name": "LMDB",
+      "source": "https://github.com/LMDB/lmdb",
+      "version_policy": "banner",
+      "banner_regex": "LMDB ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "lmdb"
+      ]
+    },
+    {
+      "name": "LevelDB",
+      "source": "https://github.com/google/leveldb",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "leveldb_open",
+          "leveldb_close"
+        ]
+      ],
+      "filename_patterns": [
+        "leveldb"
+      ]
+    },
+    {
+      "name": "RocksDB",
+      "source": "https://github.com/facebook/rocksdb",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "rocksdb_open",
+          "rocksdb_close"
+        ]
+      ],
+      "filename_patterns": [
+        "rocksdb"
+      ]
+    },
+    {
+      "name": "c-ares",
+      "source": "https://github.com/c-ares/c-ares",
+      "version_policy": "banner",
+      "banner_regex": "c-ares version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "cares"
+      ]
+    },
+    {
+      "name": "nghttp2",
+      "source": "https://github.com/nghttp2/nghttp2",
+      "version_policy": "banner",
+      "banner_regex": "nghttp2/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "nghttp2"
+      ]
+    },
+    {
+      "name": "nghttp3",
+      "source": "https://github.com/ngtcp2/nghttp3",
+      "version_policy": "banner",
+      "banner_regex": "nghttp3/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "nghttp3"
+      ]
+    },
+    {
+      "name": "libwebsockets",
+      "source": "https://github.com/warmcat/libwebsockets",
+      "version_policy": "banner",
+      "banner_regex": "libwebsockets ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "websocket"
+      ]
+    },
+    {
+      "name": "libssh2",
+      "source": "https://github.com/libssh2/libssh2",
+      "version_policy": "banner",
+      "banner_regex": "libssh2/([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "ssh2"
+      ]
+    },
+    {
+      "name": "libxslt",
+      "source": "https://gitlab.gnome.org/GNOME/libxslt",
+      "version_policy": "banner",
+      "banner_regex": "libxslt ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "xslt"
+      ]
+    },
+    {
+      "name": "libc++",
+      "source": "https://github.com/llvm/llvm-project",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "_ZNSt3__16vector",
+          "_ZNSt3__19basic_string"
+        ]
+      ],
+      "filename_patterns": [
+        "c++"
+      ]
+    },
+    {
+      "name": "HarfBuzz",
+      "source": "https://github.com/harfbuzz/harfbuzz",
+      "version_policy": "banner",
+      "banner_regex": "HarfBuzz ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "harfbuzz"
+      ]
+    },
+    {
+      "name": "FreeType",
+      "source": "https://gitlab.freedesktop.org/freetype/freetype",
+      "version_policy": "banner",
+      "banner_regex": "FreeType ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "freetype"
+      ]
+    },
+    {
+      "name": "Fontconfig",
+      "source": "https://gitlab.freedesktop.org/fontconfig/fontconfig",
+      "version_policy": "banner",
+      "banner_regex": "fontconfig version ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "fontconfig"
+      ]
+    },
+    {
+      "name": "FriBidi",
+      "source": "https://github.com/fribidi/fribidi",
+      "version_policy": "banner",
+      "banner_regex": "FriBidi ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "fribidi"
+      ]
+    },
+    {
+      "name": "ICU",
+      "source": "https://github.com/unicode-org/icu",
+      "version_policy": "banner",
+      "banner_regex": "ICU version ([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)",
+      "filename_patterns": [
+        "icu"
+      ]
+    },
+    {
+      "name": "cJSON",
+      "source": "https://github.com/DaveGamble/cJSON",
+      "version_policy": "banner",
+      "banner_regex": "cJSON ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "cjson"
+      ]
+    },
+    {
+      "name": "Jansson",
+      "source": "https://github.com/akheron/jansson",
+      "version_policy": "banner",
+      "banner_regex": "Jansson ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "jansson"
+      ]
+    },
+    {
+      "name": "YAJL",
+      "source": "https://github.com/lloyd/yajl",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "yajl_gen_alloc",
+          "yajl_parser_config"
+        ]
+      ],
+      "filename_patterns": [
+        "yajl"
+      ]
+    },
+    {
+      "name": "libuv",
+      "source": "https://github.com/libuv/libuv",
+      "version_policy": "banner",
+      "banner_regex": "libuv ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "uv"
+      ]
+    },
+    {
+      "name": "libgcrypt",
+      "source": "https://github.com/gpg/libgcrypt",
+      "version_policy": "banner",
+      "banner_regex": "Libgcrypt ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "gcrypt"
+      ]
+    },
+    {
+      "name": "GnuTLS",
+      "source": "https://gitlab.com/gnutls/gnutls",
+      "version_policy": "banner",
+      "banner_regex": "GnuTLS ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "gnutls"
+      ]
+    },
+    {
+      "name": "libtasn1",
+      "source": "https://gitlab.com/gnutls/libtasn1",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "asn1_parser2tree",
+          "asn1_der_decoding"
+        ]
+      ],
+      "filename_patterns": [
+        "tasn1"
+      ]
+    },
+    {
+      "name": "libbpf",
+      "source": "https://github.com/libbpf/libbpf",
+      "version_policy": "banner",
+      "banner_regex": "libbpf ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "bpf"
+      ]
+    },
+    {
+      "name": "libnl",
+      "source": "https://github.com/thom311/libnl",
+      "version_policy": "banner",
+      "banner_regex": "libnl ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "libnl"
+      ]
+    },
+    {
+      "name": "OpenWrt uclient",
+      "source": "https://git.openwrt.org/project/uclient.git",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "uclient_fetch",
+          "uclient_connect"
+        ]
+      ],
+      "filename_patterns": [
+        "uclient"
+      ]
+    },
+    {
+      "name": "libubox",
+      "source": "https://git.openwrt.org/project/libubox.git",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "blobmsg_parse",
+          "uloop_init"
+        ]
+      ],
+      "filename_patterns": [
+        "ubox"
+      ]
+    },
+    {
+      "name": "libubus",
+      "source": "https://git.openwrt.org/project/ubus.git",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "ubus_connect",
+          "ubus_invoke"
+        ]
+      ],
+      "filename_patterns": [
+        "ubus"
+      ]
+    },
+    {
+      "name": "systemd",
+      "source": "https://github.com/systemd/systemd",
+      "version_policy": "banner",
+      "banner_regex": "systemd ([0-9]+)",
+      "filename_patterns": [
+        "systemd"
+      ]
+    },
+    {
+      "name": "libcap",
+      "source": "https://git.kernel.org/pub/scm/linux/kernel/git/morgan/libcap.git/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "cap_get_proc",
+          "cap_set_proc"
+        ]
+      ],
+      "filename_patterns": [
+        "cap"
+      ]
+    },
+    {
+      "name": "libunwind",
+      "source": "https://github.com/libunwind/libunwind",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "unw_getcontext",
+          "unw_init_local"
+        ]
+      ],
+      "filename_patterns": [
+        "unwind"
+      ]
+    },
+    {
+      "name": "libffi",
+      "source": "https://github.com/libffi/libffi",
+      "version_policy": "banner",
+      "banner_regex": "libffi ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "ffi"
+      ]
+    },
+    {
+      "name": "PCRE2",
+      "source": "https://github.com/PCRE2Project/pcre2",
+      "version_policy": "banner",
+      "banner_regex": "PCRE2 ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "pcre2"
+      ]
+    },
+    {
+      "name": "RE2",
+      "source": "https://github.com/google/re2",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "_ZN3re27RE2C1",
+          "_ZN3re27RE2D1"
+        ]
+      ],
+      "filename_patterns": [
+        "re2"
+      ]
+    },
+    {
+      "name": "libyaml",
+      "source": "https://github.com/yaml/libyaml",
+      "version_policy": "banner",
+      "banner_regex": "LibYAML ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "yaml"
+      ]
+    },
+    {
+      "name": "libjpeg",
+      "source": "https://github.com/libjpeg-turbo/libjpeg-turbo",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "jpeg_CreateDecompress",
+          "jpeg_read_header"
+        ]
+      ],
+      "filename_patterns": [
+        "jpeg"
+      ]
+    },
+    {
+      "name": "libpng",
+      "source": "https://github.com/pnggroup/libpng",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "png_create_read_struct",
+          "png_read_info"
+        ]
+      ],
+      "filename_patterns": [
+        "png"
+      ]
+    },
+    {
+      "name": "libarchive",
+      "source": "https://github.com/libarchive/libarchive",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "archive_read_new",
+          "archive_read_next_header"
+        ]
+      ],
+      "filename_patterns": [
+        "archive"
+      ]
+    },
+    {
+      "name": "SQLite",
+      "source": "https://github.com/sqlite/sqlite",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "sqlite3_open",
+          "sqlite3_prepare_v2"
+        ]
+      ],
+      "filename_patterns": [
+        "sqlite"
+      ]
+    },
+    {
+      "name": "libwebp",
+      "source": "https://chromium.googlesource.com/webm/libwebp",
+      "version_policy": "banner",
+      "banner_regex": "WebP Decoder ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "webp"
+      ]
+    },
+    {
+      "name": "libaom",
+      "source": "https://aomedia.googlesource.com/aom",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "aom_codec_decode",
+          "aom_codec_encode"
+        ]
+      ],
+      "filename_patterns": [
+        "aom"
+      ]
+    },
+    {
+      "name": "libsamplerate",
+      "source": "https://github.com/libsndfile/libsamplerate",
+      "version_policy": "banner",
+      "banner_regex": "libsamplerate ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "samplerate"
+      ]
+    },
+    {
+      "name": "ALSA lib",
+      "source": "https://github.com/alsa-project/alsa-lib",
+      "version_policy": "banner",
+      "banner_regex": "ALSA lib ([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "filename_patterns": [
+        "asound"
+      ]
+    }
+  ]
+}

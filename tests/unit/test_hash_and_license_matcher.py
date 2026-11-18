@@ -98,10 +98,8 @@ def test_hash_matcher_elf_section():
     })
 
     comp = matcher.match_binary(binary_data, "bin/busybox")
-    assert comp is not None
-    assert comp.name == "busybox"
-    assert comp.resolved_version == "1.36.1"
-    assert comp.licenses == ["GPL-2.0-only"]
+    # Matching one section cannot establish the complete binary's release.
+    assert comp is None
 
 
 def test_license_normalization():
