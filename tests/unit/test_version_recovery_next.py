@@ -124,8 +124,7 @@ def test_libbpf_major_minor_string_remains_an_estimated_generation(shared_elf):
     )[0]
     assert component.resolved_version == "1.4.x"
     assert any(
-        prop["name"] == "firmware:version:resolution-state"
-        and prop["value"] == "estimated"
+        prop["name"] == "firmware:version:resolution-state" and prop["value"] == "estimated"
         for prop in component.properties
     )
 
@@ -149,9 +148,7 @@ def test_additional_defined_version_strings_are_attributed_by_api(
     component_name,
     version,
 ):
-    data = shared_elf(
-        f'const char *{function}(void) {{ return "{version}"; }}\n'
-    )
+    data = shared_elf(f'const char *{function}(void) {{ return "{version}"; }}\n')
     matches = BinaryInventory().extract(
         data,
         "libvendor.so",
@@ -311,6 +308,77 @@ def test_x86_32_vpx_keeps_full_string_suffix(shared_elf):
         if c.name == "libvpx.so"
     )
     assert vpx.resolved_version == "1.2.0-5082-g58f7543"
+
+
+def test_thumb32_defined_getter_attributes_the_returned_release_string():
+    import struct
+
+    from tests.unit.test_protobuf_version import VERIFY, _elf
+
+    # ldr r0,[pc,#4]; add r0,pc; bx lr; nop; literal(0x500 - pc)
+    code = bytes.fromhex("01487844704700bf") + struct.pack("<I", 0x500 - 0x106)
+    data = bytearray(_elf(code, arm=True, thumb=True)[0])
+    replacement = b"opj_version\0"
+    data[0x601 : 0x601 + len(VERIFY) + 1] = replacement.ljust(len(VERIFY) + 1, b"\0")
+    data[0x500 : 0x500 + 6] = b"2.5.2\0"
+
+    components = BinaryInventory().extract(
+        bytes(data),
+        "libvendor.so",
+        "/lib/libvendor.so",
+    )
+
+    assert components[0].resolved_version == ""
+    assert [(item.name, item.resolved_version) for item in components[1:]] == [
+        ("OpenJPEG", "2.5.2")
+    ]
+
+
+def test_thumb32_getter_does_not_read_a_release_from_writable_memory():
+    import struct
+
+    from firmware_scanner.extraction.static_version import StaticVersionExtractor
+    from tests.unit.test_protobuf_version import VERIFY, _elf
+
+    code = bytes.fromhex("01487844704700bf") + struct.pack("<I", 0x950 - 0x106)
+    data = bytearray(_elf(code, arm=True, thumb=True)[0])
+    replacement = b"opj_version\0"
+    data[0x601 : 0x601 + len(VERIFY) + 1] = replacement.ljust(len(VERIFY) + 1, b"\0")
+    data[0x950:0x956] = b"2.5.2\0"
+
+    assert StaticVersionExtractor().extract(bytes(data)) == []
+
+
+def test_thumb32_getter_reads_a_pointer_directly_from_its_literal_pool():
+    import struct
+
+    from firmware_scanner.extraction.static_version import StaticVersionExtractor
+    from tests.unit.test_protobuf_version import VERIFY, _elf
+
+    code = bytes.fromhex("00487047") + struct.pack("<I", 0x10500)
+    data = bytearray(_elf(code, arm=True, thumb=True)[0])
+    replacement = b"opj_version\0"
+    data[0x601 : 0x601 + len(VERIFY) + 1] = replacement.ljust(len(VERIFY) + 1, b"\0")
+    data[0x500:0x506] = b"2.5.2\0"
+
+    assert [(hit.name, hit.version) for hit in StaticVersionExtractor().extract(bytes(data))] == [
+        ("OpenJPEG", "2.5.2")
+    ]
+
+
+def test_thumb32_direct_literal_pointer_rejects_writable_version_text():
+    import struct
+
+    from firmware_scanner.extraction.static_version import StaticVersionExtractor
+    from tests.unit.test_protobuf_version import VERIFY, _elf
+
+    code = bytes.fromhex("00487047") + struct.pack("<I", 0x10950)
+    data = bytearray(_elf(code, arm=True, thumb=True)[0])
+    replacement = b"opj_version\0"
+    data[0x601 : 0x601 + len(VERIFY) + 1] = replacement.ljust(len(VERIFY) + 1, b"\0")
+    data[0x950:0x956] = b"2.5.2\0"
+
+    assert StaticVersionExtractor().extract(bytes(data)) == []
 
 
 @pytest.mark.parametrize("writable", [False, True])

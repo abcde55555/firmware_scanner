@@ -12,12 +12,22 @@ from dataclasses import dataclass
 from io import BytesIO
 
 from capstone import (
+    CS_ARCH_ARM,
     CS_ARCH_ARM64,
     CS_ARCH_X86,
     CS_MODE_64,
+    CS_MODE_ARM,
     CS_MODE_LITTLE_ENDIAN,
+    CS_MODE_THUMB,
     Cs,
     CsError,
+)
+from capstone.arm import (
+    ARM_INS_ADD,
+    ARM_INS_BX,
+    ARM_INS_LDR,
+    ARM_OP_MEM,
+    ARM_OP_REG,
 )
 from capstone.arm64 import (
     ARM64_INS_ADD,
@@ -97,10 +107,13 @@ def _vaddr_to_offset(
     size: int,
     *,
     executable: bool = False,
+    readonly: bool = False,
 ) -> int | None:
     """Map a VA only when the complete range is backed by bytes in a PT_LOAD."""
     for vaddr, offset, filesz, flags in load_segments:
         if executable and not flags & P_FLAGS.PF_X:
+            continue
+        if readonly and flags & P_FLAGS.PF_W:
             continue
         if vaddr <= address and address + size <= vaddr + filesz:
             return offset + (address - vaddr)
@@ -144,10 +157,14 @@ class StaticVersionExtractor:
     """Extract versions exposed by a known getter with a provable pointer return."""
 
     def extract(self, data: bytes) -> list[StaticVersionMatch]:
-        if (ELFFile is None or not isinstance(data, bytes) or len(data) < 64
-                or data[:4] != b"\x7fELF"):
+        if (
+            ELFFile is None
+            or not isinstance(data, bytes)
+            or len(data) < 64
+            or data[:4] != b"\x7fELF"
+        ):
             return []
-        if not any(name.encode('ascii') in data for name in _GETTERS):
+        if not any(name.encode("ascii") in data for name in _GETTERS):
             return []
         try:
             elf = ELFFile(BytesIO(data))
@@ -160,6 +177,9 @@ class StaticVersionExtractor:
                 architecture = "x86_64"
                 disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
                 disassembler.detail = True
+            elif machine == "EM_ARM" and elf.elfclass == 32 and elf.little_endian:
+                architecture = "arm"
+                disassembler = None
             else:
                 return []
 
@@ -173,7 +193,7 @@ class StaticVersionExtractor:
                 for segment in elf.iter_segments()
                 if segment["p_type"] == "PT_LOAD"
             ]
-            functions: dict[str, tuple[int, int]] = {}
+            functions: dict[str, tuple[int, int, bool]] = {}
             for section in elf.iter_sections():
                 if not isinstance(section, SymbolTableSection):
                     continue
@@ -185,49 +205,82 @@ class StaticVersionExtractor:
                     address = int(symbol["st_value"])
                     size = int(symbol["st_size"])
                     if 0 <= size <= 256:
-                        functions.setdefault(symbol.name, (address, size))
+                        thumb = architecture == "arm" and bool(address & 1)
+                        functions.setdefault(symbol.name, (address, size, thumb))
 
             matches: list[StaticVersionMatch] = []
-            for getter, (address, size) in functions.items():
+            for getter, (address, size, thumb) in functions.items():
                 component, style = _GETTERS[getter]
+                if architecture == "arm":
+                    mode = CS_MODE_THUMB if thumb else CS_MODE_ARM
+                    function_disassembler = Cs(
+                        CS_ARCH_ARM,
+                        mode | CS_MODE_LITTLE_ENDIAN,
+                    )
+                    function_disassembler.detail = True
+                    code_address = address & ~1
+                else:
+                    function_disassembler = disassembler
+                    code_address = address
                 requested_size = size or 4
                 code_offset = _vaddr_to_offset(
                     load_segments,
-                    address,
+                    code_address,
                     requested_size,
                     executable=True,
                 )
                 if code_offset is None or code_offset + requested_size > len(data):
                     continue
                 if size:
-                    code = data[code_offset:code_offset + size]
+                    code = data[code_offset : code_offset + size]
                 else:
                     window = data[code_offset : min(len(data), code_offset + 64)]
-                    instructions = list(disassembler.disasm(window, address))
-                    terminal = next((
-                        insn for insn in instructions
-                        if insn.id in (X86_INS_RET, ARM64_INS_RET)
-                    ), None)
+                    instructions = list(function_disassembler.disasm(window, code_address))
+                    terminal = next(
+                        (
+                            insn
+                            for insn in instructions
+                            if insn.id in (X86_INS_RET, ARM64_INS_RET, ARM_INS_BX)
+                        ),
+                        None,
+                    )
                     if terminal is None:
                         continue
-                    code = window[: terminal.address + terminal.size - address]
-                result_pointer = self._returned_pointer(disassembler, architecture, code, address)
+                    code = window[: terminal.address + terminal.size - code_address]
+                result_pointer = self._returned_pointer(
+                    function_disassembler,
+                    architecture,
+                    code,
+                    code_address,
+                )
                 if result_pointer is None:
                     continue
                 pointer, is_literal = result_pointer
                 if is_literal:
                     pointer_size = 8 if architecture == "aarch64" else 4
-                    literal_offset = _vaddr_to_offset(load_segments, pointer, pointer_size)
+                    literal_offset = _vaddr_to_offset(
+                        load_segments,
+                        pointer,
+                        pointer_size,
+                        readonly=True,
+                    )
                     if literal_offset is None or literal_offset + pointer_size > len(data):
                         continue
-                    pointer = int.from_bytes(data[literal_offset:literal_offset + pointer_size], "little")
+                    pointer = int.from_bytes(
+                        data[literal_offset : literal_offset + pointer_size], "little"
+                    )
                 text = self._read_c_string(data, load_segments, pointer)
                 if text is None:
                     continue
                 version = _version_from_text(component, style, text)
                 if version is None:
                     continue
-                string_offset = _vaddr_to_offset(load_segments, pointer, len(text) + 1)
+                string_offset = _vaddr_to_offset(
+                    load_segments,
+                    pointer,
+                    len(text) + 1,
+                    readonly=True,
+                )
                 if string_offset is None:
                     continue
                 evidence = (
@@ -238,15 +291,24 @@ class StaticVersionExtractor:
                 confidence = 0.84 if style == "libbpf_generation" else 0.95
                 matches.append(StaticVersionMatch(component, version, evidence, confidence))
             return matches
-        except (ELFError, CsError, OSError, ValueError, TypeError, KeyError, IndexError,
-                struct.error, OverflowError):
+        except (
+            ELFError,
+            CsError,
+            OSError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+            struct.error,
+            OverflowError,
+        ):
             return []
 
     @staticmethod
     def _read_c_string(
         data: bytes, load_segments: list[tuple[int, int, int, int]], address: int
     ) -> str | None:
-        offset = _vaddr_to_offset(load_segments, address, 1)
+        offset = _vaddr_to_offset(load_segments, address, 1, readonly=True)
         if offset is None:
             return None
         limit = min(len(data), offset + 4097)
@@ -254,7 +316,7 @@ class StaticVersionExtractor:
         if end < 0 or end == offset:
             return None
         raw = data[offset:end]
-        if any(byte < 0x20 or byte > 0x7e for byte in raw):
+        if any(byte < 0x20 or byte > 0x7E for byte in raw):
             return None
         return raw.decode("ascii")
 
@@ -268,6 +330,8 @@ class StaticVersionExtractor:
 
         if architecture == "aarch64":
             return StaticVersionExtractor._aarch64_pointer(instructions)
+        if architecture == "arm":
+            return StaticVersionExtractor._arm_pointer(instructions, code, address)
         return StaticVersionExtractor._x86_64_pointer(instructions)
 
     @staticmethod
@@ -278,10 +342,15 @@ class StaticVersionExtractor:
                 continue
             if insn.id == X86_INS_LEA and pointer is None:
                 operands = insn.operands
-                if (len(operands) != 2 or operands[0].type != X86_OP_REG
-                        or insn.reg_name(operands[0].reg) != "rax" or operands[1].type != X86_OP_MEM
-                        or insn.reg_name(operands[1].mem.base) != "rip"
-                        or operands[1].mem.index != 0 or operands[1].mem.scale != 1):
+                if (
+                    len(operands) != 2
+                    or operands[0].type != X86_OP_REG
+                    or insn.reg_name(operands[0].reg) != "rax"
+                    or operands[1].type != X86_OP_MEM
+                    or insn.reg_name(operands[1].mem.base) != "rip"
+                    or operands[1].mem.index != 0
+                    or operands[1].mem.scale != 1
+                ):
                     return None
                 pointer = insn.address + insn.size + int(operands[1].mem.disp)
                 continue
@@ -305,29 +374,110 @@ class StaticVersionExtractor:
                 return None
 
             if insn.id == ARM64_INS_ADR and len(operands) == 2 and operands[0].type == ARM64_OP_REG:
-                if insn.reg_name(operands[0].reg) != "x0" or operands[1].type != ARM64_OP_IMM or pointer is not None:
+                if (
+                    insn.reg_name(operands[0].reg) != "x0"
+                    or operands[1].type != ARM64_OP_IMM
+                    or pointer is not None
+                ):
                     return None
                 pointer = int(operands[1].imm)
                 continue
-            if insn.id == ARM64_INS_ADRP and len(operands) == 2 and operands[0].type == ARM64_OP_REG:
-                if insn.reg_name(operands[0].reg) != "x0" or operands[1].type != ARM64_OP_IMM or pointer is not None:
+            if (
+                insn.id == ARM64_INS_ADRP
+                and len(operands) == 2
+                and operands[0].type == ARM64_OP_REG
+            ):
+                if (
+                    insn.reg_name(operands[0].reg) != "x0"
+                    or operands[1].type != ARM64_OP_IMM
+                    or pointer is not None
+                ):
                     return None
                 base = int(operands[1].imm)
                 continue
             if insn.id == ARM64_INS_ADD and len(operands) >= 3:
-                if (operands[0].type != ARM64_OP_REG or insn.reg_name(operands[0].reg) != "x0"
-                        or operands[1].type != ARM64_OP_REG or insn.reg_name(operands[1].reg) != "x0"
-                        or operands[2].type != ARM64_OP_IMM or base is None or pointer is not None):
+                if (
+                    operands[0].type != ARM64_OP_REG
+                    or insn.reg_name(operands[0].reg) != "x0"
+                    or operands[1].type != ARM64_OP_REG
+                    or insn.reg_name(operands[1].reg) != "x0"
+                    or operands[2].type != ARM64_OP_IMM
+                    or base is None
+                    or pointer is not None
+                ):
                     return None
                 pointer = base + int(operands[2].imm)
                 base = None
                 continue
             if insn.id == ARM64_INS_LDR and len(operands) == 2 and operands[0].type == ARM64_OP_REG:
-                if insn.reg_name(operands[0].reg) != "x0" or operands[1].type != ARM64_OP_IMM or pointer is not None:
+                if (
+                    insn.reg_name(operands[0].reg) != "x0"
+                    or operands[1].type != ARM64_OP_IMM
+                    or pointer is not None
+                ):
                     return None
                 # The literal is an address holding the pointer, not the string itself.
                 pointer = int(operands[1].imm)
                 literal = True
+                continue
+            return None
+        return None
+
+    @staticmethod
+    def _arm_pointer(instructions, code: bytes, address: int) -> tuple[int, bool] | None:
+        pointer: int | None = None
+        pointer_from_literal = False
+        for index, insn in enumerate(instructions):
+            operands = insn.operands
+            if insn.id == ARM_INS_BX:
+                if (
+                    pointer is None
+                    or len(operands) != 1
+                    or operands[0].type != ARM_OP_REG
+                    or insn.reg_name(operands[0].reg) != "lr"
+                ):
+                    return None
+                if pointer_from_literal:
+                    literal_offset = pointer - address
+                    if literal_offset < 0 or literal_offset + 4 > len(code):
+                        return None
+                    pointer = int.from_bytes(
+                        code[literal_offset : literal_offset + 4],
+                        "little",
+                    )
+                return pointer, False
+            if insn.id == ARM_INS_LDR and pointer is None:
+                if (
+                    len(operands) != 2
+                    or operands[0].type != ARM_OP_REG
+                    or insn.reg_name(operands[0].reg) != "r0"
+                    or operands[1].type != ARM_OP_MEM
+                    or insn.reg_name(operands[1].mem.base) != "pc"
+                ):
+                    return None
+                pc = (insn.address + 4) & ~3
+                pointer = pc + int(operands[1].mem.disp)
+                pointer_from_literal = True
+                continue
+            if insn.id == ARM_INS_ADD and pointer is not None:
+                if (
+                    len(operands) != 2
+                    or operands[0].type != ARM_OP_REG
+                    or insn.reg_name(operands[0].reg) != "r0"
+                    or operands[1].type != ARM_OP_REG
+                    or insn.reg_name(operands[1].reg) != "pc"
+                ):
+                    return None
+                if pointer_from_literal:
+                    literal_offset = pointer - address
+                    if literal_offset < 0 or literal_offset + 4 > len(code):
+                        return None
+                    pointer = int.from_bytes(
+                        code[literal_offset : literal_offset + 4],
+                        "little",
+                    )
+                pointer += insn.address + 4
+                pointer_from_literal = False
                 continue
             return None
         return None

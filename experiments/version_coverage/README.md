@@ -328,8 +328,10 @@ PYTHONPATH=. python experiments/version_coverage/evaluate.py \
   --baseline-commit e890f0c
 ```
 
-On the frozen 1,129/774 cohort, the 0.9.0 evidence update produces 744/1,129
+On the frozen 1,129/774 cohort, the 0.10.0 evidence update produces 744/1,129
 usable fields (65.90%) and 621/774 native libraries (80.23%): 225 exact and 519
 explicit estimates. These are coverage values, not independently verified
 accuracy. See `docs/firmware-sbom-roadmap-review-2026-11-20.md` and
-`docs/database-and-rust-version-validation-2026-11-20.md`.
+`docs/database-and-rust-version-validation-2026-11-20.md`. The Allwinner
+evidence hardening and frozen-source version fix are recorded in
+`docs/version-evidence-hardening-2026-11-20.md`.

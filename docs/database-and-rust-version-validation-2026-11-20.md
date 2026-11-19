@@ -1,7 +1,7 @@
 # BLintDB, NSRL and Rust crate version validation
 
 Date: 2026-11-20
-Scanner: 0.9.0
+Scanner: 0.10.0
 
 ## Database releases
 

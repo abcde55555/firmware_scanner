@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-11-20
+
+### Added
+- ARM32 and Thumb getter support for defined functions that return a release
+  string through a PC-relative literal
+- Cross-checked `FLAC__VERSION_STRING` and `FLAC__VENDOR_STRING` release
+  evidence for embedded libFLAC
+- OpenSSL `MD5_version` banner-array evidence for legacy embedded releases
+
+### Fixed
+- Release getters no longer accept a version string mapped into writable
+  memory
+- Frozen scan bundles now include their own project metadata so generated BOMs
+  report the scanned source version instead of an unrelated installed package
+
 ## [0.9.0] - 2026-11-20
 
 ### Added

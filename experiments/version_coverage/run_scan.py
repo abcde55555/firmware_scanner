@@ -44,6 +44,7 @@ def main():
     if snapshot.exists():
         raise SystemExit("Use a new output directory; frozen source already exists")
     shutil.copytree(repo / "src", snapshot, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    shutil.copy2(repo / "pyproject.toml", snapshot / "pyproject.toml")
     sys.path.insert(0, str(snapshot))
     manifest = {
         str(path.relative_to(snapshot)): sha256(path)

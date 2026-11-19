@@ -60,16 +60,20 @@ def test_sqlite_object_preserves_complete_declared_identifier(tmp_path, version)
         'const char sqlite3_version[] = "3.44.5";',
         _SQLITE_IDENTITY.replace("int sqlite3_libversion_number(void) { return 3044005; }", "")
         + 'const char sqlite3_version[] = "3.44.5";',
-        _SQLITE_IDENTITY.replace("extern const char sqlite3_version[];", "extern char sqlite3_version[];")
+        _SQLITE_IDENTITY.replace(
+            "extern const char sqlite3_version[];", "extern char sqlite3_version[];"
+        )
         + 'char sqlite3_version[] = "3.44.5";',
         _SQLITE_IDENTITY + 'const char sqlite3_version[6] = "3.44.5";',
         _SQLITE_IDENTITY + 'const char sqlite3_version[16] = "3.44.5";',
         _SQLITE_IDENTITY + 'const char sqlite3_version[] = "SQLite 3.44.5";',
         _SQLITE_IDENTITY + 'const char sqlite3_version[] = "3.44";',
-        ('const char *sqlite3_version = "3.44.5"; '
-        'const char *sqlite3_libversion(void) { return sqlite3_version; } '
-        'int sqlite3_libversion_number(void) { return 3044005; } '
-         'const char *sqlite3_sourceid(void) { return "source"; }'),
+        (
+            'const char *sqlite3_version = "3.44.5"; '
+            "const char *sqlite3_libversion(void) { return sqlite3_version; } "
+            "int sqlite3_libversion_number(void) { return 3044005; } "
+            'const char *sqlite3_sourceid(void) { return "source"; }'
+        ),
     ],
 )
 def test_sqlite_imports_mutable_objects_and_incomplete_identity_are_refused(tmp_path, source):
@@ -105,13 +109,70 @@ def test_gmp_pointer_release_object_uses_the_documented_symbol(tmp_path, flags):
     assert evidence["value"] == "6.3.0"
 
 
+def test_flac_release_objects_cross_check_the_documented_version(tmp_path):
+    import json
+
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        'const char * const FLAC__VERSION_STRING = "1.2.1";'
+        'const char * const FLAC__VENDOR_STRING = "reference libFLAC 1.2.1 20070917";',
+    )
+    hits = extract_object_versions(data)
+
+    assert [(hit.name, hit.version) for hit in hits] == [("libFLAC", "1.2.1")]
+    evidence = json.loads(hits[0].evidence)
+    assert evidence["symbol"] == "FLAC__VERSION_STRING"
+    assert evidence["vendor_symbol"] == "FLAC__VENDOR_STRING"
+    assert evidence["value"] == "1.2.1"
+
+
+def test_flac_mutable_version_pointer_is_not_release_proof(tmp_path):
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        'char *FLAC__VERSION_STRING = "1.2.1";'
+        'const char *FLAC__VENDOR_STRING = "reference libFLAC 1.2.1 20070917";',
+    )
+
+    assert extract_object_versions(data) == []
+
+
+def test_openssl_md5_version_object_identifies_the_embedded_release(tmp_path):
+    import json
+
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        'const char MD5_version[] = "MD5 part of OpenSSL 0.9.8k 25 Mar 2009";',
+    )
+    hits = extract_object_versions(data)
+
+    assert [(hit.name, hit.version) for hit in hits] == [("OpenSSL", "0.9.8k")]
+    evidence = json.loads(hits[0].evidence)
+    assert evidence["symbol"] == "MD5_version"
+    assert evidence["value"] == "MD5 part of OpenSSL 0.9.8k 25 Mar 2009"
+
+
+def test_openssl_mutable_md5_version_array_is_not_release_proof(tmp_path):
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        'char MD5_version[] = "MD5 part of OpenSSL 0.9.8k 25 Mar 2009";',
+    )
+
+    assert extract_object_versions(data) == []
+
+
 @pytest.mark.parametrize("value", ["GMP 6.3.0", "6.3.0 trailing", "dev"])
 def test_gmp_release_requires_a_bare_numeric_release(tmp_path, value):
     from firmware_scanner.extraction.object_version import extract_object_versions
 
-    assert extract_object_versions(
-        _elf(tmp_path, f'const char *__gmp_version = "{value}";')
-    ) == []
+    assert extract_object_versions(_elf(tmp_path, f'const char *__gmp_version = "{value}";')) == []
 
 
 def test_libunistring_packed_version_object_is_decoded(tmp_path):
