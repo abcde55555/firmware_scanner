@@ -1,22 +1,46 @@
-# Version evidence hardening and 0.12.0 revalidation
+# Version evidence hardening and 0.13.0 revalidation
 
 Date: 2026-11-20
 
 ## Result
 
-Version 0.12.0 hardens existing exact-version evidence without turning source
-revisions or parent package versions into upstream releases.
+Version 0.13.0 preserves the hardened exact-version evidence and adds a scoped
+Android platform build baseline without turning source revisions, parent
+package versions, or platform builds into upstream releases.
 
 | Metric | Modern Android 16 | Allwinner Android 4.4 |
 |---|---:|---:|
-| Fixed-cohort usable versions | **744/1,129 (65.90%)** | **146/582 (25.09%)** |
+| Fixed-cohort usable versions | **785/1,129 (69.53%)** | **185/582 (31.79%)** |
 | Fixed-cohort exact versions | **225** | **119** |
-| Fixed-cohort estimated versions | **519** | **27** |
+| Fixed-cohort estimated versions | **560** | **66** |
 | Native usable versions | **621/774 (80.23%)** | **48/312 (15.38%)** |
-| Components | 1,574 | 591 |
+| Components | 1,576 | 591 |
 
 Neither image has an independent complete version truth set, so these remain
 coverage counts rather than statistically verified accuracy rates.
+
+## Android framework platform baseline
+
+Unresolved archives whose component type is `framework`, whose canonical name
+starts with `framework/`, and whose evidence path is inside
+`/system/framework/` or the partition root `/framework/` now receive the
+enclosing image build ID. Vendor and product framework partitions are excluded.
+
+| Image | Baseline | Added rows |
+|---|---|---:|
+| Modern Android 16 | `16-BP2A.250805.005-1775195212` | 39 |
+| Allwinner Android 4.4.4 | `4.4.4-KTU84Q-20180511` | 39 |
+
+These rows carry `firmware:version:resolution-state=estimated-platform-build`,
+`firmware:version:scope=platform-build-not-upstream-release`, and
+`firmware:taxonomy=platform-first-party`. The exact count remains 225 and 119,
+respectively. The native fixed-cohort result also remains 621/774 and 48/312.
+Third-party OSS selection is unchanged.
+
+The vulnerability matcher now rejects every explicitly declared
+resolution-state other than `exact`. On both final BOMs, the 39 platform-build
+components remain outside OSV queries and outside every VEX `affects`
+reference.
 
 ## Why the fixed denominators did not increase
 
@@ -94,27 +118,28 @@ rows after only the APEX-contained copy received its parent version.
 
 ## Reproducibility and version management
 
-The scan harness now copies the repository `pyproject.toml` into the frozen
-source bundle. A previous defect caused generated BOMs to report an unrelated
-installed package version (`0.2.0`) instead of the source version. Both final
-SBOMs now report **0.10.0**.
+The scan harness copies the repository `pyproject.toml` into the frozen source
+bundle. A previous defect caused generated BOMs to report an unrelated
+installed package version (`0.2.0`) instead of the source version. The final
+0.13.0 wheel reports the source version correctly.
 
 An isolated wheel install reports:
 
-- module version: `0.10.0`;
-- package metadata version: `0.10.0`;
+- module version: `0.13.0`;
+- package metadata version: `0.13.0`;
 - rule lock: `builtin-2026.11.20.2`.
 
 ## Validation
 
-- Full Python suite: **688 passed, 39 skipped**.
+- Full Python suite: **704 passed, 39 skipped**.
 - CycloneDX 1.5/1.6 BOM and VEX schemas: **8/8 valid**.
 - BLintDB: Modern confirms 9 identities; Allwinner confirms 4 identities.
 - NSRL: zero exact file matches on both images.
 - Vulnerability records remain candidates: Modern 470, Allwinner 1,500.
+- Platform-build components in VEX `affects`: **0 for both images**.
 
 Machine-readable results:
 
 - `reports/version-coverage-getters-20261120/final-summary.json`
 - `reports/version-coverage-getters-20261120/schema-validation.json`
-- `reports/version-coverage-getters-20261120/wheel-readback.json`
+- `reports/version-coverage-getters-20261120/wheel-0.13.0/wheel-verification.json`

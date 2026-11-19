@@ -328,12 +328,14 @@ PYTHONPATH=. python experiments/version_coverage/evaluate.py \
   --baseline-commit e890f0c
 ```
 
-On the frozen 1,129/774 cohort, the 0.12.0 evidence update produces 746/1,129
-usable fields (66.08%) and 621/774 native libraries (80.23%): 225 exact and 521
-explicit estimates. These are coverage values, not independently verified
-accuracy. See `docs/firmware-sbom-roadmap-review-2026-11-20.md` and
+On the frozen 1,129/774 cohort, the 0.13.0 evidence update produces 785/1,129
+usable fields (69.53%) and 621/774 native libraries (80.23%): 225 exact and 560
+explicit estimates. The 39-row increase is a scoped Android framework platform
+baseline, not additional upstream releases or third-party exact matches. These
+are coverage values, not independently verified accuracy. See
+`docs/firmware-sbom-roadmap-review-2026-11-20.md` and
 `docs/database-and-rust-version-validation-2026-11-20.md`. The Allwinner
 evidence hardening and frozen-source version fix are recorded in
 `docs/version-evidence-hardening-2026-11-20.md`.
-The 0.11.0 scan-time and cache measurements are in
+The scan-time and cache measurements are in
 `docs/firmware-scanner-performance-2026-11-20.md`.

@@ -153,6 +153,68 @@ def test_unique_parent_apex_version_is_scoped_to_contained_executables():
     } in executable.properties
 
 
+def test_framework_components_use_a_scoped_platform_build_baseline():
+    framework = Component(
+        name="framework/core",
+        component_type="framework",
+        resolved_version="",
+        description="Framework JAR at /framework/core.jar",
+        versions=[VersionConfidence(version="", confidence=0.6)],
+        properties=[],
+    )
+
+    stats = apply_android_provenance(
+        [framework],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+    )
+
+    assert stats["platform_build_versions_applied"] == 1
+    assert framework.resolved_version == "4.4.4-KTU84Q-20180511"
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-platform-build",
+    } in framework.properties
+    assert {
+        "name": "firmware:version:scope",
+        "value": "platform-build-not-upstream-release",
+    } in framework.properties
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "platform-first-party",
+    } in framework.properties
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/system/framework/core.jar", True),
+        ("/framework/core.jar", True),
+        ("/vendor/framework/core.jar", False),
+        ("/product/framework/core.jar", False),
+    ],
+)
+def test_platform_build_scope_accepts_only_system_or_partition_root_framework(
+    path: str,
+    expected: bool,
+):
+    framework = Component(
+        name="framework/core",
+        component_type="framework",
+        resolved_version="",
+        description=f"Framework JAR at {path}",
+        versions=[VersionConfidence(version="", confidence=0.6)],
+        properties=[],
+    )
+
+    stats = apply_android_provenance(
+        [framework],
+        platform_baseline="16-BP2A.250805.005-1775195212",
+    )
+
+    assert stats["platform_build_versions_applied"] == int(expected)
+    assert bool(framework.resolved_version) is expected
+
+
 def test_conflicting_parent_versions_leave_library_unknown_and_not_vulnerability_scannable():
     parent_a = Component(
         name="a",

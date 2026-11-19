@@ -142,6 +142,7 @@ def test_is_scannable_rejects_every_non_exact_version_resolution_state():
         "conflict-unresolved",
         "estimated-source-revision",
         "estimated-parent-package",
+        "estimated-platform-build",
     ):
         component = Component(
             name="libsqlite.so",
@@ -224,6 +225,38 @@ def test_vuln_scan_uses_a_blint_confirmed_component_identity_for_osv_queries():
             "ecosystem": "",
         }
     ]
+
+
+def test_vuln_scan_does_not_query_platform_build_components():
+    component = Component(
+        name="framework/core",
+        component_type="framework",
+        resolved_version="16-BP2A.250805.005-1775195212",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "estimated-platform-build",
+            }
+        ],
+    )
+
+    class Client:
+        def __init__(self):
+            self.queries = []
+
+        def check_cache_freshness(self):
+            raise AssertionError("platform build must be rejected before cache checks")
+
+        def query_with_cache(self, requested):
+            self.queries.extend(requested)
+            return []
+
+    client = Client()
+    result = VulnMatcher(client=client).scan([component])
+
+    assert result.total_components_scanned == 0
+    assert result.results == []
+    assert client.queries == []
 
 
 def test_normalize_name_maps_expanded_native_library_families_to_osv_names():

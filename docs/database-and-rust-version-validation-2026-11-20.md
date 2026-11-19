@@ -1,7 +1,7 @@
 # BLintDB, NSRL and Rust crate version validation
 
 Date: 2026-11-20
-Scanner: 0.12.0
+Scanner: 0.13.0
 
 ## Database releases
 
@@ -47,6 +47,25 @@ overwrite a target version. Parent-package versions are marked
 The DB-enriched BOM classifies 100 fixed-cohort records as third-party OSS:
 87 exact and 13 explicitly estimated. This slice is evidence-biased and does
 not measure total third-party recall.
+
+## Android framework platform baseline
+
+Version 0.13.0 also attaches the enclosing Android build to unresolved
+first-party framework archives. This is a platform build identifier, not an
+upstream library release:
+
+| Image | Platform baseline | Framework rows | Fixed-cohort usable |
+|---|---|---:|---:|
+| Modern Android 16 | `16-BP2A.250805.005-1775195212` | 39 | **785/1,129 (69.53%)** |
+| Allwinner Android 4.4.4 | `4.4.4-KTU84Q-20180511` | 39 | **185/582 (31.79%)** |
+
+The 39 rows come from `/system/framework/` or the partition-root
+`/framework/`; `/vendor/framework/` and `/product/framework/` are excluded.
+They are marked `estimated-platform-build`,
+`platform-build-not-upstream-release`, and `platform-first-party`. They do not
+change the exact count, third-party exact count, native-library coverage, or
+the components submitted to OSV. The schema validation report verifies that
+none of these component references appears in a VEX `affects` entry.
 
 ## Allwinner results
 
@@ -130,4 +149,6 @@ reachability and vendor-status analysis before classifying exploitability.
 - `reports/version-coverage-getters-20261120/final-allwinner/system_analysis.json`
 - `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6.json`
 - `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6_vuln.json`
+- `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6_cyclonedx_1.6_vex.json`
 - `reports/version-coverage-getters-20261120/schema-validation.json`
+- `reports/version-coverage-getters-20261120/wheel-0.13.0/wheel-verification.json`

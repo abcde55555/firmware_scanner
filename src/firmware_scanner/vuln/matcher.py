@@ -134,13 +134,6 @@ def _normalize_name(name: str) -> str:
 
 # Versions that aren't real version numbers
 _INVALID_VERSIONS = {"detected", "unknown", "n/a", "boringssl", ""}
-_NON_EXACT_RESOLUTION_STATES = {
-    "estimated",
-    "equivalence-class",
-    "conflict-unresolved",
-    "estimated-source-revision",
-    "estimated-parent-package",
-}
 
 
 def _is_scannable(component: Component) -> bool:
@@ -164,7 +157,7 @@ def _is_scannable(component: Component) -> bool:
         ),
         "",
     )
-    if resolution_state in _NON_EXACT_RESOLUTION_STATES:
+    if resolution_state and resolution_state != "exact":
         return False
     estimated_kind = next(
         (

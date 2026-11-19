@@ -456,6 +456,15 @@ class AndroidSystemScanner:
             notice_attributions=attributions,
             source_manifest=self._source_manifest,
             source_project_rules=self._source_project_rules,
+            platform_baseline="-".join(
+                value
+                for value in (
+                    result.build_info.android_version,
+                    result.build_info.build_id,
+                    result.build_info.incremental,
+                )
+                if value
+            ),
         )
         provenance["notice_license_attribution"] = license_stats
         return provenance

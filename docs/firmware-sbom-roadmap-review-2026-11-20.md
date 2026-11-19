@@ -1,4 +1,4 @@
-# 固件 SBOM 路线审查与 0.12.0 实测结论
+# 固件 SBOM 路线审查与 0.13.0 实测结论
 
 Date: 2026-11-20
 Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`
@@ -8,7 +8,8 @@ Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`
 路线图的长期方向可以作为架构参考，但不能按文档中的旧基线和时间表直接排期：
 
 - 文档仍以 `5691133` 的 21.3%/13.6% 作为当前起点，但当前固定分母基线已经达到
-  Android 744/1,129（其中 exact 225）、Allwinner 146/582（其中 exact 119）。
+  Android 785/1,129（其中 exact 225）、Allwinner 185/582（其中 exact 119）。
+  两边各有 39 项来自明确隔离的平台构建基线，不能算作第三方上游版本命中。
 - “只扫第一个 DEX”和“缺少内容缓存”已经修复；“版本字段覆盖”仍不能称为
   “版本准确率”。
 - Rust 源码位置、NOTICE 项目路径和 LICENSE 只能提供候选或归因，不能单独证明
@@ -44,6 +45,24 @@ source manifest + 项目 revision + 声明版本的源码文件**。它比继续
 | 24 周 KPI 可直接承诺 70% | 当前只有 coverage，没有完整图像独立真值，不能承诺独立准确率 |
 
 ## 本轮新增的有效方法
+
+### 0. Android framework 平台构建基线
+
+0.13.0 只对同时满足以下条件的未解析条目附加镜像的 Android build：
+
+- `component_type=framework`；
+- 规范名以 `framework/` 开头；
+- 证据路径位于 `/system/framework/` 或分区根目录 `/framework/`；
+  `/vendor/framework/` 和 `/product/framework/` 明确排除。
+
+结果写入 `estimated-platform-build`，并同时声明
+`platform-build-not-upstream-release` 和 `platform-first-party`。Modern 的
+baseline 是 `16-BP2A.250805.005-1775195212`，Allwinner 是
+`4.4.4-KTU84Q-20180511`。
+
+这不是第三方库版本识别算法。它解决的是第一方平台构件“没有独立上游
+release”时的构建归属问题。exact 数量、原生库覆盖率和第三方 OSS 切片均
+未变化；39 个条目也没有进入 OSV 查询或 VEX 的 `affects`。
 
 ### 1. 公开版本 getter 与版本对象
 
@@ -104,15 +123,20 @@ exact。现在：
 
 固定分母：1,129 个组件，其中原生库 774 个。
 
-| 指标 | 本轮前 | 本轮后 |
+| 指标 | 本轮前 | 0.13.0 |
 |---|---:|---:|
-| 全部组件 usable | 690/1,129, 61.12% | **744/1,129, 65.90%** |
+| 全部组件 usable | 690/1,129, 61.12% | **785/1,129, 69.53%** |
 | 原生库 usable | 567/774, 73.26% | **621/774, 80.23%** |
 | 全部 exact | 172 | **225** |
 | 原生库 exact | 54 | **102** |
-| 全部 explicit estimate/source revision/parent | 518 | **519** |
-| unknown | 428 | **377** |
+| 全部 explicit estimate/source revision/parent/platform | 518 | **560** |
+| unknown | 428 | **336** |
 | independent accuracy | 未建立 | **未建立** |
+
+0.12.0 的同分母结果是 746/1,129。0.13.0 新增的 39 项全部是
+`platform-first-party` 的 framework build baseline；第三方 OSS 固定切片仍为
+100 项，其中 87 exact、13 estimated。因此 69.53% 是当前冻结分母的字段覆盖，
+不能与路线图中“第三方 OSS 50%”直接等同。
 
 明确第三方 OSS 切片中，固定分母 100 项全部有非空版本：87 exact、13
 estimated。这里的 100% 是字段覆盖，不是 100% 准确率；该子集只包含已有明确
@@ -151,14 +175,15 @@ Allwinner：
 
 | 指标 | 结果 |
 |---|---:|
-| 全部组件 usable | 146/582, 25.09% |
+| 全部组件 usable | 185/582, 31.79% |
 | 原生库 usable | 48/312, 15.38% |
 | exact | 119 |
-| estimated | 27 |
-| unknown | 429 |
+| estimated | 66 |
+| unknown | 390 |
 
-Allwinner 没有与分区镜像哈希匹配的 source manifest，因此源码路径创新不能给它
-带来本轮新增覆盖。不得把 Modern Android 的 revision 映射外推到该镜像。
+Allwinner 新增的 39 项同样是 `estimated-platform-build`。它没有与分区镜像
+哈希匹配的 source manifest，因此不得把 Modern Android 的 revision 映射外推
+到该镜像，也不得把平台 build 写成 AOSP 或第三方库 release。
 
 ### Debian stripped libraries
 
@@ -192,9 +217,11 @@ Allwinner 没有与分区镜像哈希匹配的 source manifest，因此源码路
 
 ## 当前仍不能宣称
 
-- 不能把 65.90% usable coverage 宣称为 65.90% accurate。
+- 不能把 69.53% usable coverage 宣称为 69.53% accurate。
 - 不能把 source revision、APEX parent version 或 source archive 版本当作目标
   二进制已证明的上游 release。
+- 不能把 39 个 `estimated-platform-build` 当作第三方版本召回，也不能用它
+  查询上游 CVE。
 - 不能把 Debian 54/20 库结果直接外推到 Android/Allwinner。
 - 不能让 `libbpf 1.6.x`、Capstone `5.0.x` 等 generation estimate 用于单点 CVE
   版本查询。

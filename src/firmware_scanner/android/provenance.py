@@ -16,6 +16,10 @@ from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 
 _APEX_PATH_RE = re.compile(r"(/[^!\s]+\.(?:apex|capex))!")
 _APK_PATH_RE = re.compile(r"(/[^!\s]+\.apk)!")
+_FRAMEWORK_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_.-])(?:/system)?/framework(?:/|$)",
+    re.IGNORECASE,
+)
 _NATIVE_MARKER = "native library"
 _EXECUTABLE_MARKER = "elf executable"
 
@@ -526,14 +530,67 @@ def _parent_version(component: Component, package_versions: dict[str, str]) -> d
     return None
 
 
+def _platform_build_version(component: Component, baseline: str) -> dict | None:
+    locations = _locations(component)
+    framework_paths = [*locations, component.description]
+    if (
+        component.component_type != "framework"
+        or not component.name.startswith("framework/")
+        or not any(_FRAMEWORK_PATH_RE.search(path) for path in framework_paths)
+    ):
+        return None
+    component.resolved_version = baseline
+    component.purl = (
+        f"{component.purl.split('@', 1)[0]}@{quote(baseline, safe='._-+')}"
+        if component.purl
+        else component.purl
+    )
+    component.versions = [item for item in component.versions if item.version]
+    component.versions.append(
+        VersionConfidence(
+            version=baseline,
+            confidence=0.74,
+            method=ExtractionMethod.VERSION_ESTIMATE,
+            evidence=(
+                f"Android framework component {component.name} shares the "
+                f"enclosing platform build baseline"
+            ),
+        )
+    )
+    _append_unique(
+        component.properties,
+        "firmware:version:kind",
+        "estimated-android-platform-build",
+    )
+    _append_unique(component.properties, "firmware:container:type", "android-platform")
+    _append_unique(
+        component.properties,
+        "firmware:version:scope",
+        "platform-build-not-upstream-release",
+    )
+    _append_unique(component.properties, "firmware:taxonomy", "platform-first-party")
+    _append_unique(
+        component.properties,
+        "firmware:taxonomy:evidence",
+        "android-framework-archive",
+    )
+    _set_property(component, "firmware:version:resolution-state", "estimated-platform-build")
+    return {
+        "name": component.name,
+        "version": baseline,
+        "baseline_type": "android-platform-build",
+    }
+
+
 def apply_android_provenance(
     components: list[Component],
     *,
     notice_attributions: dict[str, set[str]] | None = None,
     source_manifest: dict | None = None,
     source_project_rules: list[dict] | None = None,
+    platform_baseline: str = "",
 ) -> dict:
-    """Add explicit AOSP source revisions first and parent package versions second."""
+    """Add scoped source, platform-build and parent-package provenance."""
     notice_attributions = notice_attributions or {}
     source_project_rules = source_project_rules or []
     manifest = _manifest_by_path(source_manifest)
@@ -547,11 +604,19 @@ def apply_android_provenance(
 
     source_rows = []
     parent_rows = []
+    platform_rows = []
     for component in components:
+        if component.resolved_version:
+            continue
+        if platform_baseline:
+            row = _platform_build_version(component, platform_baseline)
+            if row is not None:
+                platform_rows.append(row)
+                continue
         description = component.description.lower()
         is_library = _NATIVE_MARKER in description
         is_executable = _EXECUTABLE_MARKER in description
-        if component.resolved_version or not (is_library or is_executable):
+        if not (is_library or is_executable):
             continue
         labels = {
             label
@@ -634,12 +699,14 @@ def apply_android_provenance(
             row["version"].startswith("git:") is False for row in source_rows
         ),
         "parent_package_versions_applied": len(parent_rows),
+        "platform_build_versions_applied": len(platform_rows),
         "byte_identical_provenance_propagated": len(propagated_rows),
         "source_rows": source_rows,
         "parent_package_rows": parent_rows,
+        "platform_build_rows": platform_rows,
         "propagated_rows": propagated_rows,
         "scope": (
-            "AOSP build revisions and parent package versions are provenance estimates, "
-            "not upstream library releases"
+            "AOSP build revisions, platform builds and parent package versions are "
+            "provenance estimates, not upstream library releases"
         ),
     }
