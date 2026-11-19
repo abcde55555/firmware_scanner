@@ -148,6 +148,20 @@ source revisions, parent package versions, equivalence classes and unresolved
 conflicts are not. This avoids turning a coverage increase into an automatic
 vulnerability false-positive increase.
 
+Binary getters can also supply exact evidence when newer compilers inline the
+implementation. On the Allwinner ARM32 ICU libraries, `u_getVersion_51` loads a
+read-only `51.1.0.1` literal and parses its four numeric fields directly rather
+than tail-calling `u_versionFromString_51`. The scanner verifies the getter and
+helper symbol pair, the public API generation, the PC-relative literal load and
+the dotted-decimal value. It must not infer `5.1.x`: ICU's documented symbol
+suffix transition makes `_51` ICU 51, while `_48` is ICU 4.8.
+
+The same-source family pass is intentionally narrow. It requires one
+unambiguous exact-or-estimated donor and known shared-source library names.
+Inherited ICU and e2fsprogs siblings are stored with
+`firmware:version:resolution-state=estimated` and `version_estimate`; they do
+not become OSV-queryable merely because the donor was exact.
+
 ## Adoption order
 
 1. Maintain exact binary objects/getters and audited source-version pins.

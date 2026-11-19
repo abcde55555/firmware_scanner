@@ -217,6 +217,11 @@ class CycloneDXGenerator:
                 "name": "firmware:analysis:stats",
                 "value": json.dumps(info["analysis_stats"], sort_keys=True),
             })
+        if info.get("family_provenance_stats"):
+            props.append({
+                "name": "firmware:family-provenance:stats",
+                "value": json.dumps(info["family_provenance_stats"], sort_keys=True),
+            })
         rules = info.get("rules")
         if rules:
             if rules.get("release"):

@@ -175,6 +175,7 @@ def test_sbom_generator_propagates_generic_database_stats_without_android_info()
         metadata={
             "database_stats": {"files_queried": 9},
             "analysis_stats": {"content_cache_hits": 2},
+            "family_provenance_stats": {"versions_inherited": 1},
             "rules": {
                 "release": "builtin-test",
                 "lock_sha256": "b" * 64,
@@ -188,6 +189,7 @@ def test_sbom_generator_propagates_generic_database_stats_without_android_info()
     }
     assert properties["firmware:database:stats"] == '{"files_queried": 9}'
     assert properties["firmware:analysis:stats"] == '{"content_cache_hits": 2}'
+    assert properties["firmware:family-provenance:stats"] == '{"versions_inherited": 1}'
     assert properties["firmware:rules:release"] == "builtin-test"
     assert properties["firmware:rules:lock-sha256"] == "b" * 64
 

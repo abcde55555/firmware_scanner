@@ -15,10 +15,18 @@ This round added:
 - dependency-edge deduplication and SONAME ambiguity suppression.
 - a fail-closed SHA-256 lock for bundled binary, provenance, signature,
   database-manifest and offline advisory data.
+- an exact ARM32 ICU getter probe for the inlined `U_ICU_VERSION` literal;
+- same-source version inheritance for ICU and e2fsprogs families, retained as
+  estimates;
+- a high-specificity Speex banner rule for the Allwinner wrapper.
 
 The measured fixed-cohort version coverage improved on the modern Android image
 from **655/1,129 (58.02%) to 690/1,129 (61.12%)**. Native-library coverage
 improved from **532/774 (68.73%) to 567/774 (73.26%)**.
+
+The Allwinner fixed cohort improved from **136/582 (23.37%) to 145/582
+(24.91%)**. Native-library coverage improved from **39/312 (12.50%) to
+47/312 (15.06%)**.
 
 These are version-field coverage values, not independently verified accuracy.
 The exact count increased from 152 to 176 in the fixed cohort. The remaining 514
@@ -39,9 +47,7 @@ Input: `system.img`, 2,309,611,520 bytes, SHA-256
 | Unknown | 426 |
 | Source-declared exact versions applied | 22 |
 | BOM dependency records | 928 |
-| Android core scan time | 329.8 s |
-| End-to-end process time | 349.1 s |
-| Peak RSS | 3,367,644 KiB |
+| Android core scan time | 331.8 s |
 
 The prior database-enabled scan took 408.2 seconds in the Android core scan.
 Reusing SQLite connections, content-cache hits and the revised rule path reduced
@@ -83,17 +89,25 @@ Input: `sun8iw6p1_android_perf3_v1_0_uart0.img`.
 | Metric | Result |
 |---|---:|
 | Unique BOM components | 591 |
-| Non-empty resolved versions | 141 |
-| Fixed all-component coverage | 141/589, 23.94% |
-| Fixed native coverage | 44/316, 13.92% |
-| Android core scan time | 75.3 s |
-| End-to-end process time | 80.2 s |
-| Peak RSS | 3,123,912 KiB |
+| Non-empty resolved versions | 150 |
+| Exact resolution state | 36 |
+| Estimated resolution state | 11 |
+| Unknown | 385 |
+| Fixed all-component coverage | 145/582, 24.91% |
+| Fixed native coverage | 47/312, 15.06% |
+| Android core scan time | 77.7 s |
 
-The previous frozen result was 120/582 (20.62%) for all components and 23/312
-(7.37%) for native libraries. The database scan analyzed 430 unique ELF
-contents, reused 14 duplicate paths, emitted two BLintDB candidate rows for two
-files, and produced no NSRL baseline file hit.
+The same-source family pass inherited seven values. The ICU donor itself was
+resolved exactly as `51.1.0.1`; its ARM32 `u_getVersion_51` wrapper loads that
+literal from a read-only pool before parsing four numeric fields.
+`libicui18n.so` inherits `51.1.0.1` as an estimate. Five e2fsprogs sibling
+libraries and `e2fsck` inherit `1.41.14` from the independently observed
+`libext2fs.so`. The Speex wrapper has a direct `speex-1.2beta3` banner. Together
+these changes account for the nine newly populated fixed-cohort rows.
+
+The database scan analyzed 430 unique ELF contents, reused 14 duplicate paths,
+emitted two BLintDB candidate rows for two files, and produced no NSRL baseline
+file hit.
 
 Allwinner has no matching source manifest in the supplied material. Its version
 gains therefore come from binary evidence and parent-package attribution. It
@@ -128,7 +142,7 @@ queried one unique ELF and wrote database/cache statistics to both JSON and
 CycloneDX metadata. The generic enricher is closed in a `finally` path, including
 when analysis raises.
 
-The bundled data lock release is `builtin-2026.11.19.2`, covering 13 JSON packs.
+The bundled data lock release is `builtin-2026.11.19.3`, covering 13 JSON packs.
 Its release and lock SHA-256 are present in both JSON and CycloneDX metadata.
 
 ## BOM and VEX validation
@@ -136,7 +150,7 @@ Its release and lock SHA-256 are present in both JSON and CycloneDX metadata.
 The 1.5 and 1.6 BOMs for both images validate against the official CycloneDX
 schemas. The 1.5 and 1.6 VEX artifacts also validate with zero schema errors.
 The machine-readable results are in
-`reports/version-estimates-20261119/schema-validation-all.json`.
+`reports/version-estimates-20261119/schema-validation-evidence-20261119.json`.
 
 CycloneDX dependency edges are emitted only for a SONAME with one provider in
 the scanned firmware. Refs with multiple paths are merged into one dependency
@@ -163,7 +177,7 @@ Allwinner image:
 
 | Metric | Result |
 |---|---:|
-| Components queried | 53 |
+| Components queried | 62 |
 | Component-vulnerability records | 1,462 |
 | Unique vulnerability IDs | 791 |
 | Unique CVE IDs | 744 |
@@ -184,6 +198,9 @@ were removed. Further NVD/CPE and vendor-advisory validation is still required.
   with each new source manifest.
 - Source revision and parent APEX/APK versions remain estimates and are not sent
   to upstream CPE or OSV queries.
+- The same-source family pass currently covers only ICU and e2fsprogs. Each
+  inherited value is marked `version_estimate` and is excluded from vulnerability
+  queries even when its donor version is exact.
 - No independent full-image version truth set exists. The percentages above are
   coverage against a frozen component cohort, not a 61.12% or 73.26% accuracy
   claim.

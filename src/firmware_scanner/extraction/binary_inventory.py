@@ -33,6 +33,7 @@ def identity_key(name: str) -> str:
         'lzma': 'xzutils', 'openwrtuclient': 'uclient',
         'icuuc': 'icu', 'icui18n': 'icu',
         'busyboxsmp': 'busybox', 'pppd': 'ppp',
+        'speexwrapper': 'speex',
     }.get(name, name)
 
 

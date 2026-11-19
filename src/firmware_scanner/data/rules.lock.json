@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "release": "builtin-2026.11.19.2",
+  "release": "builtin-2026.11.19.3",
   "files": [
     {
       "path": "binary_reference.json",
-      "sha256": "d7fa792bb775d1cbfa6a46e047159d9e9daf4d40da925ff7a26e3df9ed08abaf",
+      "sha256": "93c845edc54b608a5df5bba08cf3c02227d2faf7bae64cef17b4eb94bda15bf3",
       "kind": "binary-rule-pack"
     },
     {

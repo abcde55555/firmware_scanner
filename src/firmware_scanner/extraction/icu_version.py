@@ -198,6 +198,72 @@ def _version_string(image: _Image, getter: str, architecture: str):
     return string_va, None, None, int(branch.operands[0].imm), insns[:3]
 
 
+def _generation_from_suffix(suffix: str) -> str:
+    """Map ICU's renamed-symbol suffix to its public generation."""
+    value = int(suffix)
+    # ICU documentation defines 48 as 4.8. Starting with ICU 49,
+    # U_ICU_VERSION_SHORT is the double-digit major version.
+    if value <= 48 and len(suffix) >= 2:
+        return f"{value // 10}.{value % 10}"
+    return str(value)
+
+
+def _inlined_version_string(image: _Image, getter: str, architecture: str):
+    """Find a version literal loaded directly by an inlined ICU getter."""
+    if architecture != "arm32":
+        return None
+    suffix = (_GETTER.fullmatch(getter).group(1) or "").removeprefix("_")
+    if not suffix.isdigit():
+        return None
+    _address, insns = image.symbol_code(getter, architecture)
+    if not insns:
+        return None
+    for index, load in enumerate(insns[:16]):
+        if not (
+            load.mnemonic == "ldr"
+            and len(load.operands) == 2
+            and load.operands[0].type == ARM_OP_REG
+            and load.operands[1].type == ARM_OP_MEM
+            and load.reg_name(load.operands[1].mem.base) == "pc"
+        ):
+            continue
+        register = load.reg_name(load.operands[0].reg)
+        add = next((
+            candidate
+            for candidate in insns[index + 1:index + 4]
+            if candidate.mnemonic == "add"
+            and len(candidate.operands) == 2
+            and candidate.operands[0].type == ARM_OP_REG
+            and candidate.reg_name(candidate.operands[0].reg) == register
+            and candidate.operands[1].type == ARM_OP_REG
+            and candidate.reg_name(candidate.operands[1].reg) == "pc"
+        ), None)
+        if not (
+            add is not None
+            and add.mnemonic == "add"
+            and len(add.operands) == 2
+            and add.operands[0].type == ARM_OP_REG
+            and add.reg_name(add.operands[0].reg) == register
+            and add.operands[1].type == ARM_OP_REG
+            and add.reg_name(add.operands[1].reg) == "pc"
+        ):
+            continue
+        literal_va = ((load.address + 4) & ~3) + int(load.operands[1].mem.disp)
+        raw = image.read_va(literal_va, 4)
+        if raw is None:
+            continue
+        delta = struct.unpack("<i", raw)[0]
+        string_va = add.address + 4 + delta
+        version = _read_version(image, string_va)
+        if (
+            version
+            and version.split(".", 1)[0] == _generation_from_suffix(suffix)
+        ):
+            add_index = insns.index(add)
+            return string_va, literal_va, delta, insns[:add_index + 1]
+    return None
+
+
 def _resolve_thumb_veneer(image: _Image, target: int):
     insns = image.decode(target & ~1, 16, "arm32", thumb=True)
     if not insns or len(insns) < 4:
@@ -348,8 +414,11 @@ def extract_icu(data: bytes) -> list[StaticVersionMatch]:
         image = _Image(data)
         if not image.little:
             return []
+        generation_matches = _symbol_generation_matches(image)
         if image.machine == "EM_AARCH64" and image.elfclass == 64:
             architecture = "aarch64"
+        elif image.machine == "EM_ARM" and image.elfclass == 32:
+            architecture = "arm32"
         else:
             return []
 
@@ -360,6 +429,41 @@ def extract_icu(data: bytes) -> list[StaticVersionMatch]:
             if helper not in image.symbols:
                 continue
             found = _version_string(image, getter, architecture)
+            if not found:
+                inlined = _inlined_version_string(image, getter, architecture)
+                if inlined:
+                    string_va, literal_va, literal_delta, getter_insns = inlined
+                    version = _read_version(image, string_va)
+                    evidence = {
+                        "probe": "icu-inlined-getter-version-v1",
+                        "architecture": architecture,
+                        "getter": getter,
+                        "getter_va": f"0x{image.symbols[getter][0] & ~1:x}",
+                        "getter_instructions": [
+                            f"0x{i.address:x}: {i.mnemonic} {i.op_str}".strip()
+                            for i in getter_insns
+                        ],
+                        "literal_pool_va": f"0x{literal_va:x}",
+                        "literal_delta": (
+                            f"-0x{abs(literal_delta):x}"
+                            if literal_delta < 0 else f"0x{literal_delta:x}"
+                        ),
+                        "string_va": f"0x{string_va:x}",
+                        "string": version,
+                        "defined_helper": helper,
+                        "upstream_api_source": _UPSTREAM_API,
+                        "upstream_semantics": (
+                            "The ICU getter parses U_ICU_VERSION from the loaded read-only "
+                            "dotted-decimal literal into UVersionInfo."
+                        ),
+                    }
+                    results.append(StaticVersionMatch(
+                        "ICU",
+                        version,
+                        json.dumps(evidence, sort_keys=True),
+                        0.97,
+                    ))
+                    continue
             if not found:
                 continue
             string_va, literal_va, literal_delta, branch_target, getter_insns = found
@@ -407,6 +511,36 @@ def extract_icu(data: bytes) -> list[StaticVersionMatch]:
                 ),
             }
             results.append(StaticVersionMatch("ICU", version, json.dumps(evidence, sort_keys=True), 0.98))
-        return results
+        return results or generation_matches
     except (ELFError, CsError, OSError, ValueError, TypeError, KeyError, IndexError, struct.error, OverflowError):
         return []
+
+
+def _symbol_generation_matches(image: _Image) -> list[StaticVersionMatch]:
+    """Infer the ICU major/minor generation from suffixed public API symbols."""
+    getters = {
+        (match.group(1) or "").removeprefix("_")
+        for name in image.symbols
+        if (match := _GETTER.fullmatch(name))
+    }
+    helpers = {
+        (match.group(1) or "").removeprefix("_")
+        for name in image.symbols
+        if (match := _HELPER.fullmatch(name))
+    }
+    suffixes = sorted(getters & helpers, key=lambda value: (len(value), value))
+    matches = []
+    for suffix in suffixes:
+        if not suffix.isdigit():
+            continue
+        version = _generation_from_suffix(suffix) + ".x"
+        evidence = json.dumps({
+            "probe": "icu-symbol-generation-v1",
+            "getter": f"u_getVersion_{suffix}",
+            "helper": f"u_versionFromString_{suffix}",
+            "version": version,
+            "version_semantics": "ICU public API symbol generation; patch release remains unresolved",
+            "upstream_api_source": _UPSTREAM_API,
+        }, sort_keys=True)
+        matches.append(StaticVersionMatch("ICU", version, evidence, 0.84))
+    return matches

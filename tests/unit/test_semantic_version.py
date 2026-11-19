@@ -246,3 +246,12 @@ def test_icu_rejects_non_elf_and_unsupported_architecture(tmp_path, cc):
 
     assert extract_icu(b"not an ELF") == []
     assert extract_icu(x86) == []
+
+
+def test_icu_symbol_generation_suffix_distinguishes_pre49_and_modern_versions():
+    from firmware_scanner.extraction.icu_version import _generation_from_suffix
+
+    assert _generation_from_suffix("48") == "4.8"
+    assert _generation_from_suffix("49") == "49"
+    assert _generation_from_suffix("51") == "51"
+    assert _generation_from_suffix("76") == "76"

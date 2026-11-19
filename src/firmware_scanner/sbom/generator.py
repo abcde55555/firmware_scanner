@@ -27,18 +27,23 @@ class SBOMGenerator:
         if android_info is None and (
             context.metadata.get("database_stats")
             or context.metadata.get("analysis_stats")
+            or context.metadata.get("family_provenance_stats")
             or context.metadata.get("rules")
         ):
             android_info = {
                 "database_stats": context.metadata.get("database_stats", {}),
                 "analysis_stats": context.metadata.get("analysis_stats", {}),
+                "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
                 "rules": context.metadata.get("rules", {}),
             }
-        elif android_info is not None and context.metadata.get("rules"):
-            android_info = {
-                **android_info,
-                "rules": context.metadata["rules"],
+        elif android_info is not None:
+            overlays = {
+                key: context.metadata[key]
+                for key in ("family_provenance_stats", "rules")
+                if context.metadata.get(key)
             }
+            if overlays:
+                android_info = {**android_info, **overlays}
 
         bom = self._cdx.generate(
             components=context.components,

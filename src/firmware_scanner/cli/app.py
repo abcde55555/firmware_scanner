@@ -983,7 +983,9 @@ def _run_analysis(
                                components_found=len(plugin_components))
 
     from ..android.provenance import apply_component_taxonomy
+    from ..extraction.family_provenance import apply_family_version_provenance
 
+    context.metadata["family_provenance_stats"] = apply_family_version_provenance(components)
     apply_component_taxonomy(components)
     total_before_dedup = len(components)
     context.components = _deduplicate_components(components)
@@ -1793,6 +1795,7 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
         },
         "database_stats": context.metadata.get("database_stats", {}),
         "analysis_stats": context.metadata.get("analysis_stats", {}),
+        "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
         "rules": context.metadata.get("rules", {}),
         "components": [c.model_dump() for c in context.components],
         "warnings": context.warnings,

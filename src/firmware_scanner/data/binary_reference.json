@@ -997,6 +997,14 @@
         ["TIFFOpen", "TIFFReadDirectory"]
       ],
       "filename_patterns": ["tiff"]
+    },
+    {
+      "name": "Speex",
+      "source": "https://github.com/xiph/speex",
+      "version_policy": "banner",
+      "banner_regex": "speex-([0-9]+\\.[0-9]+(?:beta[0-9]+|rc[0-9]+|[A-Za-z0-9._+\\-]*))(?=\\x00|\\s)",
+      "required_literal": "speex-",
+      "filename_patterns": ["speex"]
     }
   ]
 }

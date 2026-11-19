@@ -157,6 +157,17 @@ def test_additional_defined_version_strings_are_attributed_by_api(
     assert component.resolved_version == version
 
 
+def test_speex_wrapper_release_banner_is_attributed_to_speex():
+    data = b"\x7fELF" + b"\0" * 60 + b"speex-1.2beta3\0"
+    component = BinaryInventory().extract(
+        data,
+        "libspeexwrapper.so",
+        "/lib/libspeexwrapper.so",
+    )[0]
+    assert component.name == "libspeexwrapper.so"
+    assert component.resolved_version == "1.2beta3"
+
+
 def test_vpx_imports_and_runtime_values_are_not_release_proofs(shared_elf):
     data = shared_elf(
         "extern const char *vpx_codec_version_str(void);\n"

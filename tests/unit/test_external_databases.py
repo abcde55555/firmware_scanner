@@ -424,6 +424,7 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
         metadata={
             "database_stats": {"files_queried": 7},
             "analysis_stats": {"content_cache_hits": 3},
+            "family_provenance_stats": {"versions_inherited": 1},
             "rules": {
                 "release": "builtin-test",
                 "lock_sha256": "c" * 64,
@@ -435,6 +436,7 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
     report = json.loads(output.read_text())
     assert report["database_stats"] == {"files_queried": 7}
     assert report["analysis_stats"] == {"content_cache_hits": 3}
+    assert report["family_provenance_stats"] == {"versions_inherited": 1}
     assert report["rules"]["release"] == "builtin-test"
 
 
