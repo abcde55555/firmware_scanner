@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "scope": "Exact project revisions whose source tree declares an upstream release",
+  "pins": [
+    {
+      "project_path": "external/freetype",
+      "revision": "d968d2541f7158e18ab22680bfa08a538019bf6a",
+      "version": "2.13.2",
+      "source_url": "https://android.googlesource.com/platform/external/freetype/+/d968d2541f7158e18ab22680bfa08a538019bf6a/include/freetype/freetype.h",
+      "authority": "FREETYPE_MAJOR, FREETYPE_MINOR and FREETYPE_PATCH"
+    },
+    {
+      "project_path": "external/harfbuzz_ng",
+      "revision": "e489c416b6f8d2a9a2e0e85b781d1e4a0c431401",
+      "version": "10.2.0",
+      "source_url": "https://android.googlesource.com/platform/external/harfbuzz_ng/+/e489c416b6f8d2a9a2e0e85b781d1e4a0c431401/src/hb-version.h",
+      "authority": "HB_VERSION_STRING"
+    },
+    {
+      "project_path": "external/jsoncpp",
+      "revision": "8f65e4b14b9946910e1519231097870b5953b00f",
+      "version": "1.9.5",
+      "source_url": "https://android.googlesource.com/platform/external/jsoncpp/+/8f65e4b14b9946910e1519231097870b5953b00f/include/json/version.h",
+      "authority": "JSONCPP_VERSION_STRING"
+    },
+    {
+      "project_path": "external/libexif",
+      "revision": "e6271597ffa3cfd4a67e984e1c2a99c3d4cbcdfd",
+      "version": "0.6.21",
+      "source_url": "https://android.googlesource.com/platform/external/libexif/+/e6271597ffa3cfd4a67e984e1c2a99c3d4cbcdfd/configure.ac",
+      "authority": "AC_INIT package version"
+    },
+    {
+      "project_path": "external/tinyxml2",
+      "revision": "7485b22521f577cf944e5687361548d8993d8d2c",
+      "version": "10.0.0",
+      "source_url": "https://android.googlesource.com/platform/external/tinyxml2/+/7485b22521f577cf944e5687361548d8993d8d2c/CMakeLists.txt",
+      "authority": "project tinyxml2 VERSION"
+    },
+    {
+      "project_path": "external/icu",
+      "revision": "f17caeafcf20bd38074a9963c31df3629b70b5f5",
+      "version": "76.1",
+      "source_url": "https://android.googlesource.com/platform/external/icu/+/f17caeafcf20bd38074a9963c31df3629b70b5f5/icu4c/source/common/unicode/uvernum.h",
+      "authority": "U_ICU_VERSION"
+    },
+    {
+      "project_path": "external/libbpf",
+      "revision": "87b46d4814e49b05fcdc3dcc2853bf395097e382",
+      "version": "1.4",
+      "source_url": "https://android.googlesource.com/platform/external/libbpf/+/87b46d4814e49b05fcdc3dcc2853bf395097e382/src/libbpf_version.h",
+      "authority": "LIBBPF_MAJOR_VERSION and LIBBPF_MINOR_VERSION"
+    },
+    {
+      "project_path": "external/libnl",
+      "revision": "1c68bb3836956c7fc641b9d5aba6a24e3a01b6d2",
+      "version": "3.10.0",
+      "source_url": "https://android.googlesource.com/platform/external/libnl/+/1c68bb3836956c7fc641b9d5aba6a24e3a01b6d2/configure.ac",
+      "authority": "libnl major, minor and micro versions"
+    },
+    {
+      "project_path": "external/libcap",
+      "revision": "07f005558ad4ba9a3c1271a5458e09878e6d81a7",
+      "version": "2.69",
+      "source_url": "https://android.googlesource.com/platform/external/libcap/+/07f005558ad4ba9a3c1271a5458e09878e6d81a7/Make.Rules",
+      "authority": "VERSION and MINOR"
+    },
+    {
+      "project_path": "external/libevent",
+      "revision": "67b0e8c658b80d176b5b1a497cbc7e954f3d5266",
+      "version": "2.1.12-stable",
+      "source_url": "https://android.googlesource.com/platform/external/libevent/+/67b0e8c658b80d176b5b1a497cbc7e954f3d5266/configure.ac",
+      "authority": "AC_INIT libevent version"
+    },
+    {
+      "project_path": "external/zlib",
+      "revision": "c1f2595cae6ef4703003a8c9ea53239a10d7a1dd",
+      "version": "1.3.0.1-motley",
+      "source_url": "https://android.googlesource.com/platform/external/zlib/+/c1f2595cae6ef4703003a8c9ea53239a10d7a1dd/zlib.h",
+      "authority": "ZLIB_VERSION"
+    },
+    {
+      "project_path": "external/lzma",
+      "revision": "c1bc713526e9740aec88f0f18e0bca0b0c54f1f9",
+      "version": "24.09",
+      "source_url": "https://android.googlesource.com/platform/external/lzma/+/c1bc713526e9740aec88f0f18e0bca0b0c54f1f9/C/7zVersion.h",
+      "authority": "MY_VERSION_NUMBERS"
+    },
+    {
+      "project_path": "external/libdrm",
+      "revision": "64b1c0aa4282422632abdeaa608af52f1c85fc7f",
+      "version": "2.4.131",
+      "source_url": "https://raw.githubusercontent.com/WayDroid-ATV/android_external_libdrm/64b1c0aa4282422632abdeaa608af52f1c85fc7f/meson.build",
+      "authority": "meson project version"
+    },
+    {
+      "project_path": "external/ntfs-3g",
+      "revision": "e2415df401538976fb89aa20370903e0c46e51ff",
+      "version": "2022.10.3",
+      "source_url": "https://raw.githubusercontent.com/LineageOS/android_external_ntfs-3g/e2415df401538976fb89aa20370903e0c46e51ff/configure.ac",
+      "authority": "AC_INIT ntfs-3g version"
+    },
+    {
+      "project_path": "external/e2fsprogs",
+      "revision": "7770116a244e96de9672eb8b7a8a1b44ba40ec91",
+      "version": "1.46.6",
+      "source_url": "https://raw.githubusercontent.com/LineageOS/android_external_e2fsprogs/7770116a244e96de9672eb8b7a8a1b44ba40ec91/version.h",
+      "authority": "E2FSPROGS_VERSION"
+    },
+    {
+      "project_path": "external/protobuf",
+      "revision": "da98e5a6593907dd162bb6c206570c0afa5326ac",
+      "version": "3.21.12",
+      "source_url": "https://android.googlesource.com/platform/external/protobuf/+/da98e5a6593907dd162bb6c206570c0afa5326ac/version.json",
+      "authority": "protoc_version 21.12, normalized to the library release line"
+    },
+    {
+      "project_path": "external/libfuse",
+      "revision": "80ef82d1971a97d2fb4e2d347cd11d39aa2c3ef8",
+      "version": "3.17.0",
+      "source_url": "https://android.googlesource.com/platform/external/libfuse/+/80ef82d1971a97d2fb4e2d347cd11d39aa2c3ef8/meson.build",
+      "authority": "project libfuse3 version"
+    },
+    {
+      "project_path": "external/libdav1d",
+      "revision": "57db2f6f45ec8cd0528e7279fbd970a7b3f565e3",
+      "version": "1.5.0",
+      "source_url": "https://android.googlesource.com/platform/external/libdav1d/+/57db2f6f45ec8cd0528e7279fbd970a7b3f565e3/meson.build",
+      "authority": "meson project version"
+    },
+    {
+      "project_path": "external/libcap-ng",
+      "revision": "8dd5e09d5faf27a871e8654ddaa2d2af7c696578",
+      "version": "0.8.5",
+      "source_url": "https://android.googlesource.com/platform/external/libcap-ng/+/8dd5e09d5faf27a871e8654ddaa2d2af7c696578/configure.ac",
+      "authority": "AC_INIT package version"
+    },
+    {
+      "project_path": "external/libultrahdr",
+      "revision": "8ca5f9daff887eb2fd412bb66e00f850f582a3f5",
+      "version": "1.4.0",
+      "source_url": "https://android.googlesource.com/platform/external/libultrahdr/+/8ca5f9daff887eb2fd412bb66e00f850f582a3f5/CMakeLists.txt",
+      "authority": "UHDR major, minor and patch versions"
+    },
+    {
+      "project_path": "external/libyuv",
+      "revision": "741c38751c436f60c583110f617340b7f3322d94",
+      "version": "1883",
+      "source_url": "https://android.googlesource.com/platform/external/libyuv/+/741c38751c436f60c583110f617340b7f3322d94/include/libyuv/version.h",
+      "authority": "LIBYUV_VERSION"
+    }
+  ]
+}

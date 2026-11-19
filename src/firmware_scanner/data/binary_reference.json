@@ -844,6 +844,159 @@
       "filename_patterns": [
         "asound"
       ]
+    },
+    {
+      "name": "libexif",
+      "source": "https://github.com/libexif/libexif",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["exif_data_new_from_file", "exif_data_save_data"]
+      ],
+      "filename_patterns": ["exif"]
+    },
+    {
+      "name": "NTFS-3G",
+      "source": "https://github.com/tuxera/ntfs-3g",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["ntfs_attr_open", "ntfs_attr_pread"]
+      ],
+      "filename_patterns": ["ntfs"]
+    },
+    {
+      "name": "PDFium",
+      "source": "https://pdfium.googlesource.com/pdfium/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["FPDF_InitLibrary", "FPDF_LoadPage"]
+      ],
+      "filename_patterns": ["pdfium"]
+    },
+    {
+      "name": "libdrm",
+      "source": "https://gitlab.freedesktop.org/mesa/drm",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["drmIoctl", "drmGetVersion"]
+      ],
+      "filename_patterns": ["drm"]
+    },
+    {
+      "name": "libfuse",
+      "source": "https://github.com/libfuse/libfuse",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["fuse_new", "fuse_main_real"]
+      ],
+      "filename_patterns": ["fuse"]
+    },
+    {
+      "name": "minijail",
+      "source": "https://android.googlesource.com/platform/external/minijail/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["minijail_new", "minijail_run"]
+      ],
+      "filename_patterns": ["minijail"]
+    },
+    {
+      "name": "libcap-ng",
+      "source": "https://github.com/stevegrubb/libcap-ng",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["capng_get_caps_process", "capng_apply"]
+      ],
+      "filename_patterns": ["cap-ng"]
+    },
+    {
+      "name": "dav1d",
+      "source": "https://code.videolan.org/videolan/dav1d",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["dav1d_open", "dav1d_send_data"]
+      ],
+      "filename_patterns": ["dav1d"]
+    },
+    {
+      "name": "libyuv",
+      "source": "https://chromium.googlesource.com/libyuv/libyuv/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["I420ToNV12", "NV12ToI420"]
+      ],
+      "filename_patterns": ["yuv"]
+    },
+    {
+      "name": "OpenJPEG",
+      "source": "https://github.com/uclouvain/openjpeg",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["opj_create_decompress", "opj_create_compress"]
+      ],
+      "filename_patterns": ["openjp", "openjpeg"]
+    },
+    {
+      "name": "libheif",
+      "source": "https://github.com/strukturag/libheif",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["heif_context_alloc", "heif_context_read_from_file"]
+      ],
+      "filename_patterns": ["heif"]
+    },
+    {
+      "name": "libavif",
+      "source": "https://github.com/AOMediaCodec/libavif",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["avifDecoderCreate", "avifDecoderNextImage"]
+      ],
+      "filename_patterns": ["avif"]
+    },
+    {
+      "name": "Snappy",
+      "source": "https://github.com/google/snappy",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["snappy_compress", "snappy_uncompress"]
+      ],
+      "filename_patterns": ["snappy"]
+    },
+    {
+      "name": "libjxl",
+      "source": "https://github.com/libjxl/libjxl",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["JxlDecoderCreate", "JxlDecoderProcessInput"]
+      ],
+      "filename_patterns": ["jxl"]
+    },
+    {
+      "name": "libzip",
+      "source": "https://github.com/nih-at/libzip",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["zip_open", "zip_fopen"]
+      ],
+      "filename_patterns": ["zip"]
+    },
+    {
+      "name": "LibRaw",
+      "source": "https://github.com/LibRaw/LibRaw",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["libraw_init", "libraw_open_file"]
+      ],
+      "filename_patterns": ["raw"]
+    },
+    {
+      "name": "libtiff",
+      "source": "https://gitlab.com/libtiff/libtiff",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["TIFFOpen", "TIFFReadDirectory"]
+      ],
+      "filename_patterns": ["tiff"]
     }
   ]
 }

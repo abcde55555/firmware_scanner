@@ -15,7 +15,7 @@ DATA_PATH = ROOT / "src" / "firmware_scanner" / "data" / "binary_reference.json"
 def test_reference_catalog_has_provenance_and_versioned_rules():
     catalog = json.loads(DATA_PATH.read_text())
     assert catalog["schema_version"] == 1
-    assert len(catalog["references"]) >= 50
+    assert len(catalog["references"]) >= 100
     for rule in catalog["references"]:
         assert rule["name"]
         assert rule["source"].startswith("https://")
@@ -133,3 +133,67 @@ def test_identity_evidence_survives_when_version_banner_is_absent(tmp_path):
     assert len(matches) == 1
     assert matches[0].version == ""
     assert matches[0].identity_only is True
+
+
+def test_catalog_identifies_additional_native_libraries_from_defined_symbols(tmp_path):
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if not compiler:
+        pytest.skip("a C compiler is required for ELF symbol fixtures")
+
+    symbols = [
+        ("exif_data_new_from_file", "exif_data_save_data"),
+        ("ntfs_attr_open", "ntfs_attr_pread"),
+        ("FPDF_InitLibrary", "FPDF_LoadPage"),
+        ("drmIoctl", "drmGetVersion"),
+        ("fuse_new", "fuse_main_real"),
+        ("minijail_new", "minijail_run"),
+        ("capng_get_caps_process", "capng_apply"),
+        ("dav1d_open", "dav1d_send_data"),
+        ("I420ToNV12", "NV12ToI420"),
+        ("opj_create_decompress", "opj_create_compress"),
+        ("heif_context_alloc", "heif_context_read_from_file"),
+        ("avifDecoderCreate", "avifDecoderNextImage"),
+        ("snappy_compress", "snappy_uncompress"),
+        ("JxlDecoderCreate", "JxlDecoderProcessInput"),
+        ("zip_open", "zip_fopen"),
+        ("libraw_init", "libraw_open_file"),
+        ("TIFFOpen", "TIFFReadDirectory"),
+    ]
+    source = tmp_path / "catalog-fixture.c"
+    source.write_text("\n".join(
+        f"int {name}(void) {{ return 0; }}"
+        for pair in symbols
+        for name in pair
+    ))
+    library = tmp_path / "libcatalog-fixture.so"
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", str(source), "-o", str(library)],
+        check=True,
+        capture_output=True,
+    )
+    matched = {
+        item.name
+        for item in BinaryReferenceMatcher().match(
+            library.read_bytes(),
+            "libcatalog-fixture.so",
+        )
+    }
+    assert {
+        "libexif",
+        "NTFS-3G",
+        "PDFium",
+        "libdrm",
+        "libfuse",
+        "minijail",
+        "libcap-ng",
+        "dav1d",
+        "libyuv",
+        "OpenJPEG",
+        "libheif",
+        "libavif",
+        "Snappy",
+        "libjxl",
+        "libzip",
+        "LibRaw",
+        "libtiff",
+    }.issubset(matched)

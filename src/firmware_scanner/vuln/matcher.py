@@ -89,6 +89,27 @@ _NAME_ALIASES: dict[str, str] = {
     "miniupnpc": "miniupnpc",
     "miniupnpd": "miniupnpd",
     "libminiupnpc": "miniupnpc",
+    "libexif": "libexif",
+    "libdrm": "libdrm",
+    "libfuse": "libfuse",
+    "libbpf": "libbpf",
+    "libdav1d": "dav1d",
+    "libyuv": "libyuv",
+    "libheif": "libheif",
+    "libavif": "libavif",
+    "libjxl": "libjxl",
+    "libzip": "libzip",
+    "libopenjp2": "openjpeg",
+    "openjp2": "openjpeg",
+    "libraw": "libraw",
+    "snappy": "snappy",
+    "libjsoncpp": "jsoncpp",
+    "libntfs-3g": "ntfs-3g",
+    "libminijail": "minijail",
+    "libperfetto": "perfetto",
+    "libpiex": "piex",
+    "libselinux": "selinux",
+    "libtinyalsa": "tinyalsa",
     "android": "Android",
 }
 
@@ -114,10 +135,32 @@ def _normalize_name(name: str) -> str:
 
 # Versions that aren't real version numbers
 _INVALID_VERSIONS = {"detected", "unknown", "n/a", "boringssl", ""}
+_NON_EXACT_RESOLUTION_STATES = {
+    "estimated",
+    "equivalence-class",
+    "conflict-unresolved",
+    "estimated-source-revision",
+    "estimated-parent-package",
+}
 
 
 def _is_scannable(component: Component) -> bool:
     """Check if a component has enough info for a meaningful vulnerability query."""
+    source_project = next((
+        str(prop.get("value", ""))
+        for prop in component.properties
+        if prop.get("name") == "firmware:source:project"
+    ), "")
+    if source_project == "external/lzma":
+        # Android's external/lzma is the 7-Zip LZMA SDK, not XZ Utils.
+        return False
+    resolution_state = next((
+        str(prop.get("value", ""))
+        for prop in component.properties
+        if prop.get("name") == "firmware:version:resolution-state"
+    ), "")
+    if resolution_state in _NON_EXACT_RESOLUTION_STATES:
+        return False
     estimated_kind = next((
         str(prop.get("value", ""))
         for prop in component.properties
@@ -235,6 +278,8 @@ class VulnMatcher:
                 raw_vulns,
                 comp_version=comp.resolved_version,
                 comp_name=comp.name,
+                ecosystem=self._infer_ecosystem(comp),
+                target_name=_normalize_name(comp.name),
             )
             comp_result = ComponentVulnResult(
                 component_name=comp.name,

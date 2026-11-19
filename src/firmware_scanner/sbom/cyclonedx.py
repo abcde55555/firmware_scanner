@@ -59,11 +59,53 @@ class CycloneDXGenerator:
                 self._component_to_cdx(c, spec_version=spec_version) for c in components
             ],
         }
+        dependencies = self._build_declared_dependencies(components, spec_version)
+        if dependencies:
+            bom["dependencies"] = dependencies
 
         if vulnerabilities:
             bom["vulnerabilities"] = vulnerabilities
 
         return bom
+
+    def _build_declared_dependencies(
+        self,
+        components: list[Component],
+        spec_version: str,
+    ) -> list[dict]:
+        """Emit only unambiguous DT_NEEDED edges backed by a known SONAME."""
+        refs_by_soname: dict[str, set[str]] = {}
+        for component in components:
+            sonames = {
+                str(prop.get("value"))
+                for prop in component.properties
+                if prop.get("name") == "firmware:elf:soname" and prop.get("value")
+            }
+            if not sonames:
+                continue
+            ref = self._component_to_cdx(component, spec_version=spec_version)["bom-ref"]
+            for soname in sonames:
+                refs_by_soname.setdefault(soname, set()).add(ref)
+        dependency_targets: dict[str, set[str]] = {}
+        for component in components:
+            needed = {
+                str(prop.get("value"))
+                for prop in component.properties
+                if prop.get("name") == "firmware:elf:needed" and prop.get("value")
+            }
+            targets = sorted({
+                next(iter(refs_by_soname[soname]))
+                for soname in needed
+                if len(refs_by_soname.get(soname, ())) == 1
+            })
+            if targets:
+                ref = self._component_to_cdx(component, spec_version=spec_version)["bom-ref"]
+                dependency_targets.setdefault(ref, set()).update(targets)
+        return [
+            {"ref": ref, "dependsOn": sorted(targets)}
+            for ref, targets in sorted(dependency_targets.items())
+            if targets
+        ]
 
     def _build_metadata(
         self,
@@ -165,6 +207,16 @@ class CycloneDXGenerator:
             props.append({"name": "android:security_patch", "value": str(info["security_patch"])})
         if info.get("build_fingerprint"):
             props.append({"name": "android:build_fingerprint", "value": str(info["build_fingerprint"])})
+        if info.get("database_stats"):
+            props.append({
+                "name": "firmware:database:stats",
+                "value": json.dumps(info["database_stats"], sort_keys=True),
+            })
+        if info.get("analysis_stats"):
+            props.append({
+                "name": "firmware:analysis:stats",
+                "value": json.dumps(info["analysis_stats"], sort_keys=True),
+            })
 
         metadata["properties"] = props
         # Also populate properties on metadata.component for platforms inspecting the root component

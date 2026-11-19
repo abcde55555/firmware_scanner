@@ -64,6 +64,23 @@ def analyze(
         exists=True,
         help="JSON provenance pack with image_sha256 and source projects",
     ),
+    blint_db: Optional[Path] = typer.Option(
+        None,
+        "--blint-db",
+        exists=True,
+        help="Pinned BLintDB SQLite database for symbol attribution evidence",
+    ),
+    nsrl_db: Optional[Path] = typer.Option(
+        None,
+        "--nsrl-db",
+        exists=True,
+        help="Pinned NIST NSRL RDSv3 SQLite database for exact-file evidence",
+    ),
+    verify_database_integrity: bool = typer.Option(
+        True,
+        "--verify-database-integrity/--skip-database-integrity",
+        help="Verify external database size and SHA-256 before scanning",
+    ),
     max_size: int = typer.Option(4096, "--max-size", help="Max firmware file size in MB (default 4096)"),
     log_dir: Optional[Path] = typer.Option("./logs", "--log-dir", help="Scan telemetry log directory"),
     no_log: bool = typer.Option(False, "--no-log", help="Disable scan telemetry logging"),
@@ -93,6 +110,9 @@ def analyze(
         android_max_libs=android_max_libs,
         android_external_tools_dir=str(android_tools_dir) if android_tools_dir else "",
         android_source_manifest=str(android_source_manifest) if android_source_manifest else "",
+        blintdb_path=str(blint_db) if blint_db else "",
+        nsrl_db_path=str(nsrl_db) if nsrl_db else "",
+        verify_database_integrity=verify_database_integrity,
         max_file_size=max_size * 1024 * 1024,
     )
 
@@ -1390,6 +1410,7 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
     from ..android.yaffs2_reader import is_yaffs2_image, Yaffs2Reader
     from ..android.system_scanner import AndroidSystemScanner
 
+    _validate_external_databases(config)
     source_manifest = None
     if config.android_source_manifest:
         import json
@@ -1421,6 +1442,11 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     max_libs=config.android_max_libs,
                     source_manifest=source_manifest,
                     image_sha256=image_sha256,
+                    database_paths={
+                        "blintdb": config.blintdb_path,
+                        "nsrl": config.nsrl_db_path,
+                    },
+                    verify_database_integrity=config.verify_database_integrity,
                 )
                 result = scanner.scan()
                 _store_android_build_info(context, result)
@@ -1444,6 +1470,11 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     max_libs=config.android_max_libs,
                     source_manifest=source_manifest,
                     image_sha256=image_sha256,
+                    database_paths={
+                        "blintdb": config.blintdb_path,
+                        "nsrl": config.nsrl_db_path,
+                    },
+                    verify_database_integrity=config.verify_database_integrity,
                 )
                 result = scanner.scan()
                 _store_android_build_info(context, result)
@@ -1467,6 +1498,11 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     max_libs=config.android_max_libs,
                     source_manifest=source_manifest,
                     image_sha256=image_sha256,
+                    database_paths={
+                        "blintdb": config.blintdb_path,
+                        "nsrl": config.nsrl_db_path,
+                    },
+                    verify_database_integrity=config.verify_database_integrity,
                 )
                 result = scanner.scan()
                 _store_android_build_info(context, result)
@@ -1493,6 +1529,11 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                             max_libs=config.android_max_libs,
                             source_manifest=source_manifest,
                             image_sha256=image_sha256,
+                            database_paths={
+                                "blintdb": config.blintdb_path,
+                                "nsrl": config.nsrl_db_path,
+                            },
+                            verify_database_integrity=config.verify_database_integrity,
                         )
                         result = scanner.scan()
                         _store_android_build_info(context, result)
@@ -1507,6 +1548,29 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
 
     console.print("    Filesystem-level scan unavailable; raw binary scan will identify components")
     return []
+
+
+def _validate_external_databases(config: AnalysisConfig) -> None:
+    """Fail closed before a long scan when an optional database is invalid."""
+    if not config.blintdb_path and not config.nsrl_db_path:
+        return
+    from ..databases import DatabaseEnricher
+
+    enricher = None
+    try:
+        enricher = DatabaseEnricher.from_paths(
+            blint_path=config.blintdb_path or None,
+            nsrl_path=config.nsrl_db_path or None,
+            verify_hash=config.verify_database_integrity,
+        )
+    except Exception as exc:  # noqa: BLE001 - convert file-specific failure to CLI error
+        raise RuntimeError(
+            "External database validation failed: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+    finally:
+        if enricher is not None:
+            enricher.close()
 
 
 def _store_android_build_info(context: AnalysisContext, result) -> None:
@@ -1567,7 +1631,13 @@ def _store_android_build_info(context: AnalysisContext, result) -> None:
         "chip_model": chip_model,
         "target_product": target_product,
         "all_properties": all_props,
+        "database_stats": result.database_stats,
+        "analysis_stats": result.analysis_stats,
     }
+    if result.database_stats:
+        context.metadata["database_stats"] = result.database_stats
+    if result.analysis_stats:
+        context.metadata["analysis_stats"] = result.analysis_stats
 
     if context.arch_info is None:
         from ..arch.models import ArchInfo, CPUFamily, Endianness, FileType

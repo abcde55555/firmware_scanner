@@ -190,7 +190,12 @@ class OSVClient:
 
     def query_single(self, purl: str = "", name: str = "", version: str = "", ecosystem: str = "") -> list[dict]:
         """Query a single component. Returns raw vuln dicts."""
-        key = cache_key(purl=purl, name=name, version=version)
+        key = cache_key(
+            purl=purl,
+            name=name,
+            version=version,
+            ecosystem=ecosystem,
+        )
         cached = read_cached(self._cache_dir, key)
         if cached is not None:
             return cached.get("vulns", [])
@@ -220,7 +225,13 @@ class OSVClient:
             purl = q.get("purl", "")
             name = q.get("name", "")
             version = q.get("version", "")
-            key = cache_key(purl=purl, name=name, version=version)
+            ecosystem = q.get("ecosystem", "")
+            key = cache_key(
+                purl=purl,
+                name=name,
+                version=version,
+                ecosystem=ecosystem,
+            )
             cached = read_cached(self._cache_dir, key)
             if cached is not None:
                 results[idx] = cached.get("vulns", [])
@@ -239,16 +250,18 @@ class OSVClient:
                         purl=q.get("purl", ""),
                         name=q.get("name", ""),
                         version=q.get("version", ""),
+                        ecosystem=q.get("ecosystem", ""),
                     )
                     write_cache(self._cache_dir, key, vulns, query=q)
                 update_cache_meta(self._cache_dir)
-            except (urllib.error.URLError, OSError) as e:
+            except (urllib.error.URLError, OSError):
                 for i, idx in enumerate(uncached_indices):
                     q = uncached_queries[i]
                     key = cache_key(
                         purl=q.get("purl", ""),
                         name=q.get("name", ""),
                         version=q.get("version", ""),
+                        ecosystem=q.get("ecosystem", ""),
                     )
                     stale = read_cached_stale(self._cache_dir, key)
                     if stale:
@@ -264,8 +277,21 @@ class OSVClient:
         raw_vulns: list[dict],
         comp_version: str = "",
         comp_name: str = "",
+        ecosystem: str = "",
+        target_name: str = "",
     ) -> list[Vulnerability]:
         """Convert raw OSV JSON vulnerability objects to our model with semver verification and CVE deduplication."""
+        # OSV name queries without an ecosystem can return advisories for
+        # unrelated distro packages. Keep only affected entries associated with
+        # the component being queried before evaluating version ranges.
+        raw_vulns = self._filter_to_target_package(
+            raw_vulns,
+            comp_name=comp_name,
+            comp_version=comp_version,
+            ecosystem=ecosystem,
+            target_name=target_name,
+        )
+
         # 1. Filter out vulnerabilities that do not affect comp_version
         filtered_vulns: list[dict] = []
         for v in raw_vulns:
@@ -365,6 +391,130 @@ class OSVClient:
             ))
 
         return parsed
+
+    @staticmethod
+    def _target_package_names(component_name: str, target_name: str) -> set[str]:
+        aliases = {
+            "libssl": "openssl",
+            "libcrypto": "openssl",
+            "libz": "zlib",
+            "libcurl": "curl",
+            "libsqlite": "sqlite3",
+            "libsqlite3": "sqlite3",
+            "libjpeg": "libjpeg",
+            "libdav1d": "dav1d",
+            "libopenjp2": "openjpeg",
+        }
+        result = {component_name.strip().casefold(), target_name.strip().casefold()}
+        for value in tuple(result):
+            base = value
+            for suffix in (".so", ".a", ".dylib", ".dll"):
+                if base.endswith(suffix):
+                    base = base[: -len(suffix)]
+            while base and (base[-1].isdigit() or base.endswith(".")):
+                base = base.rstrip("0123456789.")
+            if base:
+                result.add(base)
+                result.add(aliases.get(base, base))
+                if base.startswith("lib"):
+                    result.add(base[3:])
+                    result.add(aliases.get(base[3:], base[3:]))
+        return {value for value in result if value}
+
+    @staticmethod
+    def _package_name_matches(package_name: str, targets: set[str]) -> bool:
+        normalized = package_name.strip().casefold()
+        if normalized in targets:
+            return True
+        return any(
+            target
+            and normalized.startswith(target)
+            and normalized[len(target):len(target) + 1].isdigit()
+            for target in targets
+        )
+
+    def _filter_to_target_package(
+        self,
+        raw_vulns: list[dict],
+        *,
+        comp_name: str,
+        comp_version: str,
+        ecosystem: str,
+        target_name: str,
+    ) -> list[dict]:
+        if not comp_name:
+            return raw_vulns
+        targets = self._target_package_names(comp_name, target_name)
+        ecosystem_key = ecosystem.strip().casefold()
+        result = []
+        for vulnerability in raw_vulns:
+            matched = []
+            for affected in vulnerability.get("affected", []):
+                package = affected.get("package", {}) if isinstance(affected, dict) else {}
+                package_name = str(package.get("name", ""))
+                package_ecosystem = str(package.get("ecosystem", ""))
+                if not self._package_name_matches(package_name, targets):
+                    continue
+                if (
+                    ecosystem_key
+                    and package_ecosystem
+                    and not package_ecosystem.casefold().startswith(ecosystem_key)
+                ):
+                    continue
+                if not ecosystem_key and package_ecosystem:
+                    affected = self._trim_distro_affected_for_upstream(
+                        affected,
+                        comp_version,
+                        package_ecosystem,
+                    )
+                    if affected is None:
+                        continue
+                matched.append(affected)
+            if matched:
+                filtered = dict(vulnerability)
+                filtered["affected"] = matched
+                result.append(filtered)
+        return result
+
+    @staticmethod
+    def _version_major(value: str) -> int | None:
+        cleaned = clean_version(value)
+        match = re.search(r"\d+", cleaned)
+        return int(match.group(0)) if match else None
+
+    def _trim_distro_affected_for_upstream(
+        self,
+        affected: dict,
+        component_version: str,
+        package_ecosystem: str,
+    ) -> dict | None:
+        """Do not apply a distro branch to a generic upstream version."""
+        if package_ecosystem.casefold() in {"git", "oss-fuzz", "github actions"}:
+            return affected
+        target_major = self._version_major(component_version)
+        if target_major is None:
+            return affected
+        ranges = []
+        for version_range in affected.get("ranges", []):
+            boundaries = []
+            for event in version_range.get("events", []):
+                for key in ("fixed", "last_affected"):
+                    if event.get(key):
+                        boundaries.append(self._version_major(str(event[key])))
+            if any(boundary == target_major for boundary in boundaries):
+                ranges.append(version_range)
+        versions = [
+            version
+            for version in affected.get("versions", [])
+            if self._version_major(str(version)) == target_major
+        ]
+        if not ranges and not versions:
+            return None
+        filtered = dict(affected)
+        filtered["ranges"] = ranges
+        if "versions" in affected:
+            filtered["versions"] = versions
+        return filtered
 
     def _build_query(self, purl: str, name: str, version: str, ecosystem: str) -> dict:
         if purl:

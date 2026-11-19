@@ -7,6 +7,8 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from functools import lru_cache
+from importlib.resources import files
 
 from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 
@@ -96,6 +98,60 @@ def _append_unique(properties: list[dict], name: str, value: str) -> None:
         properties.append(item)
 
 
+def _set_property(component: Component, name: str, value: str) -> None:
+    component.properties = [
+        prop for prop in component.properties if prop.get("name") != name
+    ]
+    component.properties.append({"name": name, "value": value})
+
+
+@lru_cache(maxsize=1)
+def load_source_version_pins() -> tuple[dict, ...]:
+    path = files("firmware_scanner.data").joinpath(
+        "provenance",
+        "source-version-pins.json",
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("Unsupported source version pin schema")
+    pins = []
+    keys = set()
+    for item in payload.get("pins", []):
+        project_path = str(item.get("project_path", "")).strip()
+        revision = str(item.get("revision", "")).strip()
+        version = str(item.get("version", "")).strip()
+        source_url = str(item.get("source_url", "")).strip()
+        authority = str(item.get("authority", "")).strip()
+        if not project_path or len(revision) != 40 or not version:
+            raise ValueError("Invalid source version pin")
+        if not source_url.startswith("https://") or not authority:
+            raise ValueError("Source version pins require HTTPS provenance")
+        key = (project_path, revision)
+        if key in keys:
+            raise ValueError(f"Duplicate source version pin: {project_path}@{revision}")
+        keys.add(key)
+        pins.append({
+            "project_path": project_path,
+            "revision": revision,
+            "version": version,
+            "source_url": source_url,
+            "authority": authority,
+        })
+    return tuple(pins)
+
+
+def _source_version_pin(project: dict) -> dict | None:
+    key = (str(project.get("path", "")), str(project.get("revision", "")))
+    return next(
+        (
+            pin
+            for pin in load_source_version_pins()
+            if (pin["project_path"], pin["revision"]) == key
+        ),
+        None,
+    )
+
+
 def _apply_source_revision(
     component: Component,
     labels: set[str],
@@ -125,26 +181,51 @@ def _apply_source_revision(
         return None
     project = candidates[0]
     revision = str(project["revision"])
-    version = f"git:{revision}"
+    pin = _source_version_pin(project)
+    version = pin["version"] if pin else f"git:{revision}"
     component.resolved_version = version
     component.versions = [version for version in component.versions if version.version]
     component.versions.append(
         VersionConfidence(
             version=version,
-            confidence=confidence,
-            method=ExtractionMethod.VERSION_ESTIMATE,
+            confidence=max(confidence, 0.97) if pin else confidence,
+            method=ExtractionMethod.BUILD_METADATA if pin else ExtractionMethod.VERSION_ESTIMATE,
             evidence=(
-                f"{rule_evidence or 'NOTICE maps ' + component.name + ' to ' + str(project['path'])}; "
-                f"the image source manifest pins {project.get('name', project['path'])} "
-                f"at {revision}"
+                (
+                    f"{rule_evidence or 'NOTICE maps ' + component.name + ' to ' + str(project['path'])}; "
+                    f"the pinned source revision declares release {version} via "
+                    f"{pin['authority']} at {pin['source_url']}"
+                )
+                if pin
+                else (
+                    f"{rule_evidence or 'NOTICE maps ' + component.name + ' to ' + str(project['path'])}; "
+                    f"the image source manifest pins {project.get('name', project['path'])} "
+                    f"at {revision}"
+                )
             ),
         )
     )
-    _append_unique(component.properties, "firmware:version:kind", "estimated-source-revision")
+    _append_unique(
+        component.properties,
+        "firmware:version:kind",
+        "source-declared-release" if pin else "estimated-source-revision",
+    )
     _append_unique(component.properties, "firmware:source:project", str(project["path"]))
     _append_unique(component.properties, "firmware:source:repository", str(project.get("name", "")))
     _append_unique(component.properties, "firmware:source:revision", revision)
-    _append_unique(component.properties, "firmware:version:scope", "source-project-build-revision")
+    if pin:
+        _append_unique(component.properties, "firmware:source:version-authority", pin["authority"])
+        _append_unique(component.properties, "firmware:source:version-evidence", pin["source_url"])
+    _append_unique(
+        component.properties,
+        "firmware:version:scope",
+        "source-project-declared-release" if pin else "source-project-build-revision",
+    )
+    _set_property(
+        component,
+        "firmware:version:resolution-state",
+        "exact" if pin else "estimated-source-revision",
+    )
     return {
         "name": component.name,
         "locations": _locations(component),
@@ -195,6 +276,7 @@ def _parent_version(component: Component, package_versions: dict[str, str]) -> d
             "firmware:version:scope",
             "parent-package-not-upstream-library",
         )
+        _set_property(component, "firmware:version:resolution-state", "estimated-parent-package")
         return {
             "name": component.name,
             "version": version,
@@ -254,6 +336,7 @@ def apply_android_provenance(
         "firmware:container:type",
         "firmware:container:locations",
         "firmware:version:scope",
+        "firmware:version:resolution-state",
     }
     for digest, equal_binaries in by_hash.items():
         donors = [
@@ -283,7 +366,7 @@ def apply_android_provenance(
             )
             for prop in donor.properties:
                 if prop.get("name") in inherited_properties:
-                    _append_unique(component.properties, prop["name"], str(prop["value"]))
+                    _set_property(component, prop["name"], str(prop["value"]))
             _append_unique(
                 component.properties,
                 "firmware:evidence:inherited-from-container-sha256",
@@ -300,6 +383,10 @@ def apply_android_provenance(
             )
     return {
         "source_revisions_applied": len(source_rows),
+        "source_versions_applied": sum(
+            row["version"].startswith("git:") is False
+            for row in source_rows
+        ),
         "parent_package_versions_applied": len(parent_rows),
         "byte_identical_provenance_propagated": len(propagated_rows),
         "source_rows": source_rows,

@@ -6,6 +6,7 @@ __pycache__/
 .Python
 build/
 dist/
+dist-wheels*/
 *.egg-info/
 .eggs/
 

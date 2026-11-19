@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "kind": "nsrl",
+  "name": "NIST NSRL Android Minimal RDS",
+  "release": "2026.03.1",
+  "database_sha256": "2f3203615d96e6079fda9a65d39cad4b2a9100fa8f7e6f54a3c74cc5eee1d315",
+  "database_bytes": 39967412224,
+  "database_schema_version": "RDSv3",
+  "source_url": "https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/rds_2026.03.1/RDS_2026.03.1_android_minimal.zip",
+  "license": "NIST public data",
+  "architecture": "all",
+  "properties": {
+    "format": "android-minimal",
+    "official_signature": "signatures.txt",
+    "version_semantics": "distribution package version is not upstream library version"
+  }
+}

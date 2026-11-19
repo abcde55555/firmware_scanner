@@ -168,6 +168,57 @@ def test_android_coverage_warning_reaches_cli_context():
     assert result.warnings[0] in context.warnings
 
 
+def test_android_analysis_cache_stats_reach_cli_context():
+    from pathlib import Path
+    from firmware_scanner.cli.app import _store_android_build_info
+    from firmware_scanner.core.context import AnalysisContext
+    context = AnalysisContext(firmware_path=Path('system.img'))
+    result = AndroidScanResult(analysis_stats={
+        "content_cache_hits": 12,
+        "content_cache_entries": 40,
+    })
+    _store_android_build_info(context, result)
+    assert context.metadata["android_build_info"]["analysis_stats"] == {
+        "content_cache_hits": 12,
+        "content_cache_entries": 40,
+    }
+    assert context.metadata["analysis_stats"] == {
+        "content_cache_hits": 12,
+        "content_cache_entries": 40,
+    }
+
+
+def test_unique_low_confidence_string_is_not_labelled_exact(monkeypatch):
+    from firmware_scanner.extraction.binary_inventory import BinaryInventory
+    from firmware_scanner.extraction.models import ExtractionMethod
+
+    inventory = BinaryInventory()
+    monkeypatch.setattr(inventory._deep, "extract", lambda _filename, _data: None)
+    monkeypatch.setattr(inventory._reference, "match", lambda _data, _filename: [])
+    monkeypatch.setattr(
+        inventory._samples,
+        "match",
+        lambda _data: [type("Hit", (), {
+            "name": "libdemo",
+            "version": "1.2.3",
+            "confidence": 0.6,
+            "method": ExtractionMethod.STRING_PATTERN,
+            "evidence": "weak string evidence",
+        })()],
+    )
+    components = inventory.extract(
+        b"\x7fELF" + b"\0" * 60,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+    state = next(
+        prop["value"]
+        for prop in components[0].properties
+        if prop["name"] == "firmware:version:resolution-state"
+    )
+    assert state == "estimated"
+
+
 @pytest.mark.parametrize('payload,forbidden', [
     (b'This is not GNU sed version 4.0\x00', 'sed'),
     (b'glibc 2.11.1\x00', 'bc'),

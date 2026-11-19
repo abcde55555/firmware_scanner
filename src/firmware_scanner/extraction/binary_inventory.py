@@ -39,7 +39,9 @@ def identity_key(name: str) -> str:
 class BinaryInventory:
     """Keep exact releases, identity evidence and build/interface facts distinct."""
 
-    def __init__(self):
+    _MAX_CONTENT_CACHE_ENTRIES = 4096
+
+    def __init__(self, database_enricher=None):
         from .binary_reference import BinaryReferenceMatcher
         from .static_version import StaticVersionExtractor
         from .semantic_version import SemanticVersionExtractor
@@ -51,14 +53,23 @@ class BinaryInventory:
         from .rust_version_estimate import RustVersionEstimator
         self._rust_estimator = RustVersionEstimator()
         self._deep = ELFDeepExtractor()
+        self._database_enricher = database_enricher
+        self._content_cache: dict[tuple[str, str, str], list[Component]] = {}
+        self._content_cache_hits = 0
 
     def extract(self, data: bytes, filename: str, location: str,
                 component_type: str = 'library') -> list[Component]:
         if not data.startswith(b'\x7fELF'):
             return []
+        digest = hashlib.sha256(data).hexdigest()
+        cache_key = (digest, filename.casefold(), component_type)
+        cached = self._content_cache.get(cache_key)
+        if cached is not None:
+            self._content_cache_hits += 1
+            return self._rebase_components(cached, location)
         properties = [
             {'name': 'firmware:evidence:location', 'value': location},
-            {'name': 'firmware:binary:sha256', 'value': hashlib.sha256(data).hexdigest()},
+            {'name': 'firmware:binary:sha256', 'value': digest},
         ]
         claims = []
         deep = self._deep.extract(filename, data)
@@ -180,6 +191,7 @@ class BinaryInventory:
                     {'name': 'firmware:version:kind', 'value': 'filename-release'},
                     {'name': 'firmware:identity', 'value': identity},
                 ])
+                self._set_property(host, 'firmware:version:resolution-state', 'estimated')
         if not host.resolved_version and not any(
                 prop['name'] == 'firmware:version:conflict' for prop in host.properties):
             estimate = self._rust_estimator.estimate(data, filename)
@@ -194,6 +206,7 @@ class BinaryInventory:
                     {'name': 'firmware:version:candidates', 'value': json.dumps(estimate.candidates)},
                     {'name': 'firmware:rust:crate', 'value': estimate.crate},
                 ])
+                self._set_property(host, 'firmware:version:resolution-state', 'estimated')
         components = [host]
         for key, matches in groups.items():
             # An unversioned defined-symbol set is still useful identity
@@ -204,7 +217,61 @@ class BinaryInventory:
                 {'name': 'firmware:relationship', 'value': 'contains-evidence-for'},
             ])
             components.append(extra)
+        if self._database_enricher is not None:
+            self._database_enricher.enrich(host, data, filename, location)
+        if len(self._content_cache) < self._MAX_CONTENT_CACHE_ENTRIES:
+            self._content_cache[cache_key] = [
+                component.model_copy(deep=True) for component in components
+            ]
         return components
+
+    @property
+    def database_stats(self) -> dict:
+        if self._database_enricher is None:
+            return {}
+        return self._database_enricher.stats.as_dict()
+
+    @property
+    def analysis_stats(self) -> dict:
+        return {
+            "content_cache_hits": self._content_cache_hits,
+            "content_cache_entries": len(self._content_cache),
+        }
+
+    @staticmethod
+    def _set_property(component: Component, name: str, value: str) -> None:
+        component.properties = [
+            prop for prop in component.properties if prop.get("name") != name
+        ]
+        component.properties.append({"name": name, "value": value})
+
+    @staticmethod
+    def _rebase_components(components: list[Component], location: str) -> list[Component]:
+        """Clone cached content evidence and replace path-specific properties."""
+        result = [component.model_copy(deep=True) for component in components]
+        for component in result:
+            original_location = next((
+                str(prop.get("value", ""))
+                for prop in component.properties
+                if prop.get("name") == "firmware:evidence:location"
+            ), "")
+            if original_location:
+                component.description = component.description.replace(
+                    original_location,
+                    location,
+                )
+                for version in component.versions:
+                    version.evidence = version.evidence.replace(
+                        original_location,
+                        location,
+                    )
+            for prop in component.properties:
+                value = str(prop.get("value", ""))
+                if prop.get("name") == "firmware:evidence:location":
+                    prop["value"] = location
+                elif original_location and original_location in value:
+                    prop["value"] = value.replace(original_location, location)
+        return result
 
     @staticmethod
     def _component(name, component_type, location, matches, properties):
@@ -249,6 +316,24 @@ class BinaryInventory:
         if not versions:
             versions = [VersionConfidence(version='', confidence=.5, method=ExtractionMethod.BINARY_SIGNATURE,
                                           evidence=f'ELF file at {location}; release version unknown')]
+        state = (
+            "conflict-unresolved"
+            if any(prop.get("name") == "firmware:version:conflict" for prop in properties)
+            else "equivalence-class"
+            if len(observed) > 1
+            else "exact"
+            if version and any(
+                item.version == version
+                and item.confidence >= 0.9
+                and item.method != ExtractionMethod.VERSION_ESTIMATE
+                for item in versions
+            )
+            else "estimated"
+            if version
+            else "unknown"
+        )
+        if not any(prop.get("name") == "firmware:version:resolution-state" for prop in properties):
+            properties.append({"name": "firmware:version:resolution-state", "value": state})
         return Component(name=name, component_type=component_type, resolved_version=version,
                          purl=f'pkg:generic/{quote(name, safe="._-")}' + (f'@{quote(version, safe="._-+")}' if version else ''),
                          description=f'{"Native library" if component_type == "library" else "ELF executable"} at {location}',

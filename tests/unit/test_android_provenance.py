@@ -5,6 +5,8 @@ from firmware_scanner.android.provenance import (
     parse_notice_attributions,
     source_manifest_matches_image,
 )
+from firmware_scanner.android.provenance import load_source_version_pins
+from firmware_scanner.android.system_scanner import AndroidSystemScanner
 from firmware_scanner.extraction.models import Component, VersionConfidence
 from firmware_scanner.vuln.matcher import _is_scannable
 
@@ -305,3 +307,114 @@ def test_unrelated_system_namespace_is_not_assigned_to_hardware_interfaces():
         ],
     )
     assert component.resolved_version == ""
+
+
+def test_pinned_source_revision_supplies_declared_upstream_version():
+    component = native("libft2.so", "/system/lib64/libft2.so")
+    stats = apply_android_provenance(
+        [component],
+        source_manifest={
+            "projects": [{
+                "path": "external/freetype",
+                "name": "platform/external/freetype",
+                "revision": "d968d2541f7158e18ab22680bfa08a538019bf6a",
+            }],
+        },
+        source_project_rules=[{
+            "pattern": r"^libft2\.so$",
+            "project_path": "external/freetype",
+            "confidence": 0.86,
+            "evidence": "FreeType SONAME fixture",
+        }],
+    )
+    assert stats["source_versions_applied"] == 1
+    assert component.resolved_version == "2.13.2"
+    assert component.versions[-1].method.value == "build_metadata"
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "exact",
+    } in component.properties
+    assert {
+        "name": "firmware:version:scope",
+        "value": "source-project-declared-release",
+    } in component.properties
+
+
+def test_source_version_pin_does_not_apply_to_a_different_revision():
+    component = native("libft2.so", "/system/lib64/libft2.so")
+    apply_android_provenance(
+        [component],
+        source_manifest={
+            "projects": [{
+                "path": "external/freetype",
+                "name": "platform/external/freetype",
+                "revision": "f" * 40,
+            }],
+        },
+        source_project_rules=[{
+            "pattern": r"^libft2\.so$",
+            "project_path": "external/freetype",
+            "confidence": 0.86,
+        }],
+    )
+    assert component.resolved_version == "git:" + "f" * 40
+
+
+def test_source_version_pin_pack_is_immutable_and_complete():
+    pins = load_source_version_pins()
+    assert pins
+    for pin in pins:
+        assert pin["project_path"]
+        assert len(pin["revision"]) == 40
+        assert pin["version"]
+        assert pin["source_url"].startswith("https://")
+
+
+def test_source_project_rule_pack_covers_external_binary_families():
+    rules = AndroidSystemScanner._load_source_project_rules()
+    assert len(rules) >= 20
+    freetype = next(
+        rule for rule in rules
+        if rule["project_path"] == "external/freetype"
+    )
+    assert __import__("re").search(freetype["pattern"], "libft2.so")
+
+
+def test_exact_source_declared_release_can_generate_upstream_cpe():
+    component = native("libz.so", "/system/lib/libz.so")
+    component.resolved_version = "1.3.0.1-motley"
+    component.versions = [
+        VersionConfidence(
+            version="1.3.0.1-motley",
+            confidence=0.97,
+            method="build_metadata",
+            evidence="version from pinned source",
+        )
+    ]
+    component.properties.extend([
+        {
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        },
+        {
+            "name": "firmware:version:kind",
+            "value": "source-declared-release",
+        },
+    ])
+    assert AndroidSystemScanner._should_synthesize_upstream_cpe(component)
+
+
+def test_estimated_source_revision_does_not_generate_upstream_cpe():
+    component = native("libcodec2.so", "/system/lib/libcodec2.so")
+    component.resolved_version = "git:" + "a" * 40
+    component.properties.extend([
+        {
+            "name": "firmware:version:resolution-state",
+            "value": "estimated-source-revision",
+        },
+        {
+            "name": "firmware:version:kind",
+            "value": "estimated-source-revision",
+        },
+    ])
+    assert not AndroidSystemScanner._should_synthesize_upstream_cpe(component)

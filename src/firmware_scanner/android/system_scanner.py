@@ -46,6 +46,8 @@ class AndroidScanResult:
     bin_count: int = 0
     apex_count: int = 0
     provenance_stats: dict = field(default_factory=dict)
+    database_stats: dict = field(default_factory=dict)
+    analysis_stats: dict = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
 
@@ -149,6 +151,8 @@ class AndroidSystemScanner:
         max_bins: int = 1000,
         source_manifest: dict | None = None,
         image_sha256: str | None = None,
+        database_paths: dict[str, str | Path] | None = None,
+        verify_database_integrity: bool = True,
     ):
         self._fs = fs_reader
         self._max_apks = max_apks
@@ -168,6 +172,21 @@ class AndroidSystemScanner:
                 source_manifest or self._registered_source_manifest(image_sha256)
             )
         self._source_project_rules = self._load_source_project_rules()
+        self._database_paths = {
+            kind: Path(path)
+            for kind, path in (database_paths or {}).items()
+            if path
+        }
+        self._verify_database_integrity = verify_database_integrity
+        self._database_enricher = None
+        if self._database_paths:
+            from ..databases import DatabaseEnricher
+
+            self._database_enricher = DatabaseEnricher.from_paths(
+                blint_path=self._database_paths.get("blintdb"),
+                nsrl_path=self._database_paths.get("nsrl"),
+                verify_hash=verify_database_integrity,
+            )
         self._axml_parser = AXMLParser()
         self._build_prop_parser = BuildPropParser()
 
@@ -266,24 +285,35 @@ class AndroidSystemScanner:
 
         # 11. Synthesize canonical NVD CPE 2.3 for components with valid upstream versions
         from ..extraction.cpe_synthesizer import synthesize_cpe
-        from ..extraction.models import ExtractionMethod
         for c in result.components:
-            if c.resolved_version and not c.cpe:
-                # Do not synthesize third-party upstream CPEs for AOSP OS fallback versions!
-                if any(v.method == ExtractionMethod.BUILD_METADATA for v in c.versions):
-                    continue
-                if any(
-                    prop.get("name") == "firmware:version:kind"
-                    and str(prop.get("value", "")).startswith("estimated-")
-                    for prop in c.properties
-                ):
-                    continue
+            if c.resolved_version and not c.cpe and self._should_synthesize_upstream_cpe(c):
                 cpe_str = synthesize_cpe(c.name, c.resolved_version)
                 if cpe_str:
                     c.cpe = cpe_str
 
         result.warnings.extend(sorted(self._coverage_warnings))
+        if self._database_enricher is not None:
+            result.database_stats = self._database_enricher.stats.as_dict()
+            self._database_enricher.close()
+        if hasattr(self, "_inventory"):
+            result.analysis_stats = self._inventory.analysis_stats
         return result
+
+    @staticmethod
+    def _should_synthesize_upstream_cpe(component) -> bool:
+        resolution_state = next((
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:version:resolution-state"
+        ), "")
+        if resolution_state and resolution_state != "exact":
+            return False
+        version_kind = next((
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:version:kind"
+        ), "")
+        return not version_kind.startswith(("estimated-", "parent-package-"))
 
     def _scan_build_props(self) -> AndroidBuildInfo:
         """Find and parse all build.prop files, merging into one info object."""
@@ -828,7 +858,7 @@ class AndroidSystemScanner:
     def _binary_inventory(self):
         if not hasattr(self, '_inventory'):
             from ..extraction.binary_inventory import BinaryInventory
-            self._inventory = BinaryInventory()
+            self._inventory = BinaryInventory(database_enricher=self._database_enricher)
         return self._inventory
 
     def _read_elf_bytes(self, path):

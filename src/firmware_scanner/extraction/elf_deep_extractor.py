@@ -473,6 +473,8 @@ class ELFDeepExtractor:
                     for tag in section.iter_tags():
                         if tag.entry.d_tag == 'DT_SONAME':
                             result.facts.append({"name": "firmware:elf:soname", "value": tag.soname})
+                        elif tag.entry.d_tag == 'DT_NEEDED':
+                            result.facts.append({"name": "firmware:elf:needed", "value": tag.needed})
                         elif tag.entry.d_tag in ('DT_RPATH', 'DT_RUNPATH'):
                             path = getattr(tag, 'runpath', '') or getattr(tag, 'rpath', '')
                             result.facts.append({"name": "firmware:elf:runpath", "value": path})

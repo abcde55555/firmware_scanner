@@ -66,6 +66,11 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "opus_get_version_string": ("Opus", "prefixed"),
     "vpx_codec_version_str": ("libvpx", "vpx"),
     "event_get_version": ("libevent", "direct"),
+    "libbpf_version_string": ("libbpf", "vpx"),
+    "dav1d_version": ("dav1d", "direct"),
+    "opj_version": ("OpenJPEG", "direct"),
+    "heif_get_version": ("libheif", "direct"),
+    "avifVersion": ("libavif", "direct"),
 }
 _VERSION = re.compile(r"v?(\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)\Z")
 

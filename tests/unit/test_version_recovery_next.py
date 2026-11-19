@@ -111,6 +111,52 @@ def test_vpx_disagreeing_defined_apis_remain_unresolved(shared_elf):
     assert any(p["name"] == "firmware:version:conflict" for p in vpx.properties)
 
 
+def test_libbpf_defined_version_string_recovers_declared_release(shared_elf):
+    data = shared_elf(
+        'const char *libbpf_version_string(void) { return "v1.4"; }\n'
+        "unsigned libbpf_major_version(void) { return 1; }\n"
+        "unsigned libbpf_minor_version(void) { return 4; }\n"
+    )
+    component = BinaryInventory().extract(
+        data,
+        "libbpf.so",
+        "/system/lib64/libbpf.so",
+    )[0]
+    assert component.resolved_version == "1.4"
+    assert any(
+        prop["name"] == "firmware:version:resolution-state"
+        and prop["value"] == "exact"
+        for prop in component.properties
+    )
+
+
+@pytest.mark.parametrize(
+    "function,component_name,version",
+    [
+        ("dav1d_version", "dav1d", "1.5.0"),
+        ("opj_version", "OpenJPEG", "2.5.2"),
+        ("heif_get_version", "libheif", "1.19.1"),
+        ("avifVersion", "libavif", "1.2.0"),
+    ],
+)
+def test_additional_defined_version_strings_are_attributed_by_api(
+    shared_elf,
+    function,
+    component_name,
+    version,
+):
+    data = shared_elf(
+        f'const char *{function}(void) {{ return "{version}"; }}\n'
+    )
+    matches = BinaryInventory().extract(
+        data,
+        "libvendor.so",
+        "/system/lib64/libvendor.so",
+    )
+    component = next(item for item in matches if item.name == component_name)
+    assert component.resolved_version == version
+
+
 def test_vpx_imports_and_runtime_values_are_not_release_proofs(shared_elf):
     data = shared_elf(
         "extern const char *vpx_codec_version_str(void);\n"

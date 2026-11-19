@@ -7,8 +7,10 @@ Android system scanner.
 
 - `waydroid-atv-20260403.json` is pinned to one exact system-image SHA-256 and
   contains the AOSP project revisions from that image's build manifest.
-- `android_source_project_rules.json` maps unambiguous Android HAL namespaces
-  to the AOSP project that emits them.
+- `android_source_project_rules.json` maps unambiguous HAL namespaces and
+  product SONAMEs to the AOSP project that emits them.
+- `source-version-pins.json` records releases declared by exact project
+  revisions. Every row includes the source file that declares the version.
 
 The image-specific manifest is never selected by filename, build fingerprint,
 or project name alone. The scanner must calculate the input image SHA-256 and
@@ -24,15 +26,23 @@ the same rule.
   namespace belongs to one known AOSP project.
 - Keep the rule generic. Vendor-specific observations belong in a new pack or
   a narrower pattern with a source URL and enabled-version conditions.
-- Source revisions and parent package versions remain marked as estimates.
-  They are excluded from upstream CPE generation and OSV version queries.
+- A source revision without a matching version pin remains an estimate and is
+  excluded from upstream CPE generation and OSV version queries.
+- A source version pin applies only when both the project path and the full
+  40-character revision match. It must identify a file in that exact source
+  tree, not a mutable branch, release note from another revision, or guess from
+  the repository name.
+- Parent package versions remain estimates and are excluded from upstream CPE
+  generation and OSV version queries.
 
 ## Update workflow
 
 1. Record the exact image SHA-256 and public release/source location.
 2. Add or update the image pack and its project revisions.
-3. Add a positive fixture and a wrong-hash/negative fixture.
-4. Run the focused provenance, Android scanner, APEX, binary accuracy, and
+3. For a declared release, add or update a source-version pin with the exact
+   revision, authority file URL, and release value.
+4. Add a positive fixture, a wrong-hash fixture and a wrong-revision fixture.
+5. Run the focused provenance, Android scanner, APEX, binary accuracy, and
    vulnerability-matcher tests.
-5. Re-scan the affected firmware and compare the frozen version-coverage
+6. Re-scan the affected firmware and compare the frozen version-coverage
    denominator before committing the rule pack with the code change.

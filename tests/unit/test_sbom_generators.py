@@ -70,6 +70,103 @@ def test_cyclonedx_1_6_generation():
     assert data["components"][0]["purl"] == "pkg:generic/busybox@1.35.0"
 
 
+def test_cyclonedx_dependencies_only_emit_unambiguous_declared_needed_edges():
+    generator = CycloneDXGenerator()
+    provider = Component(
+        name="libz.so",
+        resolved_version="1.3.1",
+        purl="pkg:generic/libz.so@1.3.1",
+        properties=[{"name": "firmware:elf:soname", "value": "libz.so.1"}],
+    )
+    consumer = Component(
+        name="tool",
+        resolved_version="1.0",
+        purl="pkg:generic/tool@1.0",
+        properties=[{"name": "firmware:elf:needed", "value": "libz.so.1"}],
+    )
+    bom = generator.generate(
+        [consumer, provider],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+    )
+    assert bom["dependencies"] == [{
+        "ref": "pkg:generic/tool@1.0",
+        "dependsOn": ["pkg:generic/libz.so@1.3.1"],
+    }]
+
+
+def test_cyclonedx_omits_dependency_when_soname_has_multiple_providers():
+    generator = CycloneDXGenerator()
+    providers = [
+        Component(
+            name=f"libz-{index}.so",
+            resolved_version="1.3.1",
+            purl=f"pkg:generic/libz-{index}.so@1.3.1",
+            properties=[{"name": "firmware:elf:soname", "value": "libz.so.1"}],
+        )
+        for index in range(2)
+    ]
+    consumer = Component(
+        name="tool",
+        resolved_version="1.0",
+        purl="pkg:generic/tool@1.0",
+        properties=[{"name": "firmware:elf:needed", "value": "libz.so.1"}],
+    )
+    bom = generator.generate(
+        [consumer, *providers],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+    )
+    assert "dependencies" not in bom
+
+
+def test_cyclonedx_merges_duplicate_consumer_refs_into_one_dependency():
+    generator = CycloneDXGenerator()
+    provider = Component(
+        name="libz.so",
+        resolved_version="1.3.1",
+        purl="pkg:generic/libz.so@1.3.1",
+        properties=[{"name": "firmware:elf:soname", "value": "libz.so.1"}],
+    )
+    consumers = [
+        Component(
+            name="tool",
+            resolved_version="1.0",
+            purl="pkg:generic/tool@1.0",
+            properties=[{"name": "firmware:elf:needed", "value": "libz.so.1"}],
+        )
+        for _ in range(2)
+    ]
+    bom = generator.generate(
+        [*consumers, provider],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+    )
+    assert bom["dependencies"] == [{
+        "ref": "pkg:generic/tool@1.0",
+        "dependsOn": ["pkg:generic/libz.so@1.3.1"],
+    }]
+
+
+def test_cyclonedx_records_scan_analysis_stats_as_metadata():
+    generator = CycloneDXGenerator()
+    bom = generator.generate(
+        [],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+        build_info={
+            "analysis_stats": {
+                "content_cache_hits": 12,
+                "content_cache_entries": 40,
+            },
+        },
+    )
+    assert {
+        "name": "firmware:analysis:stats",
+        "value": '{"content_cache_entries": 40, "content_cache_hits": 12}',
+    } in bom["metadata"]["properties"]
+
+
 def test_spdx_3_0_1_generation():
     """Verify SPDX 3.0.1 JSON-LD SBOM format compliance."""
     context = _create_sample_context()

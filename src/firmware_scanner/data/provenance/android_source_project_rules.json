@@ -14,6 +14,223 @@
       "project_path": "frameworks/hardware/interfaces",
       "confidence": 0.72,
       "evidence": "Android framework interface namespace is emitted by frameworks/hardware/interfaces"
+    },
+    {
+      "name": "FreeType SONAME",
+      "pattern": "^libft2\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/freetype",
+      "confidence": 0.86,
+      "evidence": "Android FreeType builds its native library as libft2"
+    },
+    {
+      "name": "HarfBuzz SONAMEs",
+      "pattern": "^libharfbuzz(?:_ng|_subset)?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/harfbuzz_ng",
+      "confidence": 0.86,
+      "evidence": "Android HarfBuzz native libraries are built from external/harfbuzz_ng"
+    },
+    {
+      "name": "JsonCpp SONAME",
+      "pattern": "^libjsoncpp\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/jsoncpp",
+      "confidence": 0.88,
+      "evidence": "JsonCpp Android native library naming"
+    },
+    {
+      "name": "libexif SONAME",
+      "pattern": "^libexif\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libexif",
+      "confidence": 0.9,
+      "evidence": "libexif Android native library naming"
+    },
+    {
+      "name": "TinyXML-2 SONAME",
+      "pattern": "^libtinyxml2\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/tinyxml2",
+      "confidence": 0.9,
+      "evidence": "TinyXML-2 Android native library naming"
+    },
+    {
+      "name": "Protobuf native SONAMEs",
+      "pattern": "^libprotobuf(?:-cpp-(?:full|lite))?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/protobuf",
+      "confidence": 0.86,
+      "evidence": "Android protobuf native library naming"
+    },
+    {
+      "name": "libbpf SONAME",
+      "pattern": "^libbpf\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libbpf",
+      "confidence": 0.84,
+      "evidence": "libbpf native library is vendored under external/libbpf"
+    },
+    {
+      "name": "libnl SONAME",
+      "pattern": "^libnl(?:-[0-9]+(?:\\.0)?)?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libnl",
+      "confidence": 0.86,
+      "evidence": "libnl Android native library naming"
+    },
+    {
+      "name": "libcap SONAME",
+      "pattern": "^libcap\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libcap",
+      "confidence": 0.9,
+      "evidence": "libcap Android native library naming"
+    },
+    {
+      "name": "libcap-ng SONAME",
+      "pattern": "^libcap-ng\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libcap-ng",
+      "confidence": 0.9,
+      "evidence": "libcap-ng Android native library naming"
+    },
+    {
+      "name": "liblzma SONAME",
+      "pattern": "^liblzma\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/lzma",
+      "confidence": 0.84,
+      "evidence": "Android liblzma is built from external/lzma"
+    },
+    {
+      "name": "NTFS-3G SONAME",
+      "pattern": "^libntfs-3g\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/ntfs-3g",
+      "confidence": 0.9,
+      "evidence": "NTFS-3G Android native library naming"
+    },
+    {
+      "name": "libdrm SONAME",
+      "pattern": "^libdrm\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libdrm",
+      "confidence": 0.9,
+      "evidence": "libdrm Android native library naming"
+    },
+    {
+      "name": "libfuse SONAMEs",
+      "pattern": "^libfuse(?:-lite)?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libfuse",
+      "confidence": 0.84,
+      "evidence": "Android FUSE native library naming"
+    },
+    {
+      "name": "minijail SONAME",
+      "pattern": "^libminijail\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/minijail",
+      "confidence": 0.9,
+      "evidence": "minijail Android native library naming"
+    },
+    {
+      "name": "PDFium SONAME",
+      "pattern": "^libpdfium\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/pdfium",
+      "confidence": 0.9,
+      "evidence": "PDFium Android native library naming"
+    },
+    {
+      "name": "Perfetto native SONAMEs",
+      "pattern": "^libperfetto(?:_android_internal|_c)?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/perfetto",
+      "confidence": 0.86,
+      "evidence": "Perfetto Android native library naming"
+    },
+    {
+      "name": "libyuv SONAME",
+      "pattern": "^libyuv\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libyuv",
+      "confidence": 0.9,
+      "evidence": "libyuv Android native library naming"
+    },
+    {
+      "name": "Ultra HDR SONAME",
+      "pattern": "^libultrahdr\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libultrahdr",
+      "confidence": 0.9,
+      "evidence": "Ultra HDR Android native library naming"
+    },
+    {
+      "name": "tinyalsa SONAME",
+      "pattern": "^libtinyalsa\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/tinyalsa",
+      "confidence": 0.9,
+      "evidence": "tinyalsa Android native library naming"
+    },
+    {
+      "name": "libdav1d SONAME",
+      "pattern": "^libdav1d\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libdav1d",
+      "confidence": 0.9,
+      "evidence": "dav1d Android native library naming"
+    },
+    {
+      "name": "e2fsprogs SONAMEs",
+      "pattern": "^libext2_(?:blkid|com_err|e2p|misc|quota|uuid)\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/e2fsprogs",
+      "confidence": 0.88,
+      "evidence": "e2fsprogs Android component SONAMEs"
+    },
+    {
+      "name": "libselinux SONAME",
+      "pattern": "^libselinux\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/selinux",
+      "confidence": 0.9,
+      "evidence": "SELinux Android native library naming"
+    },
+    {
+      "name": "Piex SONAME",
+      "pattern": "^libpiex\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/piex",
+      "confidence": 0.9,
+      "evidence": "Piex Android native library naming"
+    },
+    {
+      "name": "Sonic SONAME",
+      "pattern": "^libsonic\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/sonic",
+      "confidence": 0.9,
+      "evidence": "Sonic Android native library naming"
+    },
+    {
+      "name": "Sonivox SONAME",
+      "pattern": "^libsonivox\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/sonivox",
+      "confidence": 0.9,
+      "evidence": "Sonivox Android native library naming"
+    },
+    {
+      "name": "zlib SONAME",
+      "pattern": "^libz\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/zlib",
+      "confidence": 0.9,
+      "evidence": "Android zlib native library naming"
+    },
+    {
+      "name": "ICU SONAMEs",
+      "pattern": "^libicu(?:i18n|uc)?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/icu",
+      "confidence": 0.9,
+      "evidence": "ICU4C Android native library naming"
+    },
+    {
+      "name": "libevent SONAME",
+      "pattern": "^libevent\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libevent",
+      "confidence": 0.9,
+      "evidence": "libevent Android native library naming"
+    },
+    {
+      "name": "BoringSSL library identity",
+      "pattern": "^BoringSSL$",
+      "project_path": "external/boringssl",
+      "confidence": 0.84,
+      "evidence": "BoringSSL identity is emitted by the binary reference rules"
+    },
+    {
+      "name": "DNG SDK SONAME",
+      "pattern": "^libdng_sdk\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/dng_sdk",
+      "confidence": 0.9,
+      "evidence": "DNG SDK Android native library naming"
     }
   ]
 }

@@ -172,6 +172,25 @@ firmware-scanner analyze <firmware> \
   -v
 ```
 
+Optional external reference databases can be attached to Android filesystem
+scans:
+
+```bash
+firmware-scanner analyze system.img -f json -f sbom -o reports/ \
+  --blint-db reports/existing-databases-20261119/blint.db \
+  --nsrl-db reports/existing-databases-20261119/nsrl/android_minimal.db
+```
+
+Database files are selected through packaged, immutable manifests containing
+their expected byte size, SHA-256, schema and release. Integrity verification is
+enabled by default and cached by inode, size, mtime and ctime. Use
+`--skip-database-integrity` only for a known file that was verified separately;
+the schema checks remain enabled.
+
+BLintDB contributes identity and reference-build candidates. NSRL contributes
+exact-file and distribution-package evidence. Neither source promotes a
+reference or distribution version into the target library version field.
+
 Output formats:
 
 - `sbom` / `cyclonedx` - CycloneDX JSON SBOM

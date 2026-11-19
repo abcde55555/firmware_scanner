@@ -7,8 +7,9 @@ from firmware_scanner.vuln.osv_client import (
     extract_canonical_id,
     OSVClient,
 )
-from firmware_scanner.vuln.matcher import VulnMatcher, _is_scannable
+from firmware_scanner.vuln.matcher import VulnMatcher, _is_scannable, _normalize_name
 from firmware_scanner.extraction.models import Component
+from firmware_scanner.vuln.cache import cache_key
 
 
 def test_clean_version():
@@ -96,6 +97,161 @@ def test_is_scannable():
     # CalVer version (e.g. 20260522) with purl -> scannable
     c5 = Component(name="json", resolved_version="20260522", purl="pkg:maven/org.json/json@20260522")
     assert _is_scannable(c5) is True
+
+
+def test_is_scannable_rejects_every_non_exact_version_resolution_state():
+    for state in (
+        "estimated",
+        "equivalence-class",
+        "conflict-unresolved",
+        "estimated-source-revision",
+        "estimated-parent-package",
+    ):
+        component = Component(
+            name="libsqlite.so",
+            resolved_version="3.44.5",
+            properties=[{
+                "name": "firmware:version:resolution-state",
+                "value": state,
+            }],
+        )
+        assert _is_scannable(component) is False
+
+    exact = Component(
+        name="libsqlite.so",
+        resolved_version="3.44.5",
+        properties=[{
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }],
+    )
+    assert _is_scannable(exact) is True
+
+
+def test_is_scannable_does_not_query_android_lzma_sdk_as_xz_utils():
+    component = Component(
+        name="liblzma.so",
+        resolved_version="24.09",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            },
+            {
+                "name": "firmware:source:project",
+                "value": "external/lzma",
+            },
+        ],
+    )
+    assert _is_scannable(component) is False
+
+
+def test_normalize_name_maps_expanded_native_library_families_to_osv_names():
+    expected = {
+        "libexif.so": "libexif",
+        "libdrm.so": "libdrm",
+        "libfuse.so": "libfuse",
+        "libbpf.so": "libbpf",
+        "libdav1d.so": "dav1d",
+        "libyuv.so": "libyuv",
+        "libheif.so": "libheif",
+        "libavif.so": "libavif",
+        "libjxl.so": "libjxl",
+        "libzip.so": "libzip",
+        "libtiff.so": "libtiff",
+        "libjsoncpp.so": "jsoncpp",
+        "libntfs-3g.so": "ntfs-3g",
+        "libminijail.so": "minijail",
+        "libperfetto.so": "perfetto",
+        "libpiex.so": "piex",
+        "libselinux.so": "selinux",
+        "libtinyalsa.so": "tinyalsa",
+    }
+    assert {
+        name: _normalize_name(name)
+        for name in expected
+    } == expected
+
+
+def test_parse_vulns_discards_distro_advisories_for_unrelated_packages():
+    advisory = {
+        "id": "CVE-2021-47098",
+        "summary": "kernel: Fix of 38 CVEs",
+        "affected": [{
+            "package": {
+                "name": "kernel",
+                "ecosystem": "TuxCare:AlmaLinux:9.2",
+            },
+            "ranges": [{
+                "type": "ECOSYSTEM",
+                "events": [{"introduced": "0"}, {"fixed": "5.14.0-1"}],
+            }],
+        }],
+    }
+    parsed = OSVClient().parse_vulns(
+        [advisory],
+        comp_version="1.4",
+        comp_name="libbpf.so",
+    )
+    assert parsed == []
+
+
+def test_parse_vulns_keeps_only_affected_entries_for_the_target_package():
+    advisory = {
+        "id": "CVE-2020-12767",
+        "summary": "libexif denial of service",
+        "affected": [
+            {
+                "package": {"name": "kernel"},
+                "ranges": [{
+                    "type": "ECOSYSTEM",
+                    "events": [{"introduced": "0"}, {"fixed": "9.9.9"}],
+                }],
+            },
+            {
+                "package": {"name": "libexif", "ecosystem": "Debian:12"},
+                "ranges": [{
+                    "type": "ECOSYSTEM",
+                    "events": [{"introduced": "0"}, {"fixed": "0.6.22"}],
+                }],
+            },
+        ],
+    }
+    parsed = OSVClient().parse_vulns(
+        [advisory],
+        comp_version="0.6.21",
+        comp_name="libexif.so",
+    )
+    assert [item.id for item in parsed] == ["CVE-2020-12767"]
+    assert "9.9.9" not in parsed[0].affected_versions
+
+
+def test_parse_vulns_rejects_a_different_upstream_version_branch():
+    advisory = {
+        "id": "CVE-2022-3602",
+        "summary": "OpenSSL buffer overrun",
+        "affected": [{
+            "package": {"name": "openssl", "ecosystem": "AlmaLinux:9"},
+            "ranges": [{
+                "type": "ECOSYSTEM",
+                "events": [{"introduced": "0"}, {"fixed": "3.0.7"}],
+            }],
+        }],
+    }
+    parsed = OSVClient().parse_vulns(
+        [advisory],
+        comp_version="1.0.1f",
+        comp_name="OpenSSL",
+    )
+    assert parsed == []
+
+
+def test_cache_key_includes_ecosystem_and_prevents_cross_ecosystem_reuse():
+    assert cache_key(name="openssl", version="1.0.1f", ecosystem="") != cache_key(
+        name="openssl",
+        version="1.0.1f",
+        ecosystem="Alpine:v3.20",
+    )
 
 
 def test_is_version_affected_multi_branch():
