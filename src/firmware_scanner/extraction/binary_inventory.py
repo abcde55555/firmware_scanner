@@ -104,6 +104,10 @@ class BinaryInventory:
             from .icu_version import extract_icu
             for hit in extract_icu(data):
                 claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        if b'FT_Library_Version' in data and b'FT_New_Library' in data:
+            from .freetype_legacy_version import extract_freetype_legacy_version
+            for hit in extract_freetype_legacy_version(data):
+                claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
         for hit in self._samples.match(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.BINARY_SIGNATURE, hit.evidence, ''))
         from .vendor_version import extract_vendor_versions

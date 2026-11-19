@@ -767,6 +767,7 @@ def _run_analysis(
     # Android-specific scanning path
     # =========================================================================
     components: list = []
+    generic_database_enricher = None
 
     if is_android_system:
         import time as _time
@@ -985,6 +986,9 @@ def _run_analysis(
     from ..android.provenance import apply_component_taxonomy
     from ..extraction.family_provenance import apply_family_version_provenance
 
+    if generic_database_enricher is not None:
+        generic_database_enricher.reconcile(components)
+        context.metadata["database_stats"] = generic_database_enricher.stats.as_dict()
     context.metadata["family_provenance_stats"] = apply_family_version_provenance(components)
     apply_component_taxonomy(components)
     total_before_dedup = len(components)

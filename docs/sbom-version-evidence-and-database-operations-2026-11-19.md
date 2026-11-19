@@ -70,6 +70,19 @@ misses. Repeated byte-identical paths reuse the cached evidence instead of
 querying SQLite again. `analysis_stats.content_cache_hits` reports the number
 of reused paths, so the two counts should be read together.
 
+BLintDB identity lookup now runs even when a target version is already known.
+`blint_queried_files`, `blint_candidate_files`, and
+`blint_identity_confirmations` show whether the database was exercised and
+whether the candidate corroborated the component. The confirmed identity is
+stored separately from the candidate's reference version. A high-confidence
+identity can feed CPE synthesis and OSV package selection; the reference
+version cannot replace the target version.
+
+NSRL records `nsrl_queried_files` independently from
+`nsrl_matched_files`. A zero-hit result therefore means all eligible ELF
+contents were checked and no exact hash matched, rather than the database being
+unused.
+
 ## Immutable source-version pins
 
 The image source manifest gives a project and exact commit. The commit alone is
@@ -147,6 +160,17 @@ An exact version is eligible for downstream vulnerability matching. Estimated
 source revisions, parent package versions, equivalence classes and unresolved
 conflicts are not. This avoids turning a coverage increase into an automatic
 vulnerability false-positive increase.
+
+CycloneDX round-trip parsing preserves component `properties` and the
+component-level `cpe`. Without that preservation, scanning a previously
+generated BOM would lose the resolution-state gate and could query estimated
+versions against upstream OSV ecosystems. The parser therefore treats the BOM
+as a loss-conscious interchange format, not only a display artifact.
+
+BLint-confirmed identity is preferred over an opaque SONAME for upstream lookup
+when no ecosystem PURL is available. For example, `libft2.so` maps to the
+confirmed component `freetype`, producing the upstream CPE and OSV package
+query while preserving the firmware filename as the BOM component identity.
 
 Binary getters can also supply exact evidence when newer compilers inline the
 implementation. On the Allwinner ARM32 ICU libraries, `u_getVersion_51` loads a

@@ -15,19 +15,31 @@ from .nsrl import NSRLDatabase
 @dataclass
 class DatabaseStats:
     files_queried: int = 0
+    nsrl_queried_files: int = 0
     nsrl_matched_files: int = 0
     nsrl_distribution_rows: int = 0
+    blint_queried_files: int = 0
     blint_candidate_files: int = 0
     blint_candidate_rows: int = 0
+    blint_reviewed_components: int = 0
+    blint_identity_confirmations: int = 0
+    blint_reference_version_agreements: int = 0
+    blint_reference_version_mismatches: int = 0
     errors: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
         return {
             "files_queried": self.files_queried,
+            "nsrl_queried_files": self.nsrl_queried_files,
             "nsrl_matched_files": self.nsrl_matched_files,
             "nsrl_distribution_rows": self.nsrl_distribution_rows,
+            "blint_queried_files": self.blint_queried_files,
             "blint_candidate_files": self.blint_candidate_files,
             "blint_candidate_rows": self.blint_candidate_rows,
+            "blint_reviewed_components": self.blint_reviewed_components,
+            "blint_identity_confirmations": self.blint_identity_confirmations,
+            "blint_reference_version_agreements": self.blint_reference_version_agreements,
+            "blint_reference_version_mismatches": self.blint_reference_version_mismatches,
             "errors": list(self.errors),
         }
 
@@ -83,6 +95,7 @@ class DatabaseEnricher:
         self.stats.files_queried += 1
         digest = hashlib.sha256(data).hexdigest()
         if self.nsrl is not None:
+            self.stats.nsrl_queried_files += 1
             try:
                 matches = self.nsrl.lookup(digest, len(data))
             except Exception as exc:  # noqa: BLE001 - retain file-scoped DB evidence errors
@@ -98,7 +111,8 @@ class DatabaseEnricher:
                         "firmware:nsrl:distributions",
                         json.dumps(matches[:20], sort_keys=True, ensure_ascii=False),
                     )
-        if self.blint is not None and not component.resolved_version:
+        if self.blint is not None:
+            self.stats.blint_queried_files += 1
             try:
                 candidates = self.blint.candidates(data, filename)
             except Exception as exc:  # noqa: BLE001 - retain file-scoped DB evidence errors
@@ -115,6 +129,84 @@ class DatabaseEnricher:
                         json.dumps(candidates, sort_keys=True, ensure_ascii=False),
                     )
 
+    def reconcile(self, components: list[Component]) -> None:
+        """Compare final component versions with BLint reference candidates."""
+        from ..extraction.binary_inventory import identity_key
+
+        for component in components:
+            raw_candidates = next((
+                str(prop.get("value", ""))
+                for prop in component.properties
+                if prop.get("name") == "firmware:blintdb:candidates"
+            ), "")
+            if not raw_candidates:
+                continue
+            try:
+                candidates = json.loads(raw_candidates)
+            except (ValueError, TypeError):
+                continue
+            if not isinstance(candidates, list) or not candidates:
+                continue
+
+            self.stats.blint_reviewed_components += 1
+            target_identity = identity_key(component.name)
+            candidate_identities = set()
+            confirmed_projects = set()
+            confirmed_components = set()
+            reference_versions = set()
+            for candidate in candidates:
+                if not isinstance(candidate, dict):
+                    continue
+                project_name = str(candidate.get("project_name", ""))
+                if project_name:
+                    candidate_identities.add(identity_key(project_name))
+                    if identity_key(project_name) == target_identity:
+                        confirmed_projects.add(project_name)
+                for item in candidate.get("unique_component_versions", []):
+                    if not isinstance(item, dict):
+                        continue
+                    name = str(item.get("name", ""))
+                    version = str(item.get("version", "")).strip()
+                    if name:
+                        candidate_identities.add(identity_key(name))
+                        if identity_key(name) == target_identity:
+                            confirmed_components.add(name)
+                    if version:
+                        reference_versions.add(version)
+
+            if target_identity in candidate_identities:
+                self.stats.blint_identity_confirmations += 1
+                self._set_property(
+                    component,
+                    "firmware:blintdb:identity-confirmed",
+                    json.dumps(
+                        {
+                            "projects": sorted(confirmed_projects),
+                            "components": sorted(confirmed_components),
+                        },
+                        sort_keys=True,
+                    ),
+                )
+
+            if not component.resolved_version or not reference_versions:
+                continue
+            agreement = component.resolved_version in reference_versions
+            comparison = {
+                "target_version": component.resolved_version,
+                "reference_versions": sorted(reference_versions),
+                "agreement": agreement,
+                "decision": "diagnostic-only-no-version-overwrite",
+            }
+            self._set_property(
+                component,
+                "firmware:blintdb:reference-version-comparison",
+                json.dumps(comparison, sort_keys=True),
+            )
+            if agreement:
+                self.stats.blint_reference_version_agreements += 1
+            else:
+                self.stats.blint_reference_version_mismatches += 1
+
     def close(self) -> None:
         if self.blint is not None:
             self.blint.close()
@@ -126,3 +218,11 @@ class DatabaseEnricher:
         row = {"name": name, "value": value}
         if row not in component.properties:
             component.properties.append(row)
+
+    @staticmethod
+    def _set_property(component: Component, name: str, value: str) -> None:
+        component.properties = [
+            prop for prop in component.properties
+            if prop.get("name") != name
+        ]
+        component.properties.append({"name": name, "value": value})

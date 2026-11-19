@@ -6,6 +6,9 @@ to official NVD CPE 2.3 dictionaries (e.g. cpe:2.3:a:openssl:openssl:<version>:*
 
 import re
 
+from .component_identity import confirmed_upstream_identity
+from .models import Component
+
 # Canonical vendor and product mapping for known open-source components
 _CANONICAL_CPE_MAP: dict[str, tuple[str, str]] = {
     # OpenSSL family (maps libssl, libcrypto, libopenssl -> openssl:openssl)
@@ -239,3 +242,11 @@ def synthesize_cpe(name: str, version: str) -> str:
         return f"cpe:2.3:a:google:boringssl:{clean_ver}:*:*:*:*:*:*:*"
 
     return f"cpe:2.3:a:{vendor}:{product}:{clean_ver}:*:*:*:*:*:*:*"
+
+
+def synthesize_component_cpe(component: Component) -> str:
+    """Synthesize a CPE from independently confirmed component identity."""
+    return synthesize_cpe(
+        confirmed_upstream_identity(component),
+        component.resolved_version,
+    )

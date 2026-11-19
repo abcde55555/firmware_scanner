@@ -4,6 +4,7 @@ import urllib.error
 from collections.abc import Callable
 
 from ..extraction.models import Component
+from ..extraction.component_identity import confirmed_upstream_identity
 from .models import ComponentVulnResult, Severity, VulnScanResult
 from .osv_client import OSVClient
 from .threat_intel import get_cisa_kev_info, get_cnvd_cnnvd_ids, get_epss_score, is_cisa_kev
@@ -202,7 +203,7 @@ def _is_scannable(component: Component) -> bool:
     if component.purl and not component.purl.startswith("pkg:generic/"):
         return True
     # Known upstream project mapping
-    normalized = _normalize_name(component.name)
+    normalized = _normalize_name(confirmed_upstream_identity(component))
     if normalized.lower() != component.name.lower():
         return _is_real_version(ver)
     # For libraries or binaries without known alias mapping:
@@ -279,7 +280,7 @@ class VulnMatcher:
                 comp_version=comp.resolved_version,
                 comp_name=comp.name,
                 ecosystem=self._infer_ecosystem(comp),
-                target_name=_normalize_name(comp.name),
+                target_name=_normalize_name(confirmed_upstream_identity(comp)),
             )
             comp_result = ComponentVulnResult(
                 component_name=comp.name,
@@ -331,7 +332,7 @@ class VulnMatcher:
                 "name": component.name,
                 "version": component.resolved_version,
             }
-        normalized = _normalize_name(component.name)
+        normalized = _normalize_name(confirmed_upstream_identity(component))
         ecosystem = self._infer_ecosystem(component)
         return {
             "name": normalized,

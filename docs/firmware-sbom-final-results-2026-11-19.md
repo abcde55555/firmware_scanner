@@ -19,14 +19,19 @@ This round added:
 - same-source version inheritance for ICU and e2fsprogs families, retained as
   estimates;
 - a high-specificity Speex banner rule for the Allwinner wrapper.
+- a paired-API ARM32 FreeType probe that recovered `2.4.12` from
+  `FT_New_Library` and `FT_Library_Version`;
+- post-analysis BLintDB identity reconciliation and diagnostic reference-version
+  comparison;
+- CycloneDX round-trip preservation of resolution state, BLint identity and CPE.
 
 The measured fixed-cohort version coverage improved on the modern Android image
 from **655/1,129 (58.02%) to 690/1,129 (61.12%)**. Native-library coverage
 improved from **532/774 (68.73%) to 567/774 (73.26%)**.
 
-The Allwinner fixed cohort improved from **136/582 (23.37%) to 145/582
-(24.91%)**. Native-library coverage improved from **39/312 (12.50%) to
-47/312 (15.06%)**.
+The Allwinner fixed cohort improved from **136/582 (23.37%) to 146/582
+(25.09%)**. Native-library coverage improved from **39/312 (12.50%) to
+48/312 (15.38%)**.
 
 These are version-field coverage values, not independently verified accuracy.
 The exact count increased from 152 to 176 in the fixed cohort. The remaining 514
@@ -47,7 +52,7 @@ Input: `system.img`, 2,309,611,520 bytes, SHA-256
 | Unknown | 426 |
 | Source-declared exact versions applied | 22 |
 | BOM dependency records | 928 |
-| Android core scan time | 331.8 s |
+| Android core scan time | 331.6 s |
 
 The prior database-enabled scan took 408.2 seconds in the Android core scan.
 Reusing SQLite connections, content-cache hits and the revised rule path reduced
@@ -56,8 +61,11 @@ host varied by roughly 20 seconds between validated runs. The image is large eno
 peak remains around 3.4 GiB; the roadmap's 1.2 GiB target is not met.
 
 The scanner analyzed 1,789 unique ELF contents and reused 345 byte-identical
-paths. It queried BLintDB for those unique contents and emitted eight candidate
-identity rows for seven files. NSRL produced no exact baseline file hit.
+paths. It queried BLintDB for all 1,789 unique contents and emitted 23 candidate
+rows for 21 files. Final reconciliation confirmed 25 component identities and
+recorded 25 diagnostic reference-version differences. None of those reference
+versions replaced a target version. NSRL queried the same 1,789 files and found
+no exact baseline file match.
 
 The 22 source declarations include:
 
@@ -89,25 +97,32 @@ Input: `sun8iw6p1_android_perf3_v1_0_uart0.img`.
 | Metric | Result |
 |---|---:|
 | Unique BOM components | 591 |
-| Non-empty resolved versions | 150 |
-| Exact resolution state | 36 |
+| Non-empty resolved versions | 151 |
+| Exact resolution state | 37 |
 | Estimated resolution state | 11 |
-| Unknown | 385 |
-| Fixed all-component coverage | 145/582, 24.91% |
-| Fixed native coverage | 47/312, 15.06% |
-| Android core scan time | 77.7 s |
+| Unknown | 384 |
+| Fixed all-component coverage | 146/582, 25.09% |
+| Fixed native coverage | 48/312, 15.38% |
+| Android core scan time | 74.9 s |
 
 The same-source family pass inherited seven values. The ICU donor itself was
 resolved exactly as `51.1.0.1`; its ARM32 `u_getVersion_51` wrapper loads that
 literal from a read-only pool before parsing four numeric fields.
 `libicui18n.so` inherits `51.1.0.1` as an estimate. Five e2fsprogs sibling
 libraries and `e2fsck` inherit `1.41.14` from the independently observed
-`libext2fs.so`. The Speex wrapper has a direct `speex-1.2beta3` banner. Together
-these changes account for the nine newly populated fixed-cohort rows.
+`libext2fs.so`. The Speex wrapper has a direct `speex-1.2beta3` banner. The
+legacy FreeType probe recovers `2.4.12` from matching fields in
+`FT_New_Library` and `FT_Library_Version`; Android 4.4.4 upstream headers
+independently define those three constants. Together these changes account for
+the ten newly populated fixed-cohort rows.
 
-The database scan analyzed 430 unique ELF contents, reused 14 duplicate paths,
-emitted two BLintDB candidate rows for two files, and produced no NSRL baseline
-file hit.
+The database scan analyzed 430 unique ELF contents and reused 14 duplicate
+paths. BLintDB emitted five candidate rows for five files; final reconciliation
+confirmed four identities and recorded four diagnostic reference-version
+differences. `libft2.so` is an important example: the target is exactly
+`2.4.12`, while the BLint reference build is `2.13.3`; the reference value is
+retained only as review evidence. NSRL queried all 430 files and found no exact
+baseline file match.
 
 Allwinner has no matching source manifest in the supplied material. Its version
 gains therefore come from binary evidence and parent-package attribution. It
@@ -150,7 +165,11 @@ Its release and lock SHA-256 are present in both JSON and CycloneDX metadata.
 The 1.5 and 1.6 BOMs for both images validate against the official CycloneDX
 schemas. The 1.5 and 1.6 VEX artifacts also validate with zero schema errors.
 The machine-readable results are in
-`reports/version-estimates-20261119/schema-validation-evidence-20261119.json`.
+`reports/version-estimates-20261119/schema-validation-freeetype-db-audit.json`.
+
+CycloneDX round-trip parsing now preserves component `properties` and the
+component-level `cpe`. This keeps resolution-state gates, BLint-confirmed
+identity and CPE available when a generated BOM is scanned again.
 
 CycloneDX dependency edges are emitted only for a SONAME with one provider in
 the scanned firmware. Refs with multiple paths are merged into one dependency
@@ -166,21 +185,21 @@ Modern image:
 
 | Metric | Result |
 |---|---:|
-| Components queried | 282 |
-| Component-vulnerability records | 464 |
-| Unique vulnerability IDs | 251 |
-| Unique CVE IDs | 244 |
-| Components with candidates | 22 |
+| Components queried | 218 |
+| Component-vulnerability records | 467 |
+| Unique vulnerability IDs | 254 |
+| Unique CVE IDs | 247 |
+| Components with candidates | 23 |
 | Unique CISA KEV IDs | 2 |
 
 Allwinner image:
 
 | Metric | Result |
 |---|---:|
-| Components queried | 62 |
-| Component-vulnerability records | 1,462 |
-| Unique vulnerability IDs | 791 |
-| Unique CVE IDs | 744 |
+| Components queried | 36 |
+| Component-vulnerability records | 1,500 |
+| Unique vulnerability IDs | 829 |
+| Unique CVE IDs | 782 |
 | Components with candidates | 22 |
 | Unique CISA KEV IDs | 4 |
 
@@ -188,6 +207,14 @@ These are candidate matches. They do not include reachability, exploitability
 or vendor patch verification. The previous generic-name run produced obvious
 cross-branch results such as OpenSSL 3.0-only CVEs against OpenSSL 1.0.1f; those
 were removed. Further NVD/CPE and vendor-advisory validation is still required.
+
+The reduced query count is intentional. Round-tripping the BOM now preserves
+estimated and parent-package resolution states, so those values are excluded
+from upstream OSV queries. BLint-confirmed identity is used only for components
+whose target version is exact. For Allwinner FreeType, this correctly maps
+`libft2.so 2.4.12` to FreeType and reports 45 historical vulnerability
+candidates; without identity reconciliation the filename produced no upstream
+match.
 
 ## Remaining limits
 

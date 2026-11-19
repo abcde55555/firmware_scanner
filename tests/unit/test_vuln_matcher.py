@@ -146,6 +146,44 @@ def test_is_scannable_does_not_query_android_lzma_sdk_as_xz_utils():
     assert _is_scannable(component) is False
 
 
+def test_vuln_scan_uses_a_blint_confirmed_component_identity_for_osv_queries():
+    component = Component(
+        name="libft2.so",
+        resolved_version="2.4.12",
+        purl="pkg:generic/libft2.so@2.4.12",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            },
+            {
+                "name": "firmware:blintdb:identity-confirmed",
+                "value": '{"components": ["freetype"], "projects": ["freetype"]}',
+            },
+        ],
+    )
+    queries = []
+
+    class Client:
+        def check_cache_freshness(self):
+            return True, 0.0
+
+        def query_with_cache(self, requested):
+            queries.extend(requested)
+            return [[] for _ in requested]
+
+        def parse_vulns(self, *_args, **_kwargs):
+            return []
+
+    VulnMatcher(client=Client()).scan([component])
+
+    assert queries == [{
+        "name": "freetype",
+        "version": "2.4.12",
+        "ecosystem": "",
+    }]
+
+
 def test_normalize_name_maps_expanded_native_library_families_to_osv_names():
     expected = {
         "libexif.so": "libexif",
@@ -299,4 +337,21 @@ def test_cpe_synthesizer():
     assert synthesize_cpe("libprotobuf.so", "3.19.4") == "cpe:2.3:a:google:protobuf:3.19.4:*:*:*:*:*:*:*"
     assert synthesize_cpe("toybox", "0.8.12") == "cpe:2.3:a:landley:toybox:0.8.12:*:*:*:*:*:*:*"
     assert synthesize_cpe("libcrypto.so", "BoringSSL") == ""
+
+
+def test_component_cpe_synthesis_uses_confirmed_upstream_identity():
+    from firmware_scanner.extraction.cpe_synthesizer import synthesize_component_cpe
+
+    component = Component(
+        name="libft2.so",
+        resolved_version="2.4.12",
+        properties=[{
+            "name": "firmware:blintdb:identity-confirmed",
+            "value": '{"components": ["freetype"], "projects": ["freetype"]}',
+        }],
+    )
+
+    assert synthesize_component_cpe(component) == (
+        "cpe:2.3:a:freetype:freetype:2.4.12:*:*:*:*:*:*:*"
+    )
 

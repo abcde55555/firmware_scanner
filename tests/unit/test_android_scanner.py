@@ -82,6 +82,59 @@ def test_sdk_artifact_properties_reach_android_product_scan():
                for c in result)
 
 
+def test_android_scan_reconciles_database_candidates_before_cpe_synthesis(monkeypatch):
+    calls = []
+    native = Component(
+        name="libft2.so",
+        resolved_version="2.4.12",
+        properties=[{
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }],
+    )
+
+    class Stats:
+        def as_dict(self):
+            calls.append("stats")
+            return {"reviewed": 1}
+
+    class Enricher:
+        stats = Stats()
+
+        def reconcile(self, components):
+            calls.append(("reconcile", len(components)))
+            for component in components:
+                if component.name == "libft2.so":
+                    component.properties.append({
+                        "name": "firmware:blintdb:identity-confirmed",
+                        "value": '{"components": ["freetype"], "projects": ["freetype"]}',
+                    })
+
+        def close(self):
+            calls.append("close")
+
+    scanner = AndroidSystemScanner(MockFilesystem({}))
+    scanner._database_enricher = Enricher()
+    monkeypatch.setattr(scanner, "_scan_build_props", lambda: AndroidBuildInfo())
+    for method in (
+        "_scan_apex_modules",
+        "_scan_apks",
+        "_scan_executables",
+        "_scan_framework_jars",
+        "_scan_ai_models",
+    ):
+        monkeypatch.setattr(scanner, method, lambda *_args: [])
+    monkeypatch.setattr(scanner, "_scan_native_libs", lambda: [native])
+    monkeypatch.setattr(scanner, "_apply_os_version_fallback", lambda _result: None)
+    monkeypatch.setattr(scanner, "_apply_android_provenance", lambda _result: {})
+
+    result = scanner.scan()
+
+    assert result.database_stats == {"reviewed": 1}
+    assert calls == [("reconcile", 1), "stats", "close"]
+    assert native.cpe == "cpe:2.3:a:freetype:freetype:2.4.12:*:*:*:*:*:*:*"
+
+
 def test_known_bin_patterns():
     """Verify regex extraction of toybox, curl, e2fsck versions."""
     scanner = AndroidSystemScanner(MockFilesystem({}))

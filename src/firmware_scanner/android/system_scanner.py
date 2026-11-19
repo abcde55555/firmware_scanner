@@ -284,10 +284,12 @@ class AndroidSystemScanner:
             result.components.extend(aibom_comps)
 
         # 11. Synthesize canonical NVD CPE 2.3 for components with valid upstream versions
-        from ..extraction.cpe_synthesizer import synthesize_cpe
+        if self._database_enricher is not None:
+            self._database_enricher.reconcile(result.components)
+        from ..extraction.cpe_synthesizer import synthesize_component_cpe
         for c in result.components:
             if c.resolved_version and not c.cpe and self._should_synthesize_upstream_cpe(c):
-                cpe_str = synthesize_cpe(c.name, c.resolved_version)
+                cpe_str = synthesize_component_cpe(c)
                 if cpe_str:
                     c.cpe = cpe_str
 

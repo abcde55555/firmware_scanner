@@ -221,6 +221,124 @@ def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, 
     assert component.resolved_version == ""
     assert any(item["name"] == "firmware:blintdb:candidates" for item in component.properties)
     assert enricher.stats.blint_candidate_files == 1
+    assert enricher.stats.nsrl_queried_files == 1
+
+
+def test_enricher_queries_blint_identity_even_when_target_version_is_known(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_sources",
+        lambda _data: {
+            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
+        },
+    )
+    component = Component(
+        name="libdemo.so",
+        resolved_version="1.0.0",
+        properties=[{
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }],
+    )
+    enricher = DatabaseEnricher(blint=blint)
+
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+
+    assert component.resolved_version == "1.0.0"
+    assert any(item["name"] == "firmware:blintdb:candidates" for item in component.properties)
+
+
+def test_enricher_reconciles_blint_identity_without_overwriting_target_version(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_sources",
+        lambda _data: {
+            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
+        },
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+    component.resolved_version = "1.0.0"
+    component.properties.append({
+        "name": "firmware:version:resolution-state",
+        "value": "exact",
+    })
+
+    enricher.reconcile([component])
+
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert component.resolved_version == "1.0.0"
+    assert json.loads(properties["firmware:blintdb:identity-confirmed"]) == {
+        "projects": ["libdemo"],
+        "components": ["libdemo"],
+    }
+    comparison = json.loads(properties["firmware:blintdb:reference-version-comparison"])
+    assert comparison["target_version"] == "1.0.0"
+    assert comparison["reference_versions"] == ["1.2.3"]
+    assert comparison["decision"] == "diagnostic-only-no-version-overwrite"
+    assert enricher.stats.blint_identity_confirmations == 1
+    assert enricher.stats.blint_reference_version_mismatches == 1
+
+
+def test_blint_identity_records_a_matching_component_from_an_aggregate_project(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    connection = sqlite3.connect(blint_path)
+    connection.execute(
+        "UPDATE Projects SET name='aggregate', purl='pkg:conan/aggregate@9.0'"
+    )
+    connection.commit()
+    connection.close()
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_sources",
+        lambda _data: {
+            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
+        },
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+
+    enricher.reconcile([component])
+
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert json.loads(properties["firmware:blintdb:identity-confirmed"]) == {
+        "projects": [],
+        "components": ["libdemo"],
+    }
 
 
 def test_enricher_paths_accept_cli_string_values(tmp_path, monkeypatch):

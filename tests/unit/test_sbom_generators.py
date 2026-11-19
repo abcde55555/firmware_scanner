@@ -35,6 +35,16 @@ def _create_sample_context() -> AnalysisContext:
         resolved_version="3.40.1",
         component_type="library",
         purl="pkg:generic/libsqlite.so@3.40.1",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            },
+            {
+                "name": "firmware:blintdb:identity-confirmed",
+                "value": '{"components": ["sqlite3"], "projects": []}',
+            },
+        ],
     )
 
     context = AnalysisContext(
@@ -249,6 +259,15 @@ def test_sbom_parser_supports_cyclonedx_1_6_and_spdx_3_0_1(tmp_path):
     assert len(cdx_comps) == 2
     assert cdx_comps[0].name == "busybox"
     assert cdx_comps[0].resolved_version == "1.35.0"
+    assert cdx_comps[0].cpe == "cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*"
+    sqlite_properties = {
+        item["name"]: item["value"]
+        for item in cdx_comps[1].properties
+    }
+    assert sqlite_properties["firmware:version:resolution-state"] == "exact"
+    assert sqlite_properties["firmware:blintdb:identity-confirmed"] == (
+        '{"components": ["sqlite3"], "projects": []}'
+    )
 
     # SPDX 3.0.1
     spdx_path = tmp_path / "test_spdx.json"
