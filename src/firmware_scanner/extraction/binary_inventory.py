@@ -109,7 +109,11 @@ class BinaryInventory:
                 claims.append((deep.canonical_name, deep.version, deep.confidence, deep.method, deep.evidence, ''))
             elif deep.confidence >= .8 and deep.canonical_name != filename:
                 claims.append((deep.canonical_name, '', deep.confidence, deep.method, deep.evidence, ''))
-        for hit in self._reference.match(data, filename):
+        for hit in self._reference.match(
+            data,
+            filename,
+            defined_symbols=deep.defined_symbols if deep is not None else None,
+        ):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.STATIC_RULE, hit.evidence, hit.source))
         for hit in self._static.extract(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))

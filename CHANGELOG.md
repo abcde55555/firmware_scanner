@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-11-20
+
+### Changed
+- Cache CBOM/AIBOM results for byte-identical ELF contents
+- Use a single broad prefilter before detailed CBOM/AIBOM regex evaluation
+- Parse ELF metadata and defined symbols in one pass
+- Use a bounded raw ELF symbol reader for BLintDB instead of reparsing with
+  pyelftools
+- Keep large binary reference matching on raw bytes instead of materializing a
+  decoded Python text copy
+
+### Added
+- Binary asset cache and regex-pass telemetry in scan analysis statistics
+
 ## [0.10.0] - 2026-11-20
 
 ### Added

@@ -1,13 +1,12 @@
 """Conservative symbol attribution against a pinned BLintDB SQLite database."""
+
 from __future__ import annotations
 
-import io
 import re
 import sqlite3
+import struct
 from collections import defaultdict
 from pathlib import Path
-
-from elftools.elf.elffile import ELFFile
 
 from .manifest import DatabaseManifest
 
@@ -54,16 +53,12 @@ class BLintDatabase:
         required = {"SchemaMeta", "Projects", "Builds", "Binaries", "Symbols"}
         tables = {
             row[0]
-            for row in self._connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
+            for row in self._connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
         if not required.issubset(tables):
             self.close()
             raise ValueError("BLintDB lacks required lookup tables")
-        schema_meta = dict(
-            self._connection.execute("SELECT key,value FROM SchemaMeta")
-        )
+        schema_meta = dict(self._connection.execute("SELECT key,value FROM SchemaMeta"))
         actual_schema = str(schema_meta.get("schema_version", ""))
         if actual_schema != manifest.database_schema_version:
             self.close()
@@ -87,15 +82,73 @@ class BLintDatabase:
     @staticmethod
     def _symbol_sources(data: bytes) -> dict[str, set[str]]:
         sources: dict[str, set[str]] = defaultdict(set)
-        elf = ELFFile(io.BytesIO(data))
-        for section in elf.iter_sections():
-            if section.__class__.__name__ != "SymbolTableSection":
+        if len(data) < 52 or data[:4] != b"\x7fELF":
+            return sources
+        elf_class, encoding = data[4], data[5]
+        if elf_class not in (1, 2) or encoding not in (1, 2):
+            return sources
+        endian = "<" if encoding == 1 else ">"
+        try:
+            if elf_class == 2:
+                if len(data) < 64:
+                    return sources
+                section_offset = struct.unpack_from(endian + "Q", data, 40)[0]
+                entry_size, section_count = struct.unpack_from(endian + "HH", data, 58)
+                section_format = endian + "IIQQQQIIQQ"
+                symbol_format = endian + "IBBHQQ"
+                minimum_section_size, minimum_symbol_size = 64, 24
+            else:
+                section_offset = struct.unpack_from(endian + "I", data, 32)[0]
+                entry_size, section_count = struct.unpack_from(endian + "HH", data, 46)
+                section_format = endian + "IIIIIIIIII"
+                symbol_format = endian + "IIIBBH"
+                minimum_section_size, minimum_symbol_size = 40, 16
+            if (
+                entry_size < minimum_section_size
+                or section_count == 0
+                or section_offset + entry_size * section_count > len(data)
+            ):
+                return sources
+            sections = [
+                struct.unpack_from(section_format, data, section_offset + index * entry_size)
+                for index in range(section_count)
+            ]
+        except struct.error:
+            return sources
+
+        for section in sections:
+            section_type = section[1]
+            if section_type not in (2, 11):
                 continue
-            source = "dynamic_symbols" if section.name == ".dynsym" else "symtab_symbols"
-            for symbol in section.iter_symbols():
-                name = symbol.name
-                if not name or symbol["st_shndx"] == "SHN_UNDEF":
+            source = "dynamic_symbols" if section_type == 11 else "symtab_symbols"
+            symbol_offset, symbol_table_size = section[4], section[5]
+            strings_index, symbol_entry_size = section[6], section[9]
+            if strings_index >= len(sections) or symbol_entry_size < minimum_symbol_size:
+                continue
+            string_section = sections[strings_index]
+            strings_offset, strings_size = string_section[4], string_section[5]
+            if symbol_offset + symbol_table_size > len(data) or strings_offset + strings_size > len(
+                data
+            ):
+                continue
+            strings = data[strings_offset : strings_offset + strings_size]
+            for position in range(
+                symbol_offset,
+                symbol_offset + symbol_table_size - minimum_symbol_size + 1,
+                symbol_entry_size,
+            ):
+                try:
+                    symbol = struct.unpack_from(symbol_format, data, position)
+                except struct.error:
                     continue
+                name_offset = symbol[0]
+                section_index = symbol[3] if elf_class == 2 else symbol[5]
+                if not name_offset or section_index == 0 or name_offset >= len(strings):
+                    continue
+                end = strings.find(b"\0", name_offset)
+                if end <= name_offset:
+                    continue
+                name = strings[name_offset:end].decode("utf-8", errors="replace")
                 if _MECHANICAL_SYMBOL_RE.match(name):
                     continue
                 sources[source].add(name)
@@ -115,7 +168,7 @@ class BLintDatabase:
         matched: dict[int, dict] = {}
         for source, names in sources.items():
             for start in range(0, len(names), 350):
-                batch = sorted(names)[start:start + 350]
+                batch = sorted(names)[start : start + 350]
                 placeholders = ",".join("?" for _ in batch)
                 rows = connection.execute(
                     "SELECT DISTINCT s.binary_id,s.name,b.name AS binary_name,"
@@ -155,21 +208,22 @@ class BLintDatabase:
                     continue
                 dependencies = self._dependency_versions(connection, binary_id, item["binary_name"])
                 versions = {(entry["name"], entry["version"]) for entry in dependencies}
-                qualified.append({
-                    "project_name": item["project_name"],
-                    "project_purl": item["project_purl"],
-                    "reference_binary": item["binary_name"],
-                    "target_arch": item["target_arch"],
-                    "binary_name_match": name_match,
-                    "identity_symbol_count": identity_count,
-                    "target_symbol_coverage": round(coverage, 6),
-                    "components": dependencies,
-                    "unique_component_versions": [
-                        {"name": name, "version": version}
-                        for name, version in sorted(versions)
-                    ],
-                    "version_semantics": "reference-build-candidate-not-target-version",
-                })
+                qualified.append(
+                    {
+                        "project_name": item["project_name"],
+                        "project_purl": item["project_purl"],
+                        "reference_binary": item["binary_name"],
+                        "target_arch": item["target_arch"],
+                        "binary_name_match": name_match,
+                        "identity_symbol_count": identity_count,
+                        "target_symbol_coverage": round(coverage, 6),
+                        "components": dependencies,
+                        "unique_component_versions": [
+                            {"name": name, "version": version} for name, version in sorted(versions)
+                        ],
+                        "version_semantics": "reference-build-candidate-not-target-version",
+                    }
+                )
         return sorted(
             qualified,
             key=lambda row: (
@@ -194,7 +248,7 @@ class BLintDatabase:
         for source, names in sources.items():
             ordered = sorted(names)
             for start in range(0, len(ordered), 350):
-                batch = ordered[start:start + 350]
+                batch = ordered[start : start + 350]
                 placeholders = ",".join("?" for _ in batch)
                 rows = connection.execute(
                     "SELECT s.name FROM Symbols s "
@@ -217,9 +271,7 @@ class BLintDatabase:
         result = []
         if "Dependencies" not in {
             row[0]
-            for row in connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
+            for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }:
             return result
         rows = connection.execute(
@@ -234,11 +286,13 @@ class BLintDatabase:
             item = match.groupdict()
             if Path(item["relative"]).name != Path(binary_name).name:
                 continue
-            result.append({
-                "name": item["name"],
-                "version": item["version"],
-                "configuration": item["configuration"],
-                "triplet": item["triplet"],
-                "purl": row["purl"],
-            })
+            result.append(
+                {
+                    "name": item["name"],
+                    "version": item["version"],
+                    "configuration": item["configuration"],
+                    "triplet": item["triplet"],
+                    "purl": row["purl"],
+                }
+            )
         return result

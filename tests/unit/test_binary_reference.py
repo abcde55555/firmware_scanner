@@ -1,12 +1,12 @@
 import json
 import shutil
 import subprocess
+import tracemalloc
 from pathlib import Path
 
 import pytest
 
 from firmware_scanner.extraction.binary_reference import BinaryReferenceMatcher
-
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = ROOT / "src" / "firmware_scanner" / "data" / "binary_reference.json"
@@ -25,7 +25,11 @@ def test_reference_catalog_has_provenance_and_versioned_rules():
 def test_binary_banners_preserve_full_development_versions():
     matcher = BinaryReferenceMatcher()
     cases = [
-        (b"libxml2 21400-GITv2.13.0-1904-g4d38e2fe\x00", "libxml2", "21400-GITv2.13.0-1904-g4d38e2fe"),
+        (
+            b"libxml2 21400-GITv2.13.0-1904-g4d38e2fe\x00",
+            "libxml2",
+            "21400-GITv2.13.0-1904-g4d38e2fe",
+        ),
         (b"curl 8.12.0-DEV\x00", "curl", "8.12.0-DEV"),
         (b"Zstandard v1.5.6\x00", "zstd", "1.5.6"),
         (b"BoringSSL\x00", "BoringSSL", ""),
@@ -59,21 +63,34 @@ def test_defined_elf_symbols_can_identify_a_library_but_imports_cannot(tmp_path)
         "int avcodec_receive_frame(void) { return 0; }\n"
     )
     library = tmp_path / "libfixture.so"
-    subprocess.run([compiler, "-shared", "-fPIC", str(library_source), "-o", str(library)], check=True)
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", str(library_source), "-o", str(library)], check=True
+    )
 
     importer_source = tmp_path / "importer.c"
     importer_source.write_text(
-        "extern int avcodec_send_packet(void);\n"
-        "int main(void) { return avcodec_send_packet(); }\n"
+        "extern int avcodec_send_packet(void);\nint main(void) { return avcodec_send_packet(); }\n"
     )
     importer = tmp_path / "importer"
-    subprocess.run([compiler, "-shared", "-fPIC", str(importer_source), "-o", str(importer)], check=True)
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", str(importer_source), "-o", str(importer)], check=True
+    )
 
     matcher = BinaryReferenceMatcher()
     defined_matches = matcher.match(library.read_bytes(), "libfixture.so")
     imported_matches = matcher.match(importer.read_bytes(), "ffmpeg-client")
     assert any(item.name == "FFmpeg" for item in defined_matches)
     assert not any(item.name == "FFmpeg" for item in imported_matches)
+
+
+def test_preparsed_defined_symbols_identify_the_same_library():
+    matches = BinaryReferenceMatcher().match(
+        b"\x7fELF" + bytes(60),
+        "libfixture.so",
+        defined_symbols={"avcodec_send_packet", "avcodec_receive_frame"},
+    )
+
+    assert any(item.name == "FFmpeg" for item in matches)
 
 
 def test_filename_can_narrow_candidates_but_not_invent_version():
@@ -108,6 +125,36 @@ def test_one_rule_returns_distinct_versions_and_caps_candidates(tmp_path):
 
     payload = b" ".join(f"DemoLib {index}.0".encode() for index in range(40))
     assert len(matcher.match(payload)) == 32
+
+
+def test_large_binary_banner_matching_does_not_copy_the_whole_payload(tmp_path):
+    catalog = tmp_path / "catalog.json"
+    catalog.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "references": [
+                    {
+                        "name": "DemoLib",
+                        "source": "https://example.org/demolib",
+                        "version_policy": "banner",
+                        "banner_regex": r"DemoLib ([0-9]+\.[0-9]+\.[0-9]+)",
+                    }
+                ],
+            }
+        )
+    )
+    matcher = BinaryReferenceMatcher(catalog)
+    size = 8 * 1024 * 1024
+    payload = b" DemoLib 1.2.3\0".ljust(size, b"\0")
+
+    tracemalloc.start()
+    matches = matcher.match(payload)
+    _, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    assert matches[0].version == "1.2.3"
+    assert peak < int(len(payload) * 1.5)
 
 
 def test_identity_evidence_survives_when_version_banner_is_absent(tmp_path):
@@ -160,11 +207,9 @@ def test_catalog_identifies_additional_native_libraries_from_defined_symbols(tmp
         ("TIFFOpen", "TIFFReadDirectory"),
     ]
     source = tmp_path / "catalog-fixture.c"
-    source.write_text("\n".join(
-        f"int {name}(void) {{ return 0; }}"
-        for pair in symbols
-        for name in pair
-    ))
+    source.write_text(
+        "\n".join(f"int {name}(void) {{ return 0; }}" for pair in symbols for name in pair)
+    )
     library = tmp_path / "libcatalog-fixture.so"
     subprocess.run(
         [compiler, "-shared", "-fPIC", str(source), "-o", str(library)],

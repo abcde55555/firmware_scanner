@@ -1,10 +1,10 @@
-# Version evidence hardening and 0.10.0 revalidation
+# Version evidence hardening and 0.11.0 revalidation
 
 Date: 2026-11-20
 
 ## Result
 
-Version 0.10.0 hardens existing exact-version evidence without turning source
+Version 0.11.0 hardens existing exact-version evidence without turning source
 revisions or parent package versions into upstream releases.
 
 | Metric | Modern Android 16 | Allwinner Android 4.4 |

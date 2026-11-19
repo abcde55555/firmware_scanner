@@ -1,4 +1,4 @@
-# 固件 SBOM 路线审查与 0.10.0 实测结论
+# 固件 SBOM 路线审查与 0.11.0 实测结论
 
 Date: 2026-11-20
 Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`

@@ -1,11 +1,14 @@
 """Unit tests for the five-layer ELF deep version extractor."""
 
+import shutil
+import subprocess
+
 import pytest
+
+from firmware_scanner.extraction import elf_deep_extractor
 from firmware_scanner.extraction.elf_deep_extractor import (
-    ELFDeepExtractor,
     AES_SBOX_PREFIX,
-    CHACHA20_MAGIC,
-    SHA256_IV,
+    ELFDeepExtractor,
 )
 from firmware_scanner.extraction.models import ExtractionMethod
 
@@ -60,7 +63,9 @@ def test_rodata_signatures(extractor):
     assert res.version == "10.2.0"
 
     # libpcap
-    pcap_data = b"\x7fELF" + b"\x00" * 20 + b"libpcap version 1.10.5 (with TPACKET_V3)" + b"\x00" * 20
+    pcap_data = (
+        b"\x7fELF" + b"\x00" * 20 + b"libpcap version 1.10.5 (with TPACKET_V3)" + b"\x00" * 20
+    )
     res = extractor.extract("libpcap.so", pcap_data)
     assert res is not None
     assert res.version == "1.10.5"
@@ -144,13 +149,17 @@ def test_landmark_symbol_fingerprinting(extractor):
 def test_crypto_magic_constants(extractor):
     """Test Layer 4: Cryptographic magic constants detection."""
     data = b"\x7fELF" + b"\x00" * 20 + AES_SBOX_PREFIX + b"\x00" * 20
-    res = extractor._extract_crypto_constants(data, extractor.extract("libsec.so", b"\x7fELF" + b"\x00" * 60) or extractor.__class__())
+    res = extractor._extract_crypto_constants(
+        data, extractor.extract("libsec.so", b"\x7fELF" + b"\x00" * 60) or extractor.__class__()
+    )
 
 
 def test_anchored_signatures(extractor):
     """Test Layer 2.5: Anchored format-string + version-shape extraction."""
     # dnsmasq with separated format string and version string
-    dnsmasq_elf = b"\x7fELF" + b"\x00" * 20 + b"Dnsmasq version %s\x00some other data\x002.86\x00more data"
+    dnsmasq_elf = (
+        b"\x7fELF" + b"\x00" * 20 + b"Dnsmasq version %s\x00some other data\x002.86\x00more data"
+    )
     res = extractor.extract("dnsmasq", dnsmasq_elf)
     assert res is not None
     assert res.version == "2.86"
@@ -169,11 +178,22 @@ def test_symbol_sets_containment(extractor):
     """Test Layer 3.5: Multi-symbol set containment matching."""
     # libogg with 12 matching API symbols
     ogg_syms = [
-        "ogg_stream_init", "ogg_stream_clear", "ogg_stream_packetin", "ogg_stream_pageout",
-        "ogg_stream_pagein", "ogg_stream_packetout", "ogg_stream_flush", "ogg_sync_init",
-        "ogg_sync_buffer", "ogg_sync_wrote", "ogg_sync_pageout", "ogg_sync_pageseek"
+        "ogg_stream_init",
+        "ogg_stream_clear",
+        "ogg_stream_packetin",
+        "ogg_stream_pageout",
+        "ogg_stream_pagein",
+        "ogg_stream_packetout",
+        "ogg_stream_flush",
+        "ogg_sync_init",
+        "ogg_sync_buffer",
+        "ogg_sync_wrote",
+        "ogg_sync_pageout",
+        "ogg_sync_pageseek",
     ]
-    ogg_data = b"\x7fELF" + b"\x00" * 20 + b"".join(f"\x00{s}\x00".encode("ascii") for s in ogg_syms)
+    ogg_data = (
+        b"\x7fELF" + b"\x00" * 20 + b"".join(f"\x00{s}\x00".encode("ascii") for s in ogg_syms)
+    )
     res = extractor.extract("libcustom_audio.so", ogg_data)
     assert res is None
 
@@ -181,6 +201,7 @@ def test_symbol_sets_containment(extractor):
 def test_go_buildinfo(extractor):
     """Test Layer 2.8: Go embedded buildinfo extraction."""
     from firmware_scanner.extraction.elf_deep_extractor import GO_MAGIC
+
     # build a small valid Go 1.18+ buildinfo header
     # GO_MAGIC (14 bytes) + byte 14 (pointer size 8) + byte 15 (flags 2: inline strings)
     # followed by 16 padding bytes to reach header 32, then uvarint length (6) + b"go1.22"
@@ -192,3 +213,54 @@ def test_go_buildinfo(extractor):
     assert res.version == "1.22"
     assert res.version_kind == "runtime"
     assert "Go embedded buildinfo" in res.evidence
+
+
+def test_unknown_elf_is_parsed_once_for_metadata_and_symbols(tmp_path, monkeypatch):
+    compiler = shutil.which("cc")
+    if compiler is None:
+        pytest.skip("a C compiler is required for ELF fixtures")
+    source = tmp_path / "unknown.c"
+    target = tmp_path / "libunknown.so"
+    source.write_text("int example(void) { return 42; }\n")
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", str(source), "-o", str(target)],
+        check=True,
+        capture_output=True,
+    )
+
+    real_elffile = elf_deep_extractor.ELFFile
+    calls = {"count": 0}
+
+    def counting_elffile(*args, **kwargs):
+        calls["count"] += 1
+        return real_elffile(*args, **kwargs)
+
+    monkeypatch.setattr(elf_deep_extractor, "ELFFile", counting_elffile)
+
+    ELFDeepExtractor().extract("libunknown.so", target.read_bytes())
+
+    assert calls["count"] == 1
+
+
+def test_shared_defined_symbol_set_contains_only_exportable_symbols(tmp_path):
+    compiler = shutil.which("cc")
+    if compiler is None:
+        pytest.skip("a C compiler is required for ELF fixtures")
+    source = tmp_path / "symbols.c"
+    target = tmp_path / "libsymbols.so"
+    source.write_text(
+        "static int local_only(void) { return 1; }\n"
+        "int exported_symbol(void) { return local_only(); }\n"
+    )
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", "-O0", str(source), "-o", str(target)],
+        check=True,
+        capture_output=True,
+    )
+
+    result = ELFDeepExtractor().extract("libsymbols.so", target.read_bytes())
+
+    assert result is not None
+    assert result.defined_symbols is not None
+    assert "exported_symbol" in result.defined_symbols
+    assert "local_only" not in result.defined_symbols

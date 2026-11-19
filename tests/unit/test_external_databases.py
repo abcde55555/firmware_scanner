@@ -1,6 +1,8 @@
 import hashlib
 import json
+import shutil
 import sqlite3
+import subprocess
 
 import pytest
 
@@ -9,6 +11,7 @@ from firmware_scanner.cli.app import (
     _validate_external_databases,
 )
 from firmware_scanner.core.config import AnalysisConfig
+from firmware_scanner.databases import blintdb as blintdb_module
 from firmware_scanner.databases import manifest as manifest_module
 from firmware_scanner.databases.blintdb import BLintDatabase
 from firmware_scanner.databases.enricher import DatabaseEnricher
@@ -97,6 +100,25 @@ def make_blint(path):
         )
     connection.commit()
     connection.close()
+
+
+def test_blint_symbol_census_avoids_duplicate_pyelftools_parse(tmp_path):
+    compiler = shutil.which("cc")
+    if compiler is None:
+        pytest.skip("a C compiler is required for ELF fixtures")
+    source = tmp_path / "fixture.c"
+    target = tmp_path / "libfixture.so"
+    source.write_text("int fixture_symbol(void) { return 0; }\n")
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", str(source), "-o", str(target)],
+        check=True,
+        capture_output=True,
+    )
+
+    sources = BLintDatabase._symbol_sources(target.read_bytes())
+
+    assert not hasattr(blintdb_module, "ELFFile")
+    assert "fixture_symbol" in sources["dynamic_symbols"]
 
 
 def test_packaged_database_manifests_are_complete():
