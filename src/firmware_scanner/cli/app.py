@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -700,7 +701,6 @@ def _run_analysis(
             for s in result.sections
         )
     )
-
     # OS / RTOS detection
     if is_android_system:
         console.print("[*] Detecting OS type...")
@@ -887,21 +887,25 @@ def _run_analysis(
 
         if scan_log:
             scan_log.start_stage("smart_analyzer")
-        smart = SmartSectionAnalyzer()
-        smart_components = []
-        for uf in all_files:
-            if len(uf.data) > 16:
-                try:
-                    smart_components.extend(smart.analyze_section(uf.name, uf.data))
-                except Exception:
-                    pass
-        if smart_components:
-            console.print(f"    Smart analyzer found: {len(smart_components)} components")
-            components.extend(smart_components)
-        if scan_log:
-            scan_log.end_stage("smart_analyzer",
-                               files_analyzed=len(all_files),
-                               components_found=len(smart_components))
+        with _external_database_enricher(config) as generic_database_enricher:
+            smart = SmartSectionAnalyzer(database_enricher=generic_database_enricher)
+            smart_components = []
+            for uf in all_files:
+                if len(uf.data) > 16:
+                    try:
+                        smart_components.extend(smart.analyze_section(uf.name, uf.data))
+                    except Exception:
+                        pass
+            if smart_components:
+                console.print(f"    Smart analyzer found: {len(smart_components)} components")
+                components.extend(smart_components)
+            if scan_log:
+                scan_log.end_stage("smart_analyzer",
+                                   files_analyzed=len(all_files),
+                                   components_found=len(smart_components))
+            if generic_database_enricher is not None:
+                context.metadata["database_stats"] = smart.database_stats
+                context.metadata["analysis_stats"] = smart.analysis_stats
 
         # Run EMBA rules on extracted binary files (catches versions in decompressed content)
         from ..extraction.emba_rules import scan_binary_with_rules
@@ -970,6 +974,9 @@ def _run_analysis(
                                plugins_loaded=[p.name for p in plugin_mgr.get_loaded_plugins()],
                                components_found=len(plugin_components))
 
+    from ..android.provenance import apply_component_taxonomy
+
+    apply_component_taxonomy(components)
     total_before_dedup = len(components)
     context.components = _deduplicate_components(components)
     console.print(f"[+] Total unique components: {len(context.components)}")
@@ -1550,15 +1557,14 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
     return []
 
 
-def _validate_external_databases(config: AnalysisConfig) -> None:
-    """Fail closed before a long scan when an optional database is invalid."""
+def _create_external_database_enricher(config: AnalysisConfig):
+    """Load and validate optional databases for a generic firmware scan."""
     if not config.blintdb_path and not config.nsrl_db_path:
-        return
+        return None
     from ..databases import DatabaseEnricher
 
-    enricher = None
     try:
-        enricher = DatabaseEnricher.from_paths(
+        return DatabaseEnricher.from_paths(
             blint_path=config.blintdb_path or None,
             nsrl_path=config.nsrl_db_path or None,
             verify_hash=config.verify_database_integrity,
@@ -1568,9 +1574,23 @@ def _validate_external_databases(config: AnalysisConfig) -> None:
             "External database validation failed: "
             f"{type(exc).__name__}: {exc}"
         ) from exc
+
+
+@contextmanager
+def _external_database_enricher(config: AnalysisConfig):
+    enricher = _create_external_database_enricher(config)
+    try:
+        yield enricher
     finally:
         if enricher is not None:
             enricher.close()
+
+
+def _validate_external_databases(config: AnalysisConfig) -> None:
+    """Fail closed before a long Android scan when an optional database is invalid."""
+    enricher = _create_external_database_enricher(config)
+    if enricher is not None:
+        enricher.close()
 
 
 def _store_android_build_info(context: AnalysisContext, result) -> None:
@@ -1762,6 +1782,8 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
             "name": context.detected_rtos,
             "confidence": context.rtos_confidence,
         },
+        "database_stats": context.metadata.get("database_stats", {}),
+        "analysis_stats": context.metadata.get("analysis_stats", {}),
         "components": [c.model_dump() for c in context.components],
         "warnings": context.warnings,
         "errors": [e.model_dump() for e in context.errors],

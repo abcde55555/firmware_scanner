@@ -18,7 +18,6 @@ except ImportError:
 import re
 import struct
 from pathlib import Path
-from typing import Callable
 
 from .models import Component, VersionConfidence, ExtractionMethod
 from .extractors.symbol_table import SYMBOL_COMPONENT_MAP
@@ -152,8 +151,22 @@ class SmartSectionAnalyzer:
     detections than raw byte scanning alone.
     """
 
-    def __init__(self, custom_hashes: dict[str, tuple] | None = None):
+    def __init__(
+        self,
+        custom_hashes: dict[str, tuple] | None = None,
+        database_enricher=None,
+    ):
         self._hash_matcher = BinaryHashMatcher(custom_hashes)
+        self._database_enricher = database_enricher
+        self._binary_inventory = None
+
+    @property
+    def database_stats(self) -> dict:
+        return self._get_binary_inventory().database_stats
+
+    @property
+    def analysis_stats(self) -> dict:
+        return self._get_binary_inventory().analysis_stats
 
     def analyze_section(self, name: str, data: bytes) -> list[Component]:
         """Route to appropriate analyzer based on section name/content.
@@ -376,12 +389,18 @@ class SmartSectionAnalyzer:
 
     def _analyze_elf(self, name: str, data: bytes) -> list[Component]:
         """Use the same evidence attribution as the Android filesystem path."""
-        from .binary_inventory import BinaryInventory
-        if not hasattr(self, '_binary_inventory'):
-            self._binary_inventory = BinaryInventory()
         basename = name.rsplit('/', 1)[-1]
         component_type = 'library' if '.so' in basename or basename.endswith('.ko') else 'application'
-        return self._binary_inventory.extract(data, basename, name, component_type)
+        return self._get_binary_inventory().extract(data, basename, name, component_type)
+
+    def _get_binary_inventory(self):
+        if self._binary_inventory is None:
+            from .binary_inventory import BinaryInventory
+
+            self._binary_inventory = BinaryInventory(
+                database_enricher=self._database_enricher,
+            )
+        return self._binary_inventory
 
     def _analyze_elf_fallback(self, name: str, data: bytes) -> list[Component]:
         """Fallback ELF analysis when lief is not available - scan for symbol strings."""
@@ -1095,7 +1114,6 @@ class SmartSectionAnalyzer:
 
         # Try to identify what component this text file belongs to
         base_name = Path(name).stem.lower()
-        parent_dir = str(Path(name).parent).replace('\\', '/').lower()
 
         # Look for version patterns
         best_version = ""

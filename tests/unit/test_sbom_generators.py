@@ -167,6 +167,25 @@ def test_cyclonedx_records_scan_analysis_stats_as_metadata():
     } in bom["metadata"]["properties"]
 
 
+def test_sbom_generator_propagates_generic_database_stats_without_android_info():
+    context = AnalysisContext(
+        firmware_path=Path("firmware.bin"),
+        file_hash_sha256="a" * 64,
+        components=[],
+        metadata={
+            "database_stats": {"files_queried": 9},
+            "analysis_stats": {"content_cache_hits": 2},
+        },
+    )
+    bom = json.loads(SBOMGenerator().generate_cyclonedx(context, spec_version="1.6"))
+    properties = {
+        item["name"]: item["value"]
+        for item in bom["metadata"]["properties"]
+    }
+    assert properties["firmware:database:stats"] == '{"files_queried": 9}'
+    assert properties["firmware:analysis:stats"] == '{"content_cache_hits": 2}'
+
+
 def test_spdx_3_0_1_generation():
     """Verify SPDX 3.0.1 JSON-LD SBOM format compliance."""
     context = _create_sample_context()

@@ -1,11 +1,15 @@
 import gzip
 
+import pytest
+
 from firmware_scanner.android.provenance import (
     apply_android_provenance,
+    apply_component_taxonomy,
+    classify_source_project,
+    load_source_version_pins,
     parse_notice_attributions,
     source_manifest_matches_image,
 )
-from firmware_scanner.android.provenance import load_source_version_pins
 from firmware_scanner.android.system_scanner import AndroidSystemScanner
 from firmware_scanner.extraction.models import Component, VersionConfidence
 from firmware_scanner.vuln.matcher import _is_scannable
@@ -418,3 +422,67 @@ def test_estimated_source_revision_does_not_generate_upstream_cpe():
         },
     ])
     assert not AndroidSystemScanner._should_synthesize_upstream_cpe(component)
+
+
+@pytest.mark.parametrize(
+    "project_path,taxonomy",
+    [
+        ("external/freetype", "third-party-oss"),
+        ("frameworks/av", "platform-first-party"),
+        ("hardware/interfaces", "platform-first-party"),
+        ("vendor/qcom/opensource/power", "vendor-open-source"),
+        ("vendor/qcom/proprietary/display", "vendor-proprietary"),
+    ],
+)
+def test_source_project_taxonomy_is_explicit(project_path, taxonomy):
+    assert classify_source_project(project_path) == taxonomy
+
+
+def test_notice_provenance_records_platform_taxonomy():
+    notice = gzip.compress(
+        b'<licenses><file-name lib="frameworks/av">//system/lib/libcodec2.so</file-name></licenses>'
+    )
+    component = native("libcodec2.so", "/system/lib/libcodec2.so")
+    apply_android_provenance(
+        [component],
+        notice_attributions=parse_notice_attributions(notice),
+        source_manifest={
+            "projects": [{
+                "path": "frameworks/av",
+                "name": "platform/frameworks/av",
+                "revision": "a" * 40,
+            }],
+        },
+    )
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "platform-first-party",
+    } in component.properties
+
+
+def test_component_taxonomy_uses_external_ecosystem_purls():
+    maven = Component(
+        name="androidx.core:core",
+        purl="pkg:maven/androidx.core/core@1.12.0",
+    )
+    cargo = Component(
+        name="tokio",
+        purl="pkg:cargo/tokio@1.44.0",
+    )
+    generic = Component(
+        name="libvendor.so",
+        purl="pkg:generic/libvendor.so@1.0",
+    )
+    apply_component_taxonomy([maven, cargo, generic])
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in maven.properties
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in cargo.properties
+    assert not any(
+        prop["name"] == "firmware:taxonomy"
+        for prop in generic.properties
+    )

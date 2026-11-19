@@ -173,7 +173,7 @@ firmware-scanner analyze <firmware> \
 ```
 
 Optional external reference databases can be attached to Android filesystem
-scans:
+scans and generic firmware section scans:
 
 ```bash
 firmware-scanner analyze system.img -f json -f sbom -o reports/ \

@@ -1,7 +1,6 @@
 """SBOM generation orchestrator."""
 
 from ..core.context import AnalysisContext
-from ..extraction.models import Component
 from .cyclonedx import CycloneDXGenerator
 from .spdx3 import SPDX3Generator
 
@@ -25,6 +24,14 @@ class SBOMGenerator:
             )
 
         android_info = context.metadata.get("android_build_info")
+        if android_info is None and (
+            context.metadata.get("database_stats")
+            or context.metadata.get("analysis_stats")
+        ):
+            android_info = {
+                "database_stats": context.metadata.get("database_stats", {}),
+                "analysis_stats": context.metadata.get("analysis_stats", {}),
+            }
 
         bom = self._cdx.generate(
             components=context.components,

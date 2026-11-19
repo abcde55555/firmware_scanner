@@ -42,6 +42,40 @@ def test_estimated_releases_count_as_usable_but_remain_distinct_from_observed_ve
     assert result["fixed"]["observations"][1]["version_kind"] == "estimated"
 
 
+def test_explicit_taxonomy_gets_a_separate_coverage_breakdown():
+    baseline = [
+        record("libplatform-a.so", "/system/lib/libplatform-a.so"),
+        record("libplatform-b.so", "/system/lib/libplatform-b.so"),
+        record("libthirdparty.so", "/system/lib/libthirdparty.so"),
+    ]
+    current = [
+        record("libplatform-a.so", "/system/lib/libplatform-a.so", "1.0"),
+        record("libplatform-b.so", "/system/lib/libplatform-b.so"),
+        record("libthirdparty.so", "/system/lib/libthirdparty.so", "2.0"),
+    ]
+    current[0]["properties"] = [{
+        "name": "firmware:taxonomy",
+        "value": "platform-first-party",
+    }]
+    current[1]["properties"] = [{
+        "name": "firmware:taxonomy",
+        "value": "platform-first-party",
+    }]
+    current[2]["properties"] = [{
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    }]
+
+    result = evaluate(baseline, current, {})
+
+    platform = result["fixed"]["by_taxonomy"]["platform-first-party"]
+    third_party = result["fixed"]["by_taxonomy"]["third-party-oss"]
+    assert platform["baseline"] == 2
+    assert platform["usable_versions"] == 1
+    assert third_party["baseline"] == 1
+    assert third_party["usable_coverage"] == 1.0
+
+
 def test_adjacent_estimate_agreement_is_reported_separately_from_exact_agreement():
     from experiments.version_coverage.evaluate import observation_key
 

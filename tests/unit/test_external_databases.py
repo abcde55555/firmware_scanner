@@ -1,9 +1,13 @@
 import hashlib
+import json
 import sqlite3
 
 import pytest
 
-from firmware_scanner.cli.app import _validate_external_databases
+from firmware_scanner.cli.app import (
+    _external_database_enricher,
+    _validate_external_databases,
+)
 from firmware_scanner.core.config import AnalysisConfig
 from firmware_scanner.databases import manifest as manifest_module
 from firmware_scanner.databases.blintdb import BLintDatabase
@@ -12,6 +16,7 @@ from firmware_scanner.databases.manifest import DatabaseManifest, packaged_manif
 from firmware_scanner.databases.nsrl import NSRLDatabase
 from firmware_scanner.extraction.binary_inventory import BinaryInventory
 from firmware_scanner.extraction.models import Component
+from firmware_scanner.extraction.smart_analyzer import SmartSectionAnalyzer
 
 
 def manifest(kind: str, digest: str = "0" * 64) -> DatabaseManifest:
@@ -358,6 +363,45 @@ def test_binary_inventory_reuses_content_evidence_at_a_new_location(monkeypatch)
     } == {"/second/libcache-demo.so"}
 
 
+def test_smart_section_analyzer_passes_external_database_evidence_for_generic_firmware(
+    monkeypatch,
+):
+    calls = []
+
+    class Enricher:
+        def __init__(self):
+            from firmware_scanner.databases.enricher import DatabaseStats
+
+            self.stats = DatabaseStats()
+
+        def enrich(self, component, data, filename, location):
+            calls.append((filename, location))
+            component.properties.append({
+                "name": "firmware:nsrl:file-matched",
+                "value": "true",
+            })
+
+    analyzer = SmartSectionAnalyzer(database_enricher=Enricher())
+    monkeypatch.setattr(
+        analyzer._get_binary_inventory()._deep,
+        "extract",
+        lambda _filename, _data: None,
+    )
+    components = analyzer.analyze_section(
+        "/usr/lib/libgeneric.so",
+        b"\x7fELF" + b"\0" * 60 + b"generic payload\0",
+    )
+
+    assert calls == [("libgeneric.so", "/usr/lib/libgeneric.so")]
+    assert any(
+        prop["name"] == "firmware:nsrl:file-matched"
+        for component in components
+        for prop in component.properties
+    )
+    assert analyzer.analysis_stats["content_cache_entries"] == 1
+    assert analyzer.database_stats["files_queried"] == 0
+
+
 def test_external_database_validation_failure_is_not_silently_ignored(monkeypatch):
     def rejected(**_kwargs):
         raise ValueError("database schema mismatch")
@@ -369,3 +413,38 @@ def test_external_database_validation_failure_is_not_silently_ignored(monkeypatc
     config = AnalysisConfig(nsrl_db_path="/database/nsrl.db")
     with pytest.raises(RuntimeError, match="database schema mismatch"):
         _validate_external_databases(config)
+
+
+def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
+    from firmware_scanner.cli.app import _output_json_report
+    from firmware_scanner.core.context import AnalysisContext
+
+    context = AnalysisContext(
+        firmware_path=tmp_path / "firmware.bin",
+        metadata={
+            "database_stats": {"files_queried": 7},
+            "analysis_stats": {"content_cache_hits": 3},
+        },
+    )
+    output = tmp_path / "analysis.json"
+    _output_json_report(context, output)
+    report = json.loads(output.read_text())
+    assert report["database_stats"] == {"files_queried": 7}
+    assert report["analysis_stats"] == {"content_cache_hits": 3}
+
+
+def test_generic_database_context_closes_connection_after_exception(monkeypatch):
+    closed = []
+
+    class Enricher:
+        def close(self):
+            closed.append(True)
+
+    monkeypatch.setattr(
+        "firmware_scanner.cli.app._create_external_database_enricher",
+        lambda _config: Enricher(),
+    )
+    with pytest.raises(ValueError, match="scan failed"):
+        with _external_database_enricher(AnalysisConfig()):
+            raise ValueError("scan failed")
+    assert closed == [True]

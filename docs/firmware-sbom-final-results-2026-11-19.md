@@ -37,13 +37,14 @@ Input: `system.img`, 2,309,611,520 bytes, SHA-256
 | Unknown | 426 |
 | Source-declared exact versions applied | 22 |
 | BOM dependency records | 928 |
-| Android core scan time | 335.1 s |
-| End-to-end process time | 357.0 s |
-| Peak RSS | 3,403,188 KiB |
+| Android core scan time | 329.8 s |
+| End-to-end process time | 349.1 s |
+| Peak RSS | 3,367,644 KiB |
 
 The prior database-enabled scan took 408.2 seconds in the Android core scan.
 Reusing SQLite connections, content-cache hits and the revised rule path reduced
-that to 335.1 seconds, about 17.9% faster. The image is large enough that the
+that to 329.8 seconds in the final scan, about 19.2% faster. Scan time on this
+host varied by roughly 20 seconds between validated runs. The image is large enough that the
 peak remains around 3.4 GiB; the roadmap's 1.2 GiB target is not met.
 
 The scanner analyzed 1,789 unique ELF contents and reused 345 byte-identical
@@ -83,9 +84,9 @@ Input: `sun8iw6p1_android_perf3_v1_0_uart0.img`.
 | Non-empty resolved versions | 141 |
 | Fixed all-component coverage | 141/589, 23.94% |
 | Fixed native coverage | 44/316, 13.92% |
-| Android core scan time | 76.2 s |
-| End-to-end process time | 78.8 s |
-| Peak RSS | 3,124,136 KiB |
+| Android core scan time | 75.3 s |
+| End-to-end process time | 80.2 s |
+| Peak RSS | 3,123,912 KiB |
 
 The previous frozen result was 120/582 (20.62%) for all components and 23/312
 (7.37%) for native libraries. The database scan analyzed 430 unique ELF
@@ -95,6 +96,35 @@ files, and produced no NSRL baseline file hit.
 Allwinner has no matching source manifest in the supplied material. Its version
 gains therefore come from binary evidence and parent-package attribution. It
 does not receive the modern image's source revisions or version pins.
+
+## Taxonomy and generic database support
+
+The scanner now records taxonomy only where evidence is explicit: an AOSP
+source project or an external ecosystem PURL. Unattributed components remain
+unknown rather than being guessed into a denominator.
+
+On the modern image:
+
+| Taxonomy | Components | Non-empty versions |
+|---|---:|---:|
+| `platform-first-party` | 412 | 412 |
+| `third-party-oss` | 231 | 231 |
+| unclassified | 952 | 461 |
+
+Taxonomy coverage is therefore 643/1,595 (40.31%), not complete BOM coverage.
+Within the old fixed cohort, 85 records are matched to explicit third-party
+taxonomy and all 85 have a version: 29 exact and 56 estimated. That 85/85 figure
+has selection bias and is not a third-party precision claim.
+
+All 591 Allwinner components remain taxonomy-unknown because that image has no
+matching source manifest and the exposed purls do not identify an external
+ecosystem. This is the next clear data gap.
+
+BLintDB and NSRL are now available to both the Android filesystem scanner and
+the generic `SmartSectionAnalyzer` ELF path. A real `/bin/echo` smoke scan
+queried one unique ELF and wrote database/cache statistics to both JSON and
+CycloneDX metadata. The generic enricher is closed in a `finally` path, including
+when analysis raises.
 
 ## BOM and VEX validation
 

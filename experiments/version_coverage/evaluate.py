@@ -182,6 +182,19 @@ def _native(record: dict[str, Any]) -> bool:
     )
 
 
+def _taxonomy(record: dict[str, Any]) -> str:
+    properties = record.get("properties", [])
+    if not isinstance(properties, list):
+        return ""
+    return next((
+        str(prop.get("value", ""))
+        for prop in properties
+        if isinstance(prop, dict)
+        and prop.get("name") == "firmware:taxonomy"
+        and prop.get("value")
+    ), "")
+
+
 def _input_hash(value: Any) -> str:
     payload = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
@@ -327,6 +340,11 @@ def evaluate(baseline: list[dict], current: list[dict], verified: dict) -> dict:
     matches = _match(baseline, current)
     native_indices = [i for i, record in enumerate(baseline) if _native(record)]
     fixed_indices = list(range(len(baseline)))
+    taxonomy_indices: dict[str, list[int]] = {}
+    for bi, ci in matches.items():
+        taxonomy = _taxonomy(current[ci])
+        if taxonomy:
+            taxonomy_indices.setdefault(taxonomy, []).append(bi)
     observations = []
     for bi, record in enumerate(baseline):
         ci = matches.get(bi)
@@ -370,6 +388,16 @@ def evaluate(baseline: list[dict], current: list[dict], verified: dict) -> dict:
         "fixed": {
             "all": _metrics(fixed_indices, baseline, current, matches, verified_by_index),
             "native": _metrics(native_indices, baseline, current, matches, verified_by_index),
+            "by_taxonomy": {
+                taxonomy: _metrics(
+                    sorted(indices),
+                    baseline,
+                    current,
+                    matches,
+                    verified_by_index,
+                )
+                for taxonomy, indices in sorted(taxonomy_indices.items())
+            },
             "observations": observations,
         },
         "new": {"records": len(new_records), "unlocated_unmatched": unlocated_unmatched, "observations": [

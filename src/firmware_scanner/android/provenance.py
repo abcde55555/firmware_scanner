@@ -105,6 +105,54 @@ def _set_property(component: Component, name: str, value: str) -> None:
     component.properties.append({"name": name, "value": value})
 
 
+def classify_source_project(project_path: str) -> str:
+    """Classify explicitly attributed AOSP/vendor source paths conservatively."""
+    path = project_path.strip().strip("/").casefold()
+    if path.startswith("vendor/"):
+        if "/opensource/" in f"/{path}/" or "/open-source/" in f"/{path}/":
+            return "vendor-open-source"
+        return "vendor-proprietary"
+    if path.startswith("external/"):
+        return "third-party-oss"
+    if path.startswith((
+        "frameworks/",
+        "system/",
+        "hardware/",
+        "packages/modules/",
+        "art/",
+        "bionic/",
+        "build/",
+        "libnativehelper/",
+    )):
+        return "platform-first-party"
+    return "unknown"
+
+
+def apply_component_taxonomy(components: list[Component]) -> None:
+    """Add taxonomy only where a source project or ecosystem PURL is explicit."""
+    external_schemes = {
+        "cargo",
+        "cocoapods",
+        "composer",
+        "conan",
+        "gem",
+        "golang",
+        "github",
+        "gitlab",
+        "maven",
+        "npm",
+        "nuget",
+        "pypi",
+        "swift",
+    }
+    for component in components:
+        if any(prop.get("name") == "firmware:taxonomy" for prop in component.properties):
+            continue
+        purl = component.purl.casefold()
+        if any(purl.startswith(f"pkg:{scheme}/") for scheme in external_schemes):
+            _append_unique(component.properties, "firmware:taxonomy", "third-party-oss")
+
+
 @lru_cache(maxsize=1)
 def load_source_version_pins() -> tuple[dict, ...]:
     path = files("firmware_scanner.data").joinpath(
@@ -213,6 +261,9 @@ def _apply_source_revision(
     _append_unique(component.properties, "firmware:source:project", str(project["path"]))
     _append_unique(component.properties, "firmware:source:repository", str(project.get("name", "")))
     _append_unique(component.properties, "firmware:source:revision", revision)
+    taxonomy = classify_source_project(str(project["path"]))
+    if taxonomy != "unknown":
+        _append_unique(component.properties, "firmware:taxonomy", taxonomy)
     if pin:
         _append_unique(component.properties, "firmware:source:version-authority", pin["authority"])
         _append_unique(component.properties, "firmware:source:version-evidence", pin["source_url"])
@@ -337,6 +388,7 @@ def apply_android_provenance(
         "firmware:container:locations",
         "firmware:version:scope",
         "firmware:version:resolution-state",
+        "firmware:taxonomy",
     }
     for digest, equal_binaries in by_hash.items():
         donors = [
@@ -381,6 +433,7 @@ def apply_android_provenance(
                     "donor_locations": _locations(donor),
                 }
             )
+    apply_component_taxonomy(components)
     return {
         "source_revisions_applied": len(source_rows),
         "source_versions_applied": sum(

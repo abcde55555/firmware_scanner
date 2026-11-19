@@ -27,6 +27,12 @@ metric.
 ## External database integration
 
 Each database is an optional evidence source, not a source of target versions.
+The Android filesystem pipeline and the generic section-analysis pipeline share
+the same enricher and evidence semantics.
+
+For generic firmware, database lookup happens for ELF files passed through
+`SmartSectionAnalyzer`. A smoke scan of `/bin/echo` queried one unique ELF and
+emitted the database/cache statistics in both JSON and CycloneDX metadata.
 
 ### BLintDB
 
@@ -80,6 +86,18 @@ uses a `source-version-pins.json` record containing:
 
 A pin is ignored unless both the project path and full commit match. It cannot
 apply merely because a future image has the same project name.
+
+Explicit AOSP source paths also receive a conservative taxonomy:
+
+- `external/*`: `third-party-oss`
+- `frameworks/*`, `system/*`, `hardware/*`, `packages/modules/*`, `art/*`,
+  `bionic/*` and selected platform projects: `platform-first-party`
+- `vendor/*/opensource/*`: `vendor-open-source`
+- other `vendor/*` projects: `vendor-proprietary`
+
+Unattributed components remain without a taxonomy rather than being guessed
+into a denominator. Components with an explicit external ecosystem PURL such as
+Maven, Cargo, npm, PyPI, Go or Conan are classified as `third-party-oss`.
 
 An exact source pin has lower deployment portability than a binary getter, but
 it prevents a common false positive: treating an AOSP build revision or parent
