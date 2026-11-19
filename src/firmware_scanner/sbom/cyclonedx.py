@@ -120,10 +120,6 @@ class CycloneDXGenerator:
 
         metadata: dict[str, Any] = {
             "timestamp": now_iso,
-            # Top-level required fields for ATV-SBOM platforms
-            "name": target_product,
-            "version": build_id,
-            "type": "firmware",
             "lifecycles": [
                 {
                     "phase": "build"

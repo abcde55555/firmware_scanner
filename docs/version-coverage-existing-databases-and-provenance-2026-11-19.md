@@ -30,6 +30,19 @@ materials. Its measured result remains **120/582 (20.62%)** and **23/312
 (7.37%) native**. It was not filled with the modern image's revisions or
 APEX versions.
 
+## BOM artifacts
+
+Both generated BOM files contain all 1,611 deduplicated findings:
+
+- `system_cyclonedx_1.6.json` validates against the official CycloneDX 1.6
+  schema. It has 1,085 non-empty versions and 526 empty versions.
+- `system_sbom.json` validates against the official CycloneDX 1.5 schema.
+  Version 1.5 compatibility mode writes `"unknown"` for the 526 missing
+  versions so consumers do not silently drop those components.
+
+The 1.5 representation is therefore not a claim of 1,611 discovered versions.
+The actual populated count in the strict 1.6 artifact is 1,085 of 1,611.
+
 ## What produced the increase
 
 The production scan now applies four provenance layers:

@@ -62,6 +62,8 @@ def test_cyclonedx_1_6_generation():
     assert data["bomFormat"] == "CycloneDX"
     assert data["specVersion"] == "1.6"
     assert "urn:uuid:" in data["serialNumber"]
+    assert {"name", "version", "type"}.isdisjoint(data["metadata"])
+    assert data["metadata"]["component"]["type"] == "firmware"
     assert len(data["components"]) == 2
     assert data["components"][0]["name"] == "busybox"
     assert data["components"][0]["version"] == "1.35.0"
@@ -152,10 +154,8 @@ def test_asrock_atv_sbom_metadata():
     )
 
     meta = data["metadata"]
-    # 1. Mandatory metadata fields
-    assert meta["name"] == "waydroid_tv_x86_64"
-    assert meta["version"] == "BP2A.250805.005"
-    assert meta["type"] == "firmware"
+    # 1. CycloneDX-compliant root component metadata
+    assert {"name", "version", "type"}.isdisjoint(meta)
     assert meta["lifecycles"] == [{"phase": "build"}]
     assert meta["component"]["name"] == "waydroid_tv_x86_64"
     assert meta["component"]["version"] == "BP2A.250805.005"

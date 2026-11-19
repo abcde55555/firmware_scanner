@@ -18,6 +18,15 @@ BROKEN = "legacy/broken"           # Broken by classical cryptanalysis (MD5, SHA
 NEUTRAL = "neutral"                # Key derivation, DRBG, hash without quantum impact (SM3, SHA-256)
 
 _B = r"(?<![A-Za-z0-9_])"
+_CDX_PRIMITIVES = {
+    "public-key": "pke",
+    "key-agreement": "key-agree",
+}
+
+
+def cyclonedx_primitive(value: str) -> str:
+    """Map internal labels to CycloneDX 1.6's algorithm primitive enum."""
+    return _CDX_PRIMITIVES.get(value, value)
 
 
 @dataclass(frozen=True)
@@ -241,7 +250,7 @@ class CBOMScanner:
                 crypto_properties={
                     "assetType": "algorithm",
                     "algorithmProperties": {
-                        "primitive": asset.primitive,
+                        "primitive": cyclonedx_primitive(asset.primitive),
                     },
                 },
                 properties=props,
@@ -277,7 +286,7 @@ class CBOMScanner:
                 "cryptoProperties": {
                     "assetType": "algorithm",
                     "algorithmProperties": {
-                        "primitive": asset.primitive,
+                        "primitive": cyclonedx_primitive(asset.primitive),
                     },
                 },
                 "properties": props,

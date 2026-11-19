@@ -9,6 +9,7 @@ from firmware_scanner.extraction.cbom import (
     PQC,
     BROKEN,
     NEUTRAL,
+    cyclonedx_primitive,
 )
 from firmware_scanner.extraction.aibom import (
     AIBOMScanner,
@@ -31,6 +32,12 @@ def test_cbom_algorithm_catalog():
     assert "ml-dsa" in keys
     assert "des" in keys
     assert "rc4" in keys
+
+
+def test_internal_primitives_map_to_cyclonedx_enum_values():
+    assert cyclonedx_primitive("public-key") == "pke"
+    assert cyclonedx_primitive("key-agreement") == "key-agree"
+    assert cyclonedx_primitive("hash") == "hash"
 
 
 def test_cbom_scanner_detection():
