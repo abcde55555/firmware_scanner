@@ -482,6 +482,10 @@ def test_notice_provenance_records_platform_taxonomy():
         "name": "firmware:taxonomy",
         "value": "platform-first-party",
     } in component.properties
+    assert {
+        "name": "firmware:taxonomy:evidence",
+        "value": "source-project-path",
+    } in component.properties
 
 
 def test_component_taxonomy_uses_external_ecosystem_purls():
@@ -510,3 +514,24 @@ def test_component_taxonomy_uses_external_ecosystem_purls():
         prop["name"] == "firmware:taxonomy"
         for prop in generic.properties
     )
+
+
+def test_component_taxonomy_uses_confirmed_blint_identity():
+    component = Component(
+        name="libft2.so",
+        properties=[{
+            "name": "firmware:blintdb:identity-confirmed",
+            "value": '{"components": ["freetype"], "projects": ["freetype"]}',
+        }],
+    )
+
+    apply_component_taxonomy([component])
+
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in component.properties
+    assert {
+        "name": "firmware:taxonomy:evidence",
+        "value": "blintdb-confirmed-identity",
+    } in component.properties

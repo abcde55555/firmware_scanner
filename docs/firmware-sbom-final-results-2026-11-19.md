@@ -55,7 +55,7 @@ Input: `system.img`, 2,309,611,520 bytes, SHA-256
 | Unknown | 426 |
 | Source-declared exact versions applied | 22 |
 | BOM dependency records | 928 |
-| Android core scan time | 337.8 s |
+| Android core scan time | 343.5 s |
 | License coverage | 3/1,595, 0.19%, `incomplete` |
 
 The prior database-enabled scan took 408.2 seconds in the Android core scan.
@@ -108,7 +108,7 @@ Input: `sun8iw6p1_android_perf3_v1_0_uart0.img`.
 | Fixed all-component coverage | 146/582, 25.09% |
 | Fixed native coverage | 48/312, 15.38% |
 | License coverage | 187/591, 31.64%, `incomplete` |
-| Android core scan time | 74.6 s |
+| Android core scan time | 76.5 s |
 
 The same-source family pass inherited seven values. The ICU donor itself was
 resolved exactly as `51.1.0.1`; its ARM32 `u_getVersion_51` wrapper loads that
@@ -178,17 +178,23 @@ On the modern image:
 | Taxonomy | Components | Non-empty versions |
 |---|---:|---:|
 | `platform-first-party` | 412 | 412 |
-| `third-party-oss` | 231 | 231 |
-| unclassified | 952 | 461 |
+| `third-party-oss` | 239 | 239 |
+| unclassified | 944 | 453 |
 
-Taxonomy coverage is therefore 643/1,595 (40.31%), not complete BOM coverage.
-Within the old fixed cohort, 85 records are matched to explicit third-party
-taxonomy and all 85 have a version: 29 exact and 56 estimated. That 85/85 figure
+Taxonomy coverage is therefore 651/1,595 (40.82%), not complete BOM coverage.
+Within the old fixed cohort, 92 records are matched to explicit third-party
+taxonomy and all 92 have a version: 36 exact and 56 estimated. That 92/92 figure
 has selection bias and is not a third-party precision claim.
 
-All 591 Allwinner components remain taxonomy-unknown because that image has no
-matching source manifest and the exposed purls do not identify an external
-ecosystem. This is the next clear data gap.
+Allwinner now has four BLint-confirmed `third-party-oss` components: expat,
+FreeType, libjpeg-turbo and SQLite. The other 587 components remain
+taxonomy-unknown because that image has no matching source manifest and the
+exposed purls do not identify an external ecosystem. The four-component fixed
+cohort has versions for three components (75%) and includes one exact identity
+but unresolved version (`libjpeg-turbo`).
+
+Taxonomy evidence is explicit: `source-project-path`,
+`blintdb-confirmed-identity` or `external-ecosystem-purl`.
 
 BLintDB and NSRL are now available to both the Android filesystem scanner and
 the generic `SmartSectionAnalyzer` ELF path. A real `/bin/echo` smoke scan
@@ -204,7 +210,7 @@ Its release and lock SHA-256 are present in both JSON and CycloneDX metadata.
 The 1.5 and 1.6 BOMs for both images validate against the official CycloneDX
 schemas. The 1.5 and 1.6 VEX artifacts also validate with zero schema errors.
 The machine-readable results are in
-`reports/version-estimates-20261119/schema-validation-archive-license.json`.
+`reports/version-estimates-20261119/schema-validation-taxonomy-identity.json`.
 
 CycloneDX round-trip parsing now preserves component `properties` and the
 component-level `cpe`. This keeps resolution-state gates, BLint-confirmed

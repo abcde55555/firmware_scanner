@@ -112,6 +112,12 @@ Unattributed components remain without a taxonomy rather than being guessed
 into a denominator. Components with an explicit external ecosystem PURL such as
 Maven, Cargo, npm, PyPI, Go or Conan are classified as `third-party-oss`.
 
+BLintDB-confirmed component identities can also establish
+`third-party-oss` taxonomy because BLintDB entries are reference builds of
+open-source C/C++ projects. Taxonomy provenance is recorded separately as
+`firmware:taxonomy:evidence` with values such as `source-project-path`,
+`external-ecosystem-purl` or `blintdb-confirmed-identity`.
+
 An exact source pin has lower deployment portability than a binary getter, but
 it prevents a common false positive: treating an AOSP build revision or parent
 APEX version as the upstream library release. The source URL and authority are

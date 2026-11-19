@@ -148,9 +148,26 @@ def apply_component_taxonomy(components: list[Component]) -> None:
     for component in components:
         if any(prop.get("name") == "firmware:taxonomy" for prop in component.properties):
             continue
+        if any(
+            prop.get("name") == "firmware:blintdb:identity-confirmed"
+            and prop.get("value")
+            for prop in component.properties
+        ):
+            _append_unique(component.properties, "firmware:taxonomy", "third-party-oss")
+            _append_unique(
+                component.properties,
+                "firmware:taxonomy:evidence",
+                "blintdb-confirmed-identity",
+            )
+            continue
         purl = component.purl.casefold()
         if any(purl.startswith(f"pkg:{scheme}/") for scheme in external_schemes):
             _append_unique(component.properties, "firmware:taxonomy", "third-party-oss")
+            _append_unique(
+                component.properties,
+                "firmware:taxonomy:evidence",
+                "external-ecosystem-purl",
+            )
 
 
 @lru_cache(maxsize=1)
@@ -264,6 +281,11 @@ def _apply_source_revision(
     taxonomy = classify_source_project(str(project["path"]))
     if taxonomy != "unknown":
         _append_unique(component.properties, "firmware:taxonomy", taxonomy)
+        _append_unique(
+            component.properties,
+            "firmware:taxonomy:evidence",
+            "source-project-path",
+        )
     if pin:
         _append_unique(component.properties, "firmware:source:version-authority", pin["authority"])
         _append_unique(component.properties, "firmware:source:version-evidence", pin["source_url"])
