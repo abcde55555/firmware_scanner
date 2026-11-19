@@ -191,6 +191,12 @@ The provenance report records pre-deduplication NOTICE binding counts, while
 and license merging. A component without a license makes the overall status
 `incomplete`; the scanner never emits `compliant` from partial data.
 
+APK/JAR archives add two scoped evidence sources. Root `META-INF/LICENSE`,
+`LICENSE`, `NOTICE` and similarly named files apply only to the application
+component. Maven `pom.xml` licenses apply only to the matching dependency when
+the archive path, group, artifact and explicit version agree. Neither source is
+propagated to unrelated embedded native libraries.
+
 Binary getters can also supply exact evidence when newer compilers inline the
 implementation. On the Allwinner ARM32 ICU libraries, `u_getVersion_51` loads a
 read-only `51.1.0.1` literal and parses its four numeric fields directly rather

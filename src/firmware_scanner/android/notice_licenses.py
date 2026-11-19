@@ -15,14 +15,12 @@ def _normalise_text(value: str) -> str:
     return _SPACE_RE.sub(" ", value).strip().casefold()
 
 
-def _detect_licenses(text: str) -> set[str]:
+def detect_license_text(text: str) -> set[str]:
     value = _normalise_text(text)
     licenses: set[str] = set()
     if "the freetype project license" in value:
         licenses.add("FTL")
-    if "apache license version 2.0" in value or (
-        "apache license" in value and "version 2.0, january 2004" in value
-    ):
+    if "apache license" in value and "version 2.0" in value:
         licenses.add("Apache-2.0")
     if (
         "redistribution and use in source and binary forms" in value
@@ -84,7 +82,7 @@ class _NoticeHTMLParser(HTMLParser):
         elif tag == "pre":
             self._in_license = False
         elif tag == "tr" and self._in_row:
-            licenses = _detect_licenses(" ".join(self._license_parts))
+            licenses = detect_license_text(" ".join(self._license_parts))
             if licenses:
                 for match in _PATH_RE.finditer("".join(self._files)):
                     self.result.setdefault(match.group(1), set()).update(licenses)

@@ -18,6 +18,7 @@ from typing import Protocol
 
 from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 from .axml import AndroidManifestInfo, AXMLParser
+from .archive_licenses import ArchiveLicenseEvidence, extract_package_license_evidence
 from .build_prop import AndroidBuildInfo, BuildPropParser
 from .notice_licenses import apply_notice_licenses, parse_notice_licenses
 from .provenance import (
@@ -619,6 +620,7 @@ class AndroidSystemScanner:
     def _analyze_apk_archive(self, archive, apk_path, raw_data=None):
         """Analyse selected archive entries, keeping APK size independent of RAM."""
         manifest_info = None
+        license_evidence = extract_package_license_evidence(archive, apk_path)
         try:
             entry = archive.getinfo('AndroidManifest.xml')
             if entry.file_size > 8 * 1024 * 1024:
@@ -637,7 +639,12 @@ class AndroidSystemScanner:
         embedded_libs = self._extract_embedded_maven_libs(archive, apk_path)
         embedded_libs.extend(self._extract_embedded_native_libs(archive, apk_path))
         embedded_libs.extend(self._extract_embedded_dex_components(archive, apk_path))
-        return self._components_from_apk_manifest(manifest_info, apk_path, embedded_libs)
+        return self._components_from_apk_manifest(
+            manifest_info,
+            apk_path,
+            embedded_libs,
+            license_evidence=license_evidence,
+        )
 
     def _extract_embedded_dex_components(self, archive, origin):
         """Analyze root multidex entries with per-entry and aggregate size bounds."""
@@ -728,7 +735,14 @@ class AndroidSystemScanner:
                 if prop not in existing.properties:
                     existing.properties.append(prop)
 
-    def _components_from_apk_manifest(self, manifest_info, apk_path, embedded_libs):
+    def _components_from_apk_manifest(
+        self,
+        manifest_info,
+        apk_path,
+        embedded_libs,
+        *,
+        license_evidence: ArchiveLicenseEvidence | None = None,
+    ):
         if not manifest_info or not manifest_info.package_name:
             name = Path(apk_path).stem
             apk_comp = Component(
@@ -743,6 +757,7 @@ class AndroidSystemScanner:
                     evidence=f"APK found at {apk_path}",
                 )],
             )
+            self._apply_package_license_evidence(apk_comp, license_evidence)
             return [apk_comp] + embedded_libs
 
         # Build component from manifest info
@@ -778,8 +793,26 @@ class AndroidSystemScanner:
                 "value": apk_path,
             }],
         )
+        self._apply_package_license_evidence(apk_comp, license_evidence)
 
         return [apk_comp] + embedded_libs
+
+    @staticmethod
+    def _apply_package_license_evidence(
+        component: Component,
+        evidence: ArchiveLicenseEvidence | None,
+    ) -> None:
+        if evidence is None or not evidence.licenses:
+            return
+        component.licenses = sorted(set(component.licenses) | set(evidence.licenses))
+        for location in evidence.files:
+            prop = {"name": "firmware:license:evidence", "value": location}
+            if prop not in component.properties:
+                component.properties.append(prop)
+        component.properties.append({
+            "name": "firmware:license:match-confidence",
+            "value": "0.95",
+        })
 
     def _extract_embedded_native_libs(self, archive, origin):
         components = []

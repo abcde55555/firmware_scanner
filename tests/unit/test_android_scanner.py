@@ -82,6 +82,28 @@ def test_sdk_artifact_properties_reach_android_product_scan():
                for c in result)
 
 
+def test_apk_package_license_is_attached_from_meta_inf_license():
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, 'w') as archive:
+        archive.writestr('AndroidManifest.xml', b'\0' * 20)
+        archive.writestr(
+            'META-INF/LICENSE',
+            'Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/',
+        )
+
+    components = AndroidSystemScanner(MockFilesystem({}))._analyze_apk_data(
+        data.getvalue(),
+        '/system/app/Example/Example.apk',
+    )
+    application = next(c for c in components if c.component_type == 'application')
+
+    assert application.licenses == ['Apache-2.0']
+    assert {
+        'name': 'firmware:license:evidence',
+        'value': '/system/app/Example/Example.apk!/META-INF/LICENSE',
+    } in application.properties
+
+
 def test_android_scan_reconciles_database_candidates_before_cpe_synthesis(monkeypatch):
     calls = []
     native = Component(

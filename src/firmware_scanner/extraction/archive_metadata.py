@@ -3,7 +3,9 @@
 import re
 import zipfile
 import zlib
+import xml.etree.ElementTree as ET
 
+from ..android.notice_licenses import detect_license_text
 from .models import Component, ExtractionMethod, VersionConfidence
 
 _MAX_ENTRIES = 200_000
@@ -15,6 +17,9 @@ _MAX_VERSION_LENGTH = 128
 
 _MAVEN_METADATA_PATH = re.compile(
     r"^META-INF/maven/(?P<group>[A-Za-z0-9_.-]+)/(?P<artifact>[A-Za-z0-9_.-]+)/pom\.properties$"
+)
+_MAVEN_POM_XML_PATH = re.compile(
+    r"^META-INF/maven/(?P<group>[A-Za-z0-9_.-]+)/(?P<artifact>[A-Za-z0-9_.-]+)/pom\.xml$"
 )
 _ANDROIDX_VERSION_PATH = re.compile(
     r"^META-INF/(?P<coordinate>androidx\.[A-Za-z0-9.-]+_[A-Za-z0-9.-]+)\.version$"
@@ -37,7 +42,7 @@ def _valid_version(value: str) -> bool:
         bool(value)
         and len(value) <= _MAX_VERSION_LENGTH
         and _VERSION.fullmatch(value) is not None
-        and value.casefold() not in {'unknown', 'unspecified', 'none', 'null', 'detected', 'latest'}
+        and value.casefold() not in {"unknown", "unspecified", "none", "null", "detected", "latest"}
         and not value.startswith("${")
     )
 
@@ -78,9 +83,42 @@ def _parse_maven_properties(content: bytes) -> dict[str, str] | None:
     return values
 
 
+def _xml_text(element: ET.Element, name: str) -> str:
+    for child in element:
+        if child.tag.rsplit("}", 1)[-1] == name:
+            return (child.text or "").strip()
+    return ""
+
+
+def _parse_maven_pom_xml(content: bytes) -> tuple[str, str, str, list[str]] | None:
+    try:
+        root = ET.fromstring(content)
+    except (ET.ParseError, ValueError):
+        return None
+    group = _xml_text(root, "groupId")
+    artifact = _xml_text(root, "artifactId")
+    version = _xml_text(root, "version")
+    if not group or not artifact or not version:
+        return None
+    license_parts: list[str] = []
+    for element in root.iter():
+        if element.tag.rsplit("}", 1)[-1] != "license":
+            continue
+        license_parts.extend(
+            value for name in ("name", "url") if (value := _xml_text(element, name))
+        )
+    licenses = sorted(detect_license_text(" ".join(license_parts)))
+    return group, artifact, version, licenses
+
+
 def _component(
-    name: str, group: str, artifact: str, version: str, location: str,
-    entry_name: str, metadata_kind: str,
+    name: str,
+    group: str,
+    artifact: str,
+    version: str,
+    location: str,
+    entry_name: str,
+    metadata_kind: str,
 ) -> Component:
     evidence = f"{location}!/{entry_name} ({metadata_kind})"
     return Component(
@@ -94,17 +132,20 @@ def _component(
             {"name": "firmware:evidence:location", "value": f"{location}!/{entry_name}"},
             {"name": "firmware:evidence:container", "value": location},
         ],
-        versions=[VersionConfidence(
-            version=version,
-            confidence=0.98,
-            method=ExtractionMethod.MANIFEST_BINARY,
-            evidence=evidence,
-        )],
+        versions=[
+            VersionConfidence(
+                version=version,
+                confidence=0.98,
+                method=ExtractionMethod.MANIFEST_BINARY,
+                evidence=evidence,
+            )
+        ],
     )
 
 
-def extract_archive_metadata(archive: zipfile.ZipFile, location: str,
-                             warnings: list[str] | None = None) -> list[Component]:
+def extract_archive_metadata(
+    archive: zipfile.ZipFile, location: str, warnings: list[str] | None = None
+) -> list[Component]:
     """Extract Maven and AndroidX dependency versions from a ZIP/APK/JAR archive.
 
     Only complete, explicit metadata is accepted. Oversized, malformed, ambiguous,
@@ -119,33 +160,35 @@ def extract_archive_metadata(archive: zipfile.ZipFile, location: str,
 
     def warn(message):
         if warnings is not None:
-            warnings.append(f'{message}: {location}')
+            warnings.append(f"{message}: {location}")
 
     if len(infos) > _MAX_ENTRIES:
-        warn('Archive member-name scan budget reached')
+        warn("Archive member-name scan budget reached")
     metadata_count = metadata_bytes = 0
     for info in infos[:_MAX_ENTRIES]:
         name = info.filename
         maven_match = _MAVEN_METADATA_PATH.fullmatch(name)
+        pom_xml_match = _MAVEN_POM_XML_PATH.fullmatch(name)
         androidx_match = _ANDROIDX_VERSION_PATH.fullmatch(name)
-        if not maven_match and not androidx_match:
+        if not maven_match and not pom_xml_match and not androidx_match:
             continue
         if metadata_count >= _MAX_METADATA_ENTRIES:
-            warn('Archive dependency metadata scan budget reached')
+            warn("Archive dependency metadata scan budget reached")
             break
         metadata_count += 1
         if info.file_size > _MAX_METADATA_BYTES:
-            warn(f'Dependency metadata exceeds entry size limit {name}')
+            warn(f"Dependency metadata exceeds entry size limit {name}")
             continue
         if metadata_bytes + info.file_size > _MAX_TOTAL_METADATA_BYTES:
-            warn('Archive dependency metadata scan budget reached')
+            warn("Archive dependency metadata scan budget reached")
             break
         content = _read_entry(archive, info)
         if content is None:
-            warn(f'Cannot read bounded dependency metadata {name}')
+            warn(f"Cannot read bounded dependency metadata {name}")
             continue
         metadata_bytes += len(content)
 
+        licenses: list[str] = []
         if maven_match:
             path_group = maven_match.group("group")
             path_artifact = maven_match.group("artifact")
@@ -155,27 +198,52 @@ def extract_archive_metadata(archive: zipfile.ZipFile, location: str,
             group = props.get("groupId", "")
             artifact = props.get("artifactId", "")
             version = props.get("version", "")
-            if (group != path_group or artifact != path_artifact
-                    or not _valid_coordinate(group) or not _valid_coordinate(artifact)
-                    or not _valid_version(version)):
+            if (
+                group != path_group
+                or artifact != path_artifact
+                or not _valid_coordinate(group)
+                or not _valid_coordinate(artifact)
+                or not _valid_version(version)
+            ):
                 continue
             metadata_kind = "maven-pom-properties"
+        elif pom_xml_match:
+            path_group = pom_xml_match.group("group")
+            path_artifact = pom_xml_match.group("artifact")
+            parsed = _parse_maven_pom_xml(content)
+            if not parsed:
+                continue
+            group, artifact, version, licenses = parsed
+            if (
+                group != path_group
+                or artifact != path_artifact
+                or not _valid_coordinate(group)
+                or not _valid_coordinate(artifact)
+                or not _valid_version(version)
+            ):
+                continue
+            metadata_kind = "maven-pom-xml"
         else:
             # AndroidX filenames use androidx.<group>_<artifact>.version.
-            coordinate = androidx_match.group("coordinate")[len("androidx."):]
+            coordinate = androidx_match.group("coordinate")[len("androidx.") :]
             group_tail, artifact = coordinate.rsplit("_", 1)
             group = f"androidx.{group_tail}"
             try:
                 version = content.decode("ascii").strip()
             except UnicodeDecodeError:
                 continue
-            if (not group_tail or "_" in artifact or not _valid_coordinate(group)
-                    or not _valid_coordinate(artifact) or not _valid_version(version)):
+            if (
+                not group_tail
+                or "_" in artifact
+                or not _valid_coordinate(group)
+                or not _valid_coordinate(artifact)
+                or not _valid_version(version)
+            ):
                 continue
             metadata_kind = "androidx-version-file"
 
         key = f"{group}:{artifact}"
-        records.setdefault(key, []).append(_component(
+        component = _component(
             name=key,
             group=group,
             artifact=artifact,
@@ -183,17 +251,37 @@ def extract_archive_metadata(archive: zipfile.ZipFile, location: str,
             location=location,
             entry_name=name,
             metadata_kind=metadata_kind,
-        ))
+        )
+        if licenses:
+            component.licenses = licenses
+            component.properties.extend(
+                [
+                    {
+                        "name": "firmware:license:evidence",
+                        "value": f"{location}!/{name}",
+                    },
+                    {
+                        "name": "firmware:license:match-confidence",
+                        "value": "0.95",
+                    },
+                ]
+            )
+        records.setdefault(key, []).append(component)
 
     result: list[Component] = []
     for candidates in records.values():
         versions = {candidate.resolved_version for candidate in candidates}
         component = candidates[0]
+        component.licenses = sorted(
+            {license for candidate in candidates for license in candidate.licenses}
+        )
         if len(versions) != 1:
-            component.resolved_version = ''
-            component.purl = component.purl.rsplit('@', 1)[0]
+            component.resolved_version = ""
+            component.purl = component.purl.rsplit("@", 1)[0]
             component.versions = [item for candidate in candidates for item in candidate.versions]
-            component.properties.append({'name': 'firmware:version:conflict', 'value': ', '.join(sorted(versions))})
-            warn(f'Conflicting dependency versions for {component.name}')
+            component.properties.append(
+                {"name": "firmware:version:conflict", "value": ", ".join(sorted(versions))}
+            )
+            warn(f"Conflicting dependency versions for {component.name}")
         result.append(component)
     return result

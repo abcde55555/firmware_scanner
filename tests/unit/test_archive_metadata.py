@@ -31,6 +31,40 @@ def test_extracts_complete_maven_pom_properties_with_location_and_kind():
     assert {"name": "firmware:metadata_kind", "value": "maven-pom-properties"} in component.properties
 
 
+def test_extracts_maven_pom_xml_coordinate_version_and_license():
+    pom = """<?xml version="1.0" encoding="UTF-8"?>
+    <project>
+      <groupId>com.example</groupId>
+      <artifactId>widget</artifactId>
+      <version>2.4.1</version>
+      <licenses>
+        <license><name>Apache License, Version 2.0</name></license>
+      </licenses>
+    </project>
+    """
+    with _archive([
+        ("META-INF/maven/com.example/widget/pom.xml", pom),
+    ]) as archive:
+        components = extract_archive_metadata(archive, "/product/app/demo.apk")
+
+    assert len(components) == 1
+    component = components[0]
+    assert component.name == "com.example:widget"
+    assert component.resolved_version == "2.4.1"
+    assert component.licenses == ["Apache-2.0"]
+    assert {
+        "name": "firmware:metadata_kind",
+        "value": "maven-pom-xml",
+    } in component.properties
+    assert any(
+        prop["name"] == "firmware:license:evidence"
+        and prop["value"].endswith(
+            "/product/app/demo.apk!/META-INF/maven/com.example/widget/pom.xml"
+        )
+        for prop in component.properties
+    )
+
+
 def test_extracts_androidx_version_using_documented_group_artifact_filename():
     with _archive([("META-INF/androidx.core_core.version", "1.13.1\n")]) as archive:
         components = extract_archive_metadata(archive, "framework.jar")
