@@ -17,6 +17,7 @@ from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 _APEX_PATH_RE = re.compile(r"(/[^!\s]+\.(?:apex|capex))!")
 _APK_PATH_RE = re.compile(r"(/[^!\s]+\.apk)!")
 _NATIVE_MARKER = "native library"
+_EXECUTABLE_MARKER = "elf executable"
 
 
 def _normalise_notice_path(value: str) -> str:
@@ -490,7 +491,7 @@ def _parent_version(component: Component, package_versions: dict[str, str]) -> d
                 confidence=0.72,
                 method=ExtractionMethod.VERSION_ESTIMATE,
                 evidence=(
-                    f"Containing {parent_type.upper()} package version for native library "
+                    f"Containing {parent_type.upper()} package version for binary "
                     f"{component.name}; this is parent-package provenance"
                 ),
             )
@@ -509,7 +510,11 @@ def _parent_version(component: Component, package_versions: dict[str, str]) -> d
         _append_unique(
             component.properties,
             "firmware:version:scope",
-            "parent-package-not-upstream-library",
+            (
+                "parent-package-not-upstream-library"
+                if _NATIVE_MARKER in component.description.lower()
+                else "parent-package-not-upstream-component"
+            ),
         )
         _set_property(component, "firmware:version:resolution-state", "estimated-parent-package")
         return {
@@ -543,17 +548,21 @@ def apply_android_provenance(
     source_rows = []
     parent_rows = []
     for component in components:
-        if component.resolved_version or _NATIVE_MARKER not in component.description.lower():
+        description = component.description.lower()
+        is_library = _NATIVE_MARKER in description
+        is_executable = _EXECUTABLE_MARKER in description
+        if component.resolved_version or not (is_library or is_executable):
             continue
         labels = {
             label
             for location in _locations(component)
             for label in notice_attributions.get(location, ())
         }
-        row = _apply_source_revision(component, labels, manifest, source_project_rules)
-        if row is not None:
-            source_rows.append(row)
-            continue
+        if is_library:
+            row = _apply_source_revision(component, labels, manifest, source_project_rules)
+            if row is not None:
+                source_rows.append(row)
+                continue
         row = _parent_version(component, package_versions)
         if row is not None:
             parent_rows.append(row)
@@ -561,7 +570,8 @@ def apply_android_provenance(
     by_hash: dict[str, list[Component]] = defaultdict(list)
     for component in components:
         digest = _binary_sha256(component)
-        if digest and _NATIVE_MARKER in component.description.lower():
+        description = component.description.lower()
+        if digest and (_NATIVE_MARKER in description or _EXECUTABLE_MARKER in description):
             by_hash[digest].append(component)
     propagated_rows = []
     inherited_properties = {

@@ -1,10 +1,10 @@
-# Version evidence hardening and 0.11.0 revalidation
+# Version evidence hardening and 0.12.0 revalidation
 
 Date: 2026-11-20
 
 ## Result
 
-Version 0.11.0 hardens existing exact-version evidence without turning source
+Version 0.12.0 hardens existing exact-version evidence without turning source
 revisions or parent package versions into upstream releases.
 
 | Metric | Modern Android 16 | Allwinner Android 4.4 |
@@ -72,6 +72,25 @@ Examples:
   revision-pinned Rust monorepo.
 
 These components remain `estimated-source-revision`.
+
+## APEX executable parent provenance
+
+Contained APEX executables now receive the parent module version with the
+explicit `estimated-parent-package` state, matching the existing behavior for
+native libraries. These values are build provenance and are not queryable as
+upstream CVE versions.
+
+On Modern Android:
+
+- non-empty BOM versions increased from 1,134 to **1,173**;
+- unknown rows decreased from 440 to **403**;
+- parent-package applications increased by 39;
+- the frozen fixed-cohort metric increased conservatively from 744 to
+  **746/1,129**, because several APEX executables are not represented in that
+  older baseline.
+
+Two previously merged architecture copies of linker/linker64 became distinct
+rows after only the APEX-contained copy received its parent version.
 
 ## Reproducibility and version management
 

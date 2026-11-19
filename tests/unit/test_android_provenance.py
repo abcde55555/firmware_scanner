@@ -110,6 +110,49 @@ def test_unique_parent_apex_version_is_used_only_after_source_revision():
     } in library.properties
 
 
+def test_unique_parent_apex_version_is_scoped_to_contained_executables():
+    parent = Component(
+        name="com.example.module",
+        component_type="application",
+        resolved_version="360499999",
+        properties=[
+            {
+                "name": "firmware:evidence:location",
+                "value": "/system/apex/com.example.module.apex",
+            }
+        ],
+    )
+    executable = Component(
+        name="module_tool",
+        component_type="application",
+        resolved_version="",
+        description=(
+            "ELF executable at "
+            "/system/apex/com.example.module.apex!/apex_payload.img/bin/module_tool"
+        ),
+        versions=[VersionConfidence(version="", confidence=0.5)],
+        properties=[
+            {
+                "name": "firmware:evidence:location",
+                "value": ("/system/apex/com.example.module.apex!/apex_payload.img/bin/module_tool"),
+            }
+        ],
+    )
+
+    stats = apply_android_provenance([parent, executable])
+
+    assert stats["parent_package_versions_applied"] == 1
+    assert executable.resolved_version == "360499999"
+    assert {
+        "name": "firmware:version:scope",
+        "value": "parent-package-not-upstream-component",
+    } in executable.properties
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-parent-package",
+    } in executable.properties
+
+
 def test_conflicting_parent_versions_leave_library_unknown_and_not_vulnerability_scannable():
     parent_a = Component(
         name="a",

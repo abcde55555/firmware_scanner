@@ -1,22 +1,19 @@
-# Firmware Scanner 0.11.0 performance revalidation
+# Firmware Scanner 0.12.0 performance revalidation
 
 Date: 2026-11-20
 
 ## Result
 
-The optimization stack reduced the best observed Modern Android scan from
-**414.96 seconds to 283.62 seconds (31.7%)**. A final audit on the same
-functional result but a more memory-constrained host measured 371.60 seconds,
-still **10.5%** below the 0.10.0 baseline. The component set, fixed-cohort
-coverage and both database results remained identical in every run.
+The optimization stack reduced the final Modern Android scan from **414.96
+seconds to 267.58 seconds (35.5%)**. Intervening runs under host memory pressure
+ranged up to 371.60 seconds, still 10.5% below the 0.10.0 baseline.
 
 | Metric | 0.10.0 baseline | 0.11.0 |
 |---|---:|---:|
-| Modern scan time, final audit | 414.959 s | **371.596 s** |
-| Modern scan time, best observed | 414.959 s | **283.620 s** |
-| Modern peak RSS | 2,428,852 KiB | 2,419,128 KiB |
-| Components | 1,574 | 1,574 |
-| Fixed-cohort usable | 744/1,129 | 744/1,129 |
+| Modern scan time, final audit | 414.959 s | **267.581 s** |
+| Modern peak RSS | 2,428,852 KiB | 2,419,652 KiB |
+| Components | 1,574 | 1,576 |
+| Fixed-cohort usable | 744/1,129 | 746/1,129 |
 | Fixed-cohort exact | 225 | 225 |
 | BLint identity confirmations | 9 | 9 |
 | NSRL exact matches | 0 | 0 |
@@ -29,10 +26,9 @@ Allwinner remained behaviorally identical:
 - 4 BLint identity confirmations and 3 comparable reference disagreements;
 - zero NSRL matches.
 
-The final Allwinner audit took **116.52 seconds**, down from 128.63 seconds
-(9.4%). The optimization is material for both images, with larger variance on
-the Modern image because it reflects larger APEX/APK reads and host memory
-pressure.
+The final Allwinner audit took **110.60 seconds**, down from 128.63 seconds
+(14.0%). Modern timing still varies with host memory pressure because it
+reflects larger APEX/APK reads.
 
 ## Changes
 
@@ -68,9 +64,10 @@ SBOM metadata.
 
 ## Verification
 
-- Full Python suite: **696 passed, 39 skipped** before final artifact build.
-- Component identity, version and location sets: **zero delta** against 0.10.0.
-- Fixed-cohort result: **zero delta**.
+- Full Python suite: **697 passed, 39 skipped** before final artifact build.
+- Native-library identity and version sets: **zero delta** against 0.11.0.
+- Fixed-cohort result: **746/1,129**, with two additional parent-package
+  estimates and no exact-version change.
 - BLintDB and NSRL result dictionaries: **identical**.
 - CycloneDX 1.5/1.6 BOM and VEX schemas: **8/8 valid**.
 - Isolated wheel install: module and metadata versions both `0.11.0`.
