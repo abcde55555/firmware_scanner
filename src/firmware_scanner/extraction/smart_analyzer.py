@@ -439,11 +439,58 @@ class SmartSectionAnalyzer:
         - Each string ID is a 4-byte LE offset pointing to string data
         - String data: ULEB128 length prefix, then UTF-8 bytes
         """
-        strings = self._extract_dex_strings(data)
+        defined_classes = self._extract_dex_defined_classes(data)
+        if not defined_classes:
+            return []
+        strings = self._extract_dex_strings(data[:struct.unpack_from('<I', data, 0x20)[0]])
         if not strings:
             return []
 
-        return self._match_dex_strings(strings, name)
+        return self._match_dex_strings(strings, name, defined_classes)
+
+    def _extract_dex_defined_classes(self, data: bytes) -> list[str]:
+        """Read defined class descriptors; imported type names are not bundled code."""
+        if (len(data) < 0x70 or data[:4] != b'dex\n'
+                or data[4:8] not in (b'035\0', b'036\0', b'037\0', b'038\0', b'039\0', b'040\0')
+                or struct.unpack_from('<I', data, 0x28)[0] != 0x12345678):
+            return []
+        file_size = struct.unpack_from('<I', data, 0x20)[0]
+        if not 0x70 <= file_size <= len(data):
+            return []
+        data = data[:file_size]
+        string_count, string_offset, type_count, type_offset = struct.unpack_from('<4I', data, 0x38)
+        class_count, class_offset = struct.unpack_from('<2I', data, 0x60)
+        for count, offset, width in ((string_count, string_offset, 4),
+                                     (type_count, type_offset, 4), (class_count, class_offset, 32)):
+            if count > 1_000_000 or (count and (offset < 0x70 or offset + count * width > len(data))):
+                return []
+        if class_count > 65536 or type_count > 65536:
+            return []
+        result = set()
+        seen_types, seen_strings = set(), set()
+        for index in range(class_count):
+            type_index = struct.unpack_from('<I', data, class_offset + index * 32)[0]
+            if type_index >= type_count or type_index in seen_types:
+                continue
+            seen_types.add(type_index)
+            string_index = struct.unpack_from('<I', data, type_offset + type_index * 4)[0]
+            if string_index >= string_count or string_index in seen_strings:
+                continue
+            seen_strings.add(string_index)
+            offset = struct.unpack_from('<I', data, string_offset + string_index * 4)[0]
+            if offset >= len(data):
+                continue
+            length, consumed = self._read_uleb128(data, offset)
+            if not 0 < length <= 4096 or not 0 < consumed <= 5:
+                continue
+            start = offset + consumed
+            end = data.find(b'\0', start, min(len(data), start + 4097))
+            if end < 0:
+                continue
+            descriptor = data[start:end].decode('utf-8', errors='replace')
+            if descriptor.startswith('L') and descriptor.endswith(';'):
+                result.add(descriptor)
+        return sorted(result)
 
     def _extract_dex_strings(self, data: bytes) -> list[str]:
         """Extract all strings from a DEX file's string pool."""
@@ -522,43 +569,53 @@ class SmartSectionAnalyzer:
 
         return result, consumed
 
-    def _match_dex_strings(self, strings: list[str], section_name: str) -> list[Component]:
+    def _match_dex_strings(self, strings: list[str], section_name: str,
+                           defined_classes: list[str] | None = None) -> list[Component]:
         """Match DEX strings against known Android library packages."""
         found_components: dict[str, tuple[str, str, str, list[str]]] = {}
+        version_families: dict[str, set[str]] = {}
         # (key) -> (name, vendor, version_hint, evidence_strings)
 
-        for s in strings:
+        for s in strings if defined_classes is None else defined_classes:
             # Normalize: DEX type descriptors use 'L' prefix and '/' separators
             # e.g., "Lcom/squareup/okhttp3/OkHttpClient;"
-            check_str = s
-            if check_str.startswith('L'):
-                check_str = check_str[1:]
-            if check_str.endswith(';'):
-                check_str = check_str[:-1]
+            if not s.startswith('L') or not s.endswith(';'):
+                continue
+            check_str = s[1:-1]
 
             for prefix in _DEX_PACKAGE_PREFIXES_SORTED:
-                if check_str.startswith(prefix) or f"/{prefix}" in check_str:
+                if check_str.startswith(prefix.rstrip('/') + '/'):
                     comp_name, vendor, version_hint = DEX_PACKAGE_MAP[prefix]
                     key = comp_name.lower()
                     if key not in found_components:
                         found_components[key] = (comp_name, vendor, version_hint, [])
+                    if version_hint:
+                        version_families.setdefault(key, set()).add(version_hint)
                     found_components[key][3].append(s[:80])
                     break
 
         # Also search for version strings embedded in constants
-        version_strings: dict[str, str] = {}
-        version_re = re.compile(r"(\d+\.\d+(?:\.\d+)?(?:[-_.]\w+)?)")
+        version_strings: dict[str, set[str]] = {}
+        version_patterns = {
+            key: re.compile(r"^\s*" + re.escape(comp_name) +
+                            r"(?:\s+version\s*[:=]?\s*|[/ -])"
+                            r"(\d+\.\d+(?:\.\d+)?(?:[-_.]\w+)?)(?:\s|$)", re.IGNORECASE)
+            for key, (comp_name, _, _, _) in found_components.items()
+        }
         for s in strings:
-            for key, (comp_name, _, _, _) in found_components.items():
-                if comp_name.lower() in s.lower():
-                    m = version_re.search(s)
-                    if m and self._is_plausible_version(m.group(1)):
-                        version_strings[key] = m.group(1)
+            for key, pattern in version_patterns.items():
+                match = pattern.search(s)
+                if match and self._is_plausible_version(match.group(1)):
+                    version_strings.setdefault(key, set()).add(match.group(1))
 
         # Build Component objects
         components: list[Component] = []
         for key, (comp_name, vendor, version_hint, evidence) in found_components.items():
-            version = version_strings.get(key, version_hint)
+            candidates = version_strings.get(key, set())
+            families = version_families.get(key, set())
+            version = ('' if len(families) > 1 else
+                       next(iter(candidates)) if len(candidates) == 1 else
+                       next(iter(families)) if not candidates and len(families) == 1 else '')
             confidence = min(0.5 + len(evidence) * 0.05, 0.95)
             if version and version not in ("", "detected"):
                 confidence = min(confidence + 0.1, 0.95)
@@ -567,16 +624,25 @@ class SmartSectionAnalyzer:
                 name=comp_name,
                 vendor=vendor,
                 component_type="library",
-                resolved_version=version if version else "detected (version unknown)",
+                resolved_version=version,
                 versions=[VersionConfidence(
-                    version=version if version else "detected",
+                    version=version,
                     confidence=confidence,
                     method=ExtractionMethod.STRING_PATTERN,
-                    evidence=f"DEX packages in {section_name}: {', '.join(evidence[:3])}",
+                    evidence=(f"DEX defined classes in {section_name}: {', '.join(evidence[:3])}"
+                              + (f"; own release banner {version}" if version in candidates else
+                                 f"; namespace version family {version}" if version else '')),
                 )],
+                properties=[{'name': 'firmware:evidence:location', 'value': section_name}],
             )
             if version and not version.endswith('.x'):
-                comp.purl = f"pkg:maven/{comp_name.lower().replace(' ', '-')}@{version}"
+                comp.purl = f"pkg:generic/{comp_name.lower().replace(' ', '-')}@{version}"
+            if len(candidates) > 1:
+                comp.properties.append({'name': 'firmware:version:conflict',
+                                        'value': ', '.join(sorted(candidates))})
+            if families:
+                comp.properties.append({'name': 'firmware:version:families',
+                                        'value': ', '.join(sorted(families))})
             components.append(comp)
 
         return components

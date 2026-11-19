@@ -1,12 +1,12 @@
 """Vulnerability matcher - orchestrates component scanning against OSV."""
 
 import urllib.error
-from typing import Callable
+from collections.abc import Callable
 
 from ..extraction.models import Component
-from .models import ComponentVulnResult, VulnScanResult, Severity
+from .models import ComponentVulnResult, Severity, VulnScanResult
 from .osv_client import OSVClient
-from .threat_intel import is_cisa_kev, get_cisa_kev_info, get_epss_score, get_cnvd_cnnvd_ids
+from .threat_intel import get_cisa_kev_info, get_cnvd_cnnvd_ids, get_epss_score, is_cisa_kev
 
 
 # Maps firmware library names to upstream project names recognized by OSV
@@ -118,6 +118,13 @@ _INVALID_VERSIONS = {"detected", "unknown", "n/a", "boringssl", ""}
 
 def _is_scannable(component: Component) -> bool:
     """Check if a component has enough info for a meaningful vulnerability query."""
+    estimated_kind = next((
+        str(prop.get("value", ""))
+        for prop in component.properties
+        if prop.get("name") == "firmware:version:kind"
+    ), "")
+    if estimated_kind.startswith(("estimated-source-revision", "estimated-apex", "estimated-apk")):
+        return False
     ver = component.resolved_version.strip().lower()
     if not ver or ver in _INVALID_VERSIONS:
         return False

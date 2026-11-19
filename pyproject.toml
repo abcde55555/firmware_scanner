@@ -25,12 +25,15 @@ radare2 = ["r2pipe>=1.8.0"]
 ghidra = ["pyhidra>=1.0.0"]
 android = ["lz4>=4.0.0"]
 full = ["r2pipe>=1.8.0", "pyhidra>=1.0.0", "lz4>=4.0.0"]
+corpus = ["tree-sitter==0.26.1", "tree-sitter-rust==0.24.2"]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
     "pytest-cov>=4.0",
     "mypy>=1.5",
     "ruff>=0.1.0",
+    "tree-sitter==0.26.1",
+    "tree-sitter-rust==0.24.2",
 ]
 
 [project.scripts]

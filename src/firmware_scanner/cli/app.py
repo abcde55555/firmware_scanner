@@ -58,6 +58,12 @@ def analyze(
     android_max_apks: int = typer.Option(500, "--android-max-apks", help="Max APKs to scan in Android images"),
     android_max_libs: int = typer.Option(2000, "--android-max-libs", help="Max native libs to scan in Android images"),
     android_tools_dir: Optional[Path] = typer.Option(None, "--android-tools", help="Dir with Android image tools (simg2img, lpunpack)"),
+    android_source_manifest: Optional[Path] = typer.Option(
+        None,
+        "--android-source-manifest",
+        exists=True,
+        help="JSON provenance pack with image_sha256 and source projects",
+    ),
     max_size: int = typer.Option(4096, "--max-size", help="Max firmware file size in MB (default 4096)"),
     log_dir: Optional[Path] = typer.Option("./logs", "--log-dir", help="Scan telemetry log directory"),
     no_log: bool = typer.Option(False, "--no-log", help="Disable scan telemetry logging"),
@@ -86,6 +92,7 @@ def analyze(
         android_max_apks=android_max_apks,
         android_max_libs=android_max_libs,
         android_external_tools_dir=str(android_tools_dir) if android_tools_dir else "",
+        android_source_manifest=str(android_source_manifest) if android_source_manifest else "",
         max_file_size=max_size * 1024 * 1024,
     )
 
@@ -1375,12 +1382,19 @@ def _find_build_prop_in_raw(data: bytes) -> list:
 
 def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig, context: AnalysisContext) -> list:
     """Run Android-specific filesystem scanning when an Android system image is detected."""
+    import hashlib
     import struct
     from ..android.sparse import SparseImageParser
     from ..android.ext4_reader import Ext4Reader
     from ..android.erofs_reader import ErofsReader
     from ..android.yaffs2_reader import is_yaffs2_image, Yaffs2Reader
     from ..android.system_scanner import AndroidSystemScanner
+
+    source_manifest = None
+    if config.android_source_manifest:
+        import json
+        source_manifest = json.loads(Path(config.android_source_manifest).read_text())
+    image_sha256 = hashlib.sha256(data).hexdigest()
 
     raw_data = data
 
@@ -1405,10 +1419,12 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     reader,
                     max_apks=config.android_max_apks,
                     max_libs=config.android_max_libs,
+                    source_manifest=source_manifest,
+                    image_sha256=image_sha256,
                 )
                 result = scanner.scan()
+                _store_android_build_info(context, result)
                 if result.components:
-                    _store_android_build_info(context, result)
                     console.print(f"    ext4 scan: {result.apk_count} APKs, {result.lib_count} libs, {result.apex_count} APEX modules")
                     return result.components
                 else:
@@ -1426,10 +1442,12 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     reader,
                     max_apks=config.android_max_apks,
                     max_libs=config.android_max_libs,
+                    source_manifest=source_manifest,
+                    image_sha256=image_sha256,
                 )
                 result = scanner.scan()
+                _store_android_build_info(context, result)
                 if result.components:
-                    _store_android_build_info(context, result)
                     console.print(f"    EROFS scan: {result.apk_count} APKs, {result.lib_count} libs")
                     return result.components
                 else:
@@ -1447,10 +1465,12 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     reader,
                     max_apks=config.android_max_apks,
                     max_libs=config.android_max_libs,
+                    source_manifest=source_manifest,
+                    image_sha256=image_sha256,
                 )
                 result = scanner.scan()
+                _store_android_build_info(context, result)
                 if result.components:
-                    _store_android_build_info(context, result)
                     console.print(f"    YAFFS2 scan: {result.apk_count} APKs, {result.lib_count} libs")
                     return result.components
                 else:
@@ -1471,10 +1491,12 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                             reader,
                             max_apks=config.android_max_apks,
                             max_libs=config.android_max_libs,
+                            source_manifest=source_manifest,
+                            image_sha256=image_sha256,
                         )
                         result = scanner.scan()
+                        _store_android_build_info(context, result)
                         if result.components:
-                            _store_android_build_info(context, result)
                             console.print(f"    Found {len(result.components)} components in {section.name}")
                             components.extend(result.components)
                     except Exception:

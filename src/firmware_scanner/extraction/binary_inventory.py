@@ -1,4 +1,5 @@
 """Attribute binary evidence to a file or an independently identified embedded library."""
+import hashlib
 import json
 import re
 from collections import defaultdict
@@ -47,13 +48,18 @@ class BinaryInventory:
         self._static = StaticVersionExtractor()
         self._semantic = SemanticVersionExtractor()
         self._samples = BinarySampleMatcher()
+        from .rust_version_estimate import RustVersionEstimator
+        self._rust_estimator = RustVersionEstimator()
         self._deep = ELFDeepExtractor()
 
     def extract(self, data: bytes, filename: str, location: str,
                 component_type: str = 'library') -> list[Component]:
         if not data.startswith(b'\x7fELF'):
             return []
-        properties = [{'name': 'firmware:evidence:location', 'value': location}]
+        properties = [
+            {'name': 'firmware:evidence:location', 'value': location},
+            {'name': 'firmware:binary:sha256', 'value': hashlib.sha256(data).hexdigest()},
+        ]
         claims = []
         deep = self._deep.extract(filename, data)
         if deep:
@@ -159,6 +165,35 @@ class BinaryInventory:
                 host_key = 'openssl'
         host_claims = groups.pop(host_key, [])
         host = self._component(filename, component_type, location, host_claims, properties)
+        if not host.resolved_version and not any(
+                prop['name'] == 'firmware:version:conflict' for prop in host.properties):
+            from .filename_release import extract_filename_release
+            filename_release = extract_filename_release(filename)
+            if filename_release is not None:
+                identity, version, evidence = filename_release
+                host.resolved_version = version
+                host.purl += '@' + quote(version, safe='._-+')
+                host.versions.append(VersionConfidence(
+                    version=version, confidence=.85,
+                    method=ExtractionMethod.STRING_PATTERN, evidence=evidence))
+                host.properties.extend([
+                    {'name': 'firmware:version:kind', 'value': 'filename-release'},
+                    {'name': 'firmware:identity', 'value': identity},
+                ])
+        if not host.resolved_version and not any(
+                prop['name'] == 'firmware:version:conflict' for prop in host.properties):
+            estimate = self._rust_estimator.estimate(data, filename)
+            if estimate is not None:
+                host.resolved_version = estimate.version
+                host.purl += '@' + quote(estimate.version, safe='._-+')
+                host.versions.append(VersionConfidence(
+                    version=estimate.version, confidence=min(.85, estimate.support),
+                    method=ExtractionMethod.VERSION_ESTIMATE, evidence=estimate.evidence))
+                host.properties.extend([
+                    {'name': 'firmware:version:kind', 'value': estimate.kind},
+                    {'name': 'firmware:version:candidates', 'value': json.dumps(estimate.candidates)},
+                    {'name': 'firmware:rust:crate', 'value': estimate.crate},
+                ])
         components = [host]
         for key, matches in groups.items():
             # An unversioned defined-symbol set is still useful identity

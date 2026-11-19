@@ -4,18 +4,26 @@ Coordinates scanning an entire Android filesystem to identify all
 components (APKs, native libraries, executables) with their versions.
 """
 
+import gzip
+import io
+import json
+import re
+import xml.etree.ElementTree as ET
 import zipfile
 import zlib
-import io
-import re
+from contextlib import ExitStack
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
-from ..extraction.models import Component, VersionConfidence, ExtractionMethod
-from ..extraction.emba_rules import scan_binary_with_rules, get_rules
-from .axml import AXMLParser, AndroidManifestInfo
-from .build_prop import BuildPropParser, AndroidBuildInfo
+from ..extraction.models import Component, ExtractionMethod, VersionConfidence
+from .axml import AndroidManifestInfo, AXMLParser
+from .build_prop import AndroidBuildInfo, BuildPropParser
+from .provenance import (
+    apply_android_provenance,
+    parse_notice_attributions,
+    source_manifest_matches_image,
+)
 
 
 class FilesystemReader(Protocol):
@@ -37,6 +45,7 @@ class AndroidScanResult:
     lib_count: int = 0
     bin_count: int = 0
     apex_count: int = 0
+    provenance_stats: dict = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
 
@@ -115,9 +124,22 @@ BUILD_PROP_PATHS = [
     "/default.prop",
 ]
 
+NOTICE_PATHS = [
+    "/system/etc/NOTICE.xml.gz",
+    "/product/etc/NOTICE.xml.gz",
+    "/vendor/etc/NOTICE.xml.gz",
+    "/system_ext/etc/NOTICE.xml.gz",
+    "/vendor/etc/NOTICE.xml",
+    "/system/etc/NOTICE.xml",
+]
+
 
 class AndroidSystemScanner:
     """Orchestrates scanning of an extracted Android filesystem."""
+
+    _MAX_DEX_SIZE = 64 * 1024 * 1024
+    _MAX_TOTAL_DEX_SIZE = 256 * 1024 * 1024
+    _MAX_DEX_ENTRIES = 64
 
     def __init__(
         self,
@@ -125,16 +147,32 @@ class AndroidSystemScanner:
         max_apks: int = 500,
         max_libs: int = 2000,
         max_bins: int = 1000,
+        source_manifest: dict | None = None,
+        image_sha256: str | None = None,
     ):
         self._fs = fs_reader
         self._max_apks = max_apks
         self._max_libs = max_libs
         self._max_bins = max_bins
+        self._source_manifest_error = ""
+        if source_manifest is not None and not source_manifest_matches_image(
+            source_manifest, image_sha256
+        ):
+            self._source_manifest = None
+            self._source_manifest_error = (
+                "Explicit Android source manifest lacks the scanned image SHA-256 or "
+                "does not match it; source revisions were not applied"
+            )
+        else:
+            self._source_manifest = (
+                source_manifest or self._registered_source_manifest(image_sha256)
+            )
+        self._source_project_rules = self._load_source_project_rules()
         self._axml_parser = AXMLParser()
         self._build_prop_parser = BuildPropParser()
 
-        from ..extraction.cbom import CBOMScanner, DiscoveredCryptoAsset
         from ..extraction.aibom import AIBOMScanner, DiscoveredAIModel, DiscoveredAIRuntime
+        from ..extraction.cbom import CBOMScanner, DiscoveredCryptoAsset
         self._cbom_scanner = CBOMScanner()
         self._aibom_scanner = AIBOMScanner()
         self._crypto_assets_map: dict[str, DiscoveredCryptoAsset] = {}
@@ -152,6 +190,8 @@ class AndroidSystemScanner:
 
         # 1. Parse build.prop for system-level metadata
         result.build_info = self._scan_build_props()
+        if self._source_manifest_error:
+            result.warnings.append(self._source_manifest_error)
         result.components.extend(
             self._build_prop_parser.to_components(result.build_info)
         )
@@ -204,6 +244,7 @@ class AndroidSystemScanner:
 
         # 8. Apply AOSP baseline metadata annotation
         self._apply_os_version_fallback(result)
+        result.provenance_stats = self._apply_android_provenance(result)
 
         # 9. Cryptographic Bill of Materials (CBOM)
         if self._crypto_assets_map:
@@ -230,6 +271,12 @@ class AndroidSystemScanner:
             if c.resolved_version and not c.cpe:
                 # Do not synthesize third-party upstream CPEs for AOSP OS fallback versions!
                 if any(v.method == ExtractionMethod.BUILD_METADATA for v in c.versions):
+                    continue
+                if any(
+                    prop.get("name") == "firmware:version:kind"
+                    and str(prop.get("value", "")).startswith("estimated-")
+                    for prop in c.properties
+                ):
                     continue
                 cpe_str = synthesize_cpe(c.name, c.resolved_version)
                 if cpe_str:
@@ -281,6 +328,62 @@ class AndroidSystemScanner:
                 prop = {"name": f"firmware:android:{name}", "value": str(value)}
                 if value and prop not in comp.properties:
                     comp.properties.append(prop)
+
+    def _apply_android_provenance(self, result: AndroidScanResult) -> dict:
+        """Attach image-local NOTICE/source provenance and parent package versions."""
+        attributions: dict[str, set[str]] = {}
+        for path in NOTICE_PATHS:
+            data = self._fs.read_file(path, max_size=16 * 1024 * 1024)
+            if not data:
+                continue
+            try:
+                if data.startswith(b"\x1f\x8b"):
+                    data = gzip.GzipFile(fileobj=io.BytesIO(data)).read(16 * 1024 * 1024 + 1)
+                if len(data) > 16 * 1024 * 1024:
+                    raise ValueError("decompressed NOTICE exceeds 16 MiB")
+                for location, labels in parse_notice_attributions(data).items():
+                    attributions.setdefault(location, set()).update(labels)
+            except (OSError, ValueError, EOFError, ET.ParseError) as exc:
+                self._coverage_warnings.add(
+                    f"Cannot parse Android NOTICE attribution {path}: {type(exc).__name__}: {exc}"
+                )
+        return apply_android_provenance(
+            result.components,
+            notice_attributions=attributions,
+            source_manifest=self._source_manifest,
+            source_project_rules=self._source_project_rules,
+        )
+
+    @staticmethod
+    def _registered_source_manifest(image_sha256: str | None) -> dict | None:
+        """Select an exact image-hash-matched source manifest from the rule pack."""
+        if not image_sha256:
+            return None
+        root = Path(__file__).resolve().parents[1] / "data" / "provenance"
+        if not root.is_dir():
+            return None
+        for path in sorted(root.glob("*.json")):
+            try:
+                manifest = json.loads(path.read_text())
+            except (OSError, ValueError, TypeError):
+                continue
+            if str(manifest.get("image_sha256", "")).casefold() == image_sha256.casefold():
+                return manifest
+        return None
+
+    @staticmethod
+    def _load_source_project_rules() -> list[dict]:
+        path = (
+            Path(__file__).resolve().parents[1]
+            / "data"
+            / "provenance"
+            / "android_source_project_rules.json"
+        )
+        try:
+            rules = json.loads(path.read_text()).get("rules", [])
+        except (OSError, ValueError, TypeError):
+            return []
+        return [rule for rule in rules if isinstance(rule, dict)]
 
     def _extract_embedded_maven_libs(self, zf: zipfile.ZipFile, origin_path: str) -> list[Component]:
         """Read bounded, explicitly attributed dependency declarations."""
@@ -437,6 +540,10 @@ class AndroidSystemScanner:
                 component_type="application",
                 resolved_version="",
                 description=f"APK at {apk_path} (unreadable)",
+                properties=[{
+                    "name": "firmware:evidence:location",
+                    "value": apk_path,
+                }],
                 versions=[VersionConfidence(
                     version="",
                     confidence=0.45,
@@ -478,7 +585,97 @@ class AndroidSystemScanner:
             manifest_info = self._extract_manifest_from_raw(raw_data)
         embedded_libs = self._extract_embedded_maven_libs(archive, apk_path)
         embedded_libs.extend(self._extract_embedded_native_libs(archive, apk_path))
+        embedded_libs.extend(self._extract_embedded_dex_components(archive, apk_path))
         return self._components_from_apk_manifest(manifest_info, apk_path, embedded_libs)
+
+    def _extract_embedded_dex_components(self, archive, origin):
+        """Analyze root multidex entries with per-entry and aggregate size bounds."""
+        dex_entries = []
+        for entry in archive.infolist():
+            match = re.fullmatch(r"classes([2-9]|[1-9][0-9]{1,5})?\.dex", entry.filename)
+            if match:
+                dex_index = int(match.group(1) or "1")
+                dex_entries.append((dex_index, entry.filename, entry))
+        dex_entries.sort(key=lambda item: (item[0], item[1]))
+
+        if len(dex_entries) > self._MAX_DEX_ENTRIES:
+            self._coverage_warnings.add(
+                f"DEX entry count exceeds {self._MAX_DEX_ENTRIES}: {origin}; remaining DEX files were skipped"
+            )
+
+        from ..extraction.smart_analyzer import SmartSectionAnalyzer
+
+        analyzer = SmartSectionAnalyzer()
+        components = []
+        total_size = 0
+        for _, entry_name, entry in dex_entries[:self._MAX_DEX_ENTRIES]:
+            path = f"{origin}!/{entry_name}"
+            remaining = self._MAX_TOTAL_DEX_SIZE - total_size
+            if entry.file_size > self._MAX_DEX_SIZE:
+                self._coverage_warnings.add(
+                    f"DEX entry exceeds {self._MAX_DEX_SIZE // (1024 * 1024)} MiB limit: {path}"
+                )
+                continue
+            if entry.file_size > remaining:
+                self._coverage_warnings.add(
+                    f"DEX total decompression budget exceeded: {path}"
+                )
+                continue
+
+            # Reserve the member's entire budget before reading: a CRC error
+            # may occur after decompression without returning the final bytes.
+            total_size += entry.file_size
+            try:
+                with archive.open(entry) as stream:
+                    data = bytearray()
+                    while len(data) <= entry.file_size:
+                        chunk = stream.read(min(1024 * 1024, entry.file_size + 1 - len(data)))
+                        if not chunk:
+                            break
+                        data.extend(chunk)
+                if len(data) != entry.file_size:
+                    self._coverage_warnings.add(f"Cannot completely read DEX entry: {path}")
+                    continue
+                if data[:4] != b"dex\n":
+                    self._coverage_warnings.add(f"Invalid DEX entry: {path}")
+                    continue
+                if data[4:8] not in (b'035\0', b'036\0', b'037\0', b'038\0', b'039\0', b'040\0'):
+                    self._coverage_warnings.add(f"Unsupported DEX format version: {path}")
+                    continue
+                found = analyzer.analyze_section(path, bytes(data))
+                self._merge_dex_components(components, found)
+            except Exception as error:  # noqa: BLE001 - isolate failures to this archive member
+                self._coverage_warnings.add(
+                    f"Cannot analyze DEX entry: {path}: {type(error).__name__}"
+                )
+        return components
+
+    @staticmethod
+    def _merge_dex_components(target, discovered):
+        """Merge repeated DEX findings while retaining distinct location evidence."""
+        by_identity = {
+            (component.name, component.component_type, component.resolved_version, component.purl): component
+            for component in target
+        }
+        for component in discovered:
+            identity = (component.name, component.component_type, component.resolved_version, component.purl)
+            existing = by_identity.get(identity)
+            if existing is None:
+                target.append(component)
+                by_identity[identity] = component
+                continue
+            existing_evidence = {
+                (version.version, version.method, version.evidence)
+                for version in existing.versions
+            }
+            for version in component.versions:
+                evidence = (version.version, version.method, version.evidence)
+                if evidence not in existing_evidence:
+                    existing.versions.append(version)
+                    existing_evidence.add(evidence)
+            for prop in component.properties:
+                if prop not in existing.properties:
+                    existing.properties.append(prop)
 
     def _components_from_apk_manifest(self, manifest_info, apk_path, embedded_libs):
         if not manifest_info or not manifest_info.package_name:
@@ -525,6 +722,10 @@ class AndroidSystemScanner:
             )],
             purl=f"pkg:apk/{manifest_info.package_name}@{version}" if version else f"pkg:apk/{manifest_info.package_name}",
             description="; ".join(desc_parts),
+            properties=[{
+                "name": "firmware:evidence:location",
+                "value": apk_path,
+            }],
         )
 
         return [apk_comp] + embedded_libs
@@ -880,51 +1081,47 @@ class AndroidSystemScanner:
                     continue
 
                 full_path = f"{dir_path.rstrip('/')}/{entry.name}"
-                jar_data = self._fs.read_file(full_path, max_size=16 * 1024 * 1024)
-                if not jar_data or jar_data[:2] != b'PK':
-                    continue
-
-                # Create component from JAR/APK name
-                jar_name = entry.name.rsplit('.', 1)[0]
-                jar_ver = ""
-                m_aidl_jar = re.search(r'-V(\d+(?:\.\d+)?)(?:-java)?$', jar_name)
-                if m_aidl_jar:
-                    jar_ver = f"V{m_aidl_jar.group(1)}"
-
-                components.append(Component(
-                    name=f"framework/{jar_name}",
-                    component_type="framework",
-                    resolved_version=jar_ver,
-                    purl=f"pkg:generic/framework/{jar_name}@{jar_ver}" if jar_ver else "",
-                    description=f"Framework JAR at {full_path}",
-                    versions=[VersionConfidence(
-                        version=jar_ver,
-                        confidence=0.90 if jar_ver else 0.60,
-                        method=ExtractionMethod.MANIFEST_BINARY if jar_ver else ExtractionMethod.STRING_PATTERN,
-                        evidence=f"Framework interface {jar_ver}" if jar_ver else f"Framework JAR at {full_path}",
-                    )],
-                ))
-
-                # Extract embedded Maven libraries and DEX components
                 try:
-                    zf = zipfile.ZipFile(io.BytesIO(jar_data))
-                    embedded_libs = self._extract_embedded_maven_libs(zf, full_path)
-                    components.extend(embedded_libs)
-
-                    for name in zf.namelist():
-                        if name.endswith('.dex'):
-                            dex_data = zf.read(name)
-                            if dex_data and dex_data[:4] == b'dex\n':
-                                from ..extraction.smart_analyzer import SmartSectionAnalyzer
-                                analyzer = SmartSectionAnalyzer()
-                                dex_components = analyzer.analyze_section(
-                                    f"{full_path}/{name}", dex_data
-                                )
-                                components.extend(dex_components)
-                            break  # Only first DEX
-                    zf.close()
-                except Exception:
-                    pass
+                    with ExitStack() as stack:
+                        if callable(getattr(self._fs, 'read_file_range', None)):
+                            from .archive_reader import FilesystemFile
+                            handle = stack.enter_context(FilesystemFile(self._fs, full_path))
+                        else:
+                            limit = 128 * 1024 * 1024
+                            if (callable(getattr(self._fs, 'file_size', None))
+                                    and self._fs.file_size(full_path) > limit):
+                                self._coverage_warnings.add(
+                                    f'Framework archive exceeds 128 MiB fallback limit: {full_path}')
+                                continue
+                            jar_data = self._fs.read_file(full_path, max_size=limit)
+                            if not jar_data or jar_data[:2] != b'PK':
+                                continue
+                            handle = stack.enter_context(io.BytesIO(jar_data))
+                        zf = stack.enter_context(zipfile.ZipFile(handle))
+                        jar_name = entry.name.rsplit('.', 1)[0]
+                        match = re.search(r'-V(\d+(?:\.\d+)?)(?:-java)?$', jar_name)
+                        jar_ver = f'V{match.group(1)}' if match else ''
+                        components.append(Component(
+                            name=f"framework/{jar_name}",
+                            component_type="framework",
+                            resolved_version=jar_ver,
+                            purl=f"pkg:generic/framework/{jar_name}@{jar_ver}" if jar_ver else "",
+                            description=f"Framework JAR at {full_path}",
+                            versions=[VersionConfidence(
+                                version=jar_ver,
+                                confidence=0.90 if jar_ver else 0.60,
+                                method=(ExtractionMethod.MANIFEST_BINARY if jar_ver
+                                        else ExtractionMethod.STRING_PATTERN),
+                                evidence=(f"Framework interface {jar_ver}" if jar_ver
+                                          else f"Framework JAR at {full_path}"),
+                            )],
+                        ))
+                        components.extend(self._extract_embedded_maven_libs(zf, full_path))
+                        components.extend(self._extract_embedded_dex_components(zf, full_path))
+                except (OSError, ValueError, RuntimeError, zipfile.BadZipFile, zlib.error, EOFError) as error:
+                    self._coverage_warnings.add(
+                        f"Cannot scan framework archive: {full_path}: {type(error).__name__}"
+                    )
 
         return components
 

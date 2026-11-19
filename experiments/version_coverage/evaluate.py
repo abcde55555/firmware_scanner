@@ -15,7 +15,8 @@ from typing import Any
 _LOCATION_RE = re.compile(r"(?<![A-Za-z0-9:/])/(?!/)(?:[^\s\"'<>;,|]+)")
 _URL_RE = re.compile(r"https?://[^\s\"'<>;,|]+", re.IGNORECASE)
 _SOURCE_FILE_RE = re.compile(r"\b(?:build\.prop|AndroidManifest\.xml)\b", re.IGNORECASE)
-_UNKNOWN = {"", "unknown", "n/a", "na", "none", "null", "unavailable", "unanalysed", "unanalyzed"}
+_UNKNOWN = {"", "unknown", "n/a", "na", "none", "null", "unavailable", "unanalysed", "unanalyzed",
+            "detected", "detected (version unknown)"}
 _CONFLICT = {"conflict", "ambiguous", "multiple", "various"}
 _RANGE_RE = re.compile(
     r"(?:>=|<=|>|<|~|\^|\*|\|\||\bto\b|\s[-–—]\s|\d\s*,\s*\d|"
@@ -143,6 +144,37 @@ def _version_kind(value: str) -> str:
     return "exact"
 
 
+def _output_kind(record: dict[str, Any]) -> str:
+    """A single selected estimate is usable without becoming an observed release."""
+    value = _version(record)
+    kind = _version_kind(value)
+    if kind != "exact":
+        return kind
+    properties = record.get("properties", [])
+    if isinstance(properties, list) and any(
+        isinstance(prop, dict) and prop.get("name") == "firmware:version:kind"
+        and prop.get("value") == "estimated-release" for prop in properties
+    ):
+        return "estimated"
+    versions = record.get("versions", [])
+    if isinstance(versions, list) and any(
+        isinstance(item, dict) and item.get("method") == "version_estimate"
+        and item.get("version") == value for item in versions
+    ):
+        return "estimated"
+    return kind
+
+
+def _adjacent_estimate(record: dict[str, Any], expected: str | None) -> bool:
+    if expected is None or _output_kind(record) != "estimated":
+        return False
+    values = [_version(record), expected]
+    if not all(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", value) for value in values):
+        return False
+    actual, target = [tuple(map(int, value.split("."))) for value in values]
+    return actual[:2] == target[:2] and abs(actual[2] - target[2]) == 1
+
+
 def _native(record: dict[str, Any]) -> bool:
     return (
         record.get("component_type") == "library"
@@ -175,7 +207,8 @@ def _deduplicate(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if len(claims) == 1 and not has_conflict_marker:
             claim = next(iter(claims))
             # Keep an exact/range claim when all remaining copies are unknown or agree.
-            source = next(record for record in copies if _version(record) == claim)
+            agreeing = [record for record in copies if _version(record) == claim]
+            source = next((record for record in agreeing if _output_kind(record) == "exact"), agreeing[0])
             unique.append(dict(source))
         elif not claims and not has_conflict_marker:
             unique.append(dict(copies[0]))
@@ -213,15 +246,17 @@ def _match(baseline: list[dict[str, Any]], current: list[dict[str, Any]]) -> dic
 
 def _metrics(indices: list[int], baseline: list[dict[str, Any]], current: list[dict[str, Any]],
              matches: dict[int, int], verified_by_index: dict[int, str]) -> dict[str, Any]:
-    exact = unknown = ranges = independently_verified = correct = errors = 0
+    exact = estimated = unknown = ranges = independently_verified = correct = errors = adjacent = 0
     for bi in indices:
         ci = matches.get(bi)
         if ci is None:
             continue
         output_version = _version(current[ci])
-        kind = _version_kind(output_version)
+        kind = _output_kind(current[ci])
         if kind == "exact":
             exact += 1
+        elif kind == "estimated":
+            estimated += 1
         elif kind == "range":
             ranges += 1
         else:
@@ -229,10 +264,11 @@ def _metrics(indices: list[int], baseline: list[dict[str, Any]], current: list[d
         expected = verified_by_index.get(bi)
         if expected is not None:
             independently_verified += 1
-            if kind == "exact" and output_version == expected:
+            if kind in ("exact", "estimated") and output_version == expected:
                 correct += 1
-            elif kind == "exact":
+            elif kind in ("exact", "estimated"):
                 errors += 1
+            adjacent += _adjacent_estimate(current[ci], expected)
     denominator = len(indices)
     ratio = correct / denominator if denominator else 0.0
     return {
@@ -240,11 +276,18 @@ def _metrics(indices: list[int], baseline: list[dict[str, Any]], current: list[d
         "matched": sum(index in matches for index in indices),
         "uncovered": denominator - sum(index in matches for index in indices),
         "exact_versions": exact,
+        "estimated_versions": estimated,
+        "usable_versions": exact + estimated,
+        "usable_coverage": (exact + estimated) / denominator if denominator else 0.0,
+        "usable_target_50_percent": ("NOT_APPLICABLE" if not denominator else
+                                     "MET" if (exact + estimated) / denominator >= .5 else "NOT_MET"),
         "unknown": unknown,
         "ranges": ranges,
         "independently_verified": independently_verified,
         "correct": correct,
         "errors": errors,
+        "adjacent_estimates": adjacent,
+        "accepted_verified": correct + adjacent,
         "correct_coverage": ratio,
         "target_50_percent": "NOT_APPLICABLE" if not denominator else ("MET" if ratio >= 0.5 else "NOT_MET"),
     }
@@ -289,7 +332,7 @@ def evaluate(baseline: list[dict], current: list[dict], verified: dict) -> dict:
         ci = matches.get(bi)
         output = current[ci] if ci is not None else None
         output_version = _version(output) if output is not None else ""
-        kind = _version_kind(output_version) if output is not None else "unknown"
+        kind = _output_kind(output) if output is not None else "unknown"
         expected = verified_by_index.get(bi)
         observations.append({
             "observation_key": observation_key(record),
@@ -300,8 +343,9 @@ def evaluate(baseline: list[dict], current: list[dict], verified: dict) -> dict:
             "version": output_version if output is not None else None,
             "version_kind": kind if output is not None else None,
             "verified_version": expected,
-            "correct": expected is not None and kind == "exact" and output_version == expected,
-            "error": expected is not None and kind == "exact" and output_version != expected,
+            "correct": expected is not None and kind in ("exact", "estimated") and output_version == expected,
+            "error": expected is not None and kind in ("exact", "estimated") and output_version != expected,
+            "adjacent_estimate": output is not None and _adjacent_estimate(output, expected),
         })
 
     matched_current = set(matches.values())

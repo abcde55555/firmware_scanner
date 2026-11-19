@@ -17,9 +17,17 @@ from pathlib import Path
 
 def read_signatures(path):
     root = ET.parse(path).getroot()
-    executable = root.find('.//exe')
+    # Ghidra also serializes imported-function executables (often "unknown").
+    # Their order is unspecified; only the basename's own MD5 may contribute.
+    md5 = Path(path).name.removeprefix('sigs_')
+    owners = [item for item in root.findall('./execlist')
+              if item.findtext('./exe/md5') == md5]
+    if len(owners) != 1:
+        raise ValueError('Expected exactly one owning executable for signature file')
+    owner = owners[0]
+    executable = owner.find('./exe')
     vectors = []
-    for function in root.findall('.//fdesc'):
+    for function in owner.findall('./fdesc'):
         features = tuple(sorted((int(item.text, 0), int(item.get('tf', '1')))
                                 for item in function.findall('./lshcosine/hash')))
         if len(features) >= 10:

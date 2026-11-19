@@ -31,12 +31,65 @@ ext4 system partition and records the original image hash; it does not scan the
 other IMAGEWTY partitions.
 
 The evaluator keeps every baseline row, including missing or reclassified rows.
-`exact_versions` is a populated-field count, not an accuracy measurement. The 50%
-gate uses independently established expected versions passed with `--verified`:
+`exact_versions` counts single observed claims; `estimated_versions` counts single
+selected estimates with an estimate marker. Neither is an accuracy measurement.
+`usable_versions` and `usable_coverage` include both; `usable_target_50_percent`
+tests the requested output-coverage target. The separate accuracy gate named
+`target_50_percent` uses independently established expected versions passed with `--verified`:
 a JSON object mapping `observation_key(baseline_record)` to an exact version.
 An omitted verification map means unverified, not that every output is wrong.
 Native rows are libraries described as native libraries, not names containing
-`.so`. Range/candidate claims do not pass the exact-version gate.
+`.so`. Range/candidate-only claims and text such as `detected (version unknown)`
+do not pass either coverage gate. `adjacent_estimates` counts verified differences
+of one numeric patch within the same major/minor line; these remain strict errors
+and are separately included in `accepted_verified` under the user's tolerance.
+
+## Rust estimated releases and DEX inventory
+
+The runtime reads the bundled `data/rust_version_positions.json`; no network,
+Rust compiler or tree-sitter dependency is required during firmware scans. The
+ELF64 x86-64 decoder requires owned crate paths, relocations, code references and
+bounded core-panic argument context. At least three distinct owned coordinates
+must support a reference. A selected release is marked `estimated-release`, with
+candidate releases, source/archive hashes and its selection rule. A source pin
+only breaks ties inside the matching candidates; it is not binary source proof.
+Observed release claims and explicit conflicts are preserved.
+
+Offline corpus work needs the `corpus` extra (also included in `dev`). The AST
+builder rechecks each registry archive and source member without extracting it
+to an uncontrolled location. It records parser versions and a native grammar
+hash. Recovered nodes outside syntax-error regions may contribute; parse errors
+remain in the index. Generated source positions are reference features, not proof
+that all compiler panic sites have the same AST coordinates.
+
+```sh
+PYTHONPATH=src python experiments/version_coverage/build_rust_ast_index.py \
+  --collect --batch-size 10 --total-budget-mib 256
+
+PYTHONPATH=src python experiments/version_coverage/build_rust_position_index.py \
+  reports/version-corpus-20261118/rust-sources/corpus.json \
+  reports/version-corpus-20261118/rebuilt-rust-positions.json \
+  reports/version-corpus-20261118/rust-reference-builds-1/builds.json \
+  reports/version-corpus-20261118/rust-reference-builds-2/builds.json \
+  reports/version-corpus-20261118/rust-reference-builds-ryu-wrapper/builds.json \
+  reports/version-corpus-20261118/rust-reference-builds-3/builds.json \
+  --ast-index reports/version-corpus-20261118/rust-ast-index.json
+```
+
+The current index contains 36 crate families, 169 nonempty releases and 38,369
+source/compiled sites. Four empty AST release entries were excluded. These counts
+describe reference coverage, not target firmware accuracy or a 50% result.
+
+APK and framework ZIP paths scan all supported root `classes*.dex` members, up to
+64 members, 64 MiB per DEX and 256 MiB total decompression per archive. Framework
+JARs use random reads when supported. DEX library inventory uses `class_defs`,
+not merely referenced types; this follows the [official DEX layout](https://source.android.com/docs/core/runtime/dex-format).
+DEX 041 containers and reverse-endian DEX are not currently parsed. Unknown
+versions stay empty; namespaces do not supply a numeric release. OkHttp's
+[`okhttp3`](https://raw.githubusercontent.com/square/okhttp/parent-4.12.0/okhttp/src/main/kotlin/okhttp3/OkHttpClient.kt)
+and Retrofit's [`retrofit2`](https://raw.githubusercontent.com/square/retrofit/2.11.0/retrofit/src/main/java/retrofit2/Retrofit.java)
+namespaces are included. Only anchored own-product release banners can supply
+DEX versions; unrelated diagnostic numbers are ignored.
 
 ## Independent checker candidate scout
 
@@ -176,3 +229,70 @@ declared identifier, independently of source-manifest and NOTICE labels. The two
 real semantic controls use `FIRMWARE_SYSTEM_IMAGE` (or `FREETYPE_SYSTEM_IMAGE`) to
 read the original ext4 image and assert fixed ELF hashes, avoiding a mounted-file
 dependency.
+
+## Existing binary databases
+
+`blint_db_probe.py` downloads the pinned ARM64 BLintDB OCI layer, verifies its
+digest without loading it into RAM, and queries direct ELF observations. The OCI
+media type says `+tar`, but the authenticated payload is raw SQLite.
+
+```sh
+PYTHONPATH=src python experiments/version_coverage/blint_db_probe.py \
+  --download-db \
+  --output reports/existing-databases-20261119/blintdb-probe.json
+```
+
+The raw result retains every symbol candidate. `analyze_blintdb.py` applies
+defined-symbol filtering, low-information symbol suppression, target coverage,
+Blint's binary-name gates, and Conan deploy-path parsing:
+
+```sh
+PYTHONPATH=src python experiments/version_coverage/analyze_blintdb.py \
+  reports/existing-databases-20261119/blintdb-probe.json \
+  --database reports/existing-databases-20261119/blint.db \
+  --output reports/existing-databases-20261119/blintdb-gated.json
+```
+
+Raw candidates and reference-build versions never enter the product version
+field without independent artifact evidence.
+
+`nsrl_db_probe.py` performs exact SHA-256 plus size membership checks against an
+NSRL RDSv3 SQLite database. Delta ZIP support reads literal FILE/PKG records,
+proves the accepted SQL operation set, and runs a positive query control:
+
+```sh
+PYTHONPATH=src python experiments/version_coverage/nsrl_db_probe.py \
+  reports/existing-databases-20261119/nsrl/android_minimal.db \
+  --observations allwinner=reports/version-corpus-20261118/scan/allwinner/file-observations.json \
+  --observations system=reports/version-corpus-20261118/scan/system/file-observations.json \
+  --delta reports/existing-databases-20261119/nsrl/RDS_2026.06.1_android_minimal_delta.zip \
+  --delta reports/existing-databases-20261119/nsrl/RDS_2026.09.1_android_minimal_delta.zip \
+  --output reports/existing-databases-20261119/nsrl-probe.json
+```
+
+`PKG.version` is a distribution version and is not promoted to an upstream
+native-library release.
+
+## Android source and parent provenance
+
+The production Android scanner now parses image-local NOTICE mappings and applies
+source revisions only from an image-SHA-256-matched manifest. It also records
+APEX/APK parent versions and propagates provenance across byte-identical ELF
+copies by SHA-256. `provenance.py` keeps these values explicitly marked as
+estimates; they are excluded from CPE synthesis and OSV queries.
+
+The exact-image Waydroid source pack and HAL namespace rules are in
+`src/firmware_scanner/data/provenance/`. To evaluate a completed scan against the
+frozen cohort:
+
+```sh
+PYTHONPATH=. python experiments/version_coverage/evaluate.py \
+  reports/function-version-experiment-20261118/after/system/system_analysis.json \
+  reports/version-estimates-20261119/source-revisions/scan-final/system_analysis.json \
+  --baseline-commit e890f0c
+```
+
+The final measured result is 655/1,129 populated fields (58.02%) and 532/774
+native libraries (68.73%). Only 152 are exact fields; the remainder are labelled
+source-revision or parent-package estimates. See
+`docs/version-coverage-existing-databases-and-provenance-2026-11-19.md`.

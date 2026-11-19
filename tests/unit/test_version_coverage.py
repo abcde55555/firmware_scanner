@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from experiments.version_coverage.evaluate import evaluate
@@ -20,6 +18,47 @@ def record(name, location, version="", component_type="library", vendor="Acme"):
             }
         ],
     }
+
+
+def test_estimated_releases_count_as_usable_but_remain_distinct_from_observed_versions():
+    baseline = [record(name, f"/lib/{name}.so") for name in ("observed", "estimated", "candidate")]
+    observed = record("observed", "/lib/observed.so", "1.2.3")
+    estimated = record("estimated", "/lib/estimated.so", "1.2.4")
+    estimated["properties"] = [{"name": "firmware:version:kind", "value": "estimated-release"}]
+    candidate = record("candidate", "/lib/candidate.so")
+    candidate["versions"] = [{"version": "3.0.0", "method": "version_estimate"}]
+
+    result = evaluate(baseline, [observed, estimated, candidate], {})
+
+    metrics = result["fixed"]["all"]
+    assert metrics["baseline"] == 3
+    assert metrics["exact_versions"] == 1
+    assert metrics["estimated_versions"] == 1
+    assert metrics["usable_versions"] == 2
+    assert metrics["usable_coverage"] == pytest.approx(2 / 3)
+    assert metrics["usable_target_50_percent"] == "MET"
+    assert metrics["independently_verified"] == 0
+    assert metrics["target_50_percent"] == "NOT_MET"
+    assert result["fixed"]["observations"][1]["version_kind"] == "estimated"
+
+
+def test_adjacent_estimate_agreement_is_reported_separately_from_exact_agreement():
+    from experiments.version_coverage.evaluate import observation_key
+
+    baseline = [record("libalpha.so", "/lib/libalpha.so")]
+    estimated = record("libalpha.so", "/lib/libalpha.so", "1.2.4")
+    estimated["versions"][0]["method"] = "version_estimate"
+    expected = {observation_key(baseline[0]): "1.2.3"}
+
+    result = evaluate(baseline, [estimated], expected)
+
+    metrics = result["fixed"]["all"]
+    assert metrics["estimated_versions"] == 1
+    assert metrics["correct"] == 0
+    assert metrics["errors"] == 1
+    assert metrics["adjacent_estimates"] == 1
+    assert metrics["accepted_verified"] == 1
+    assert result["fixed"]["observations"][0]["adjacent_estimate"] is True
 
 
 def test_removed_or_reclassified_baseline_records_stay_uncovered():
@@ -123,7 +162,7 @@ def test_https_provenance_is_not_collected_as_a_file_location():
     assert result["fixed"]["all"]["uncovered"] == 1
 
 
-@pytest.mark.parametrize("explicit_version", ["", "unknown", "conflict"])
+@pytest.mark.parametrize("explicit_version", ["", "unknown", "conflict", "detected", "detected (version unknown)"])
 def test_explicit_unknown_or_conflict_resolved_version_blocks_candidate_fallback(explicit_version):
     baseline = [record("libalpha.so", "/system/lib/libalpha.so")]
     current = [{

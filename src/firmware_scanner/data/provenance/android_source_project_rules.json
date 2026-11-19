@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {
+      "name": "AOSP hardware interfaces",
+      "pattern": "^android\\.hardware\\.",
+      "project_path": "hardware/interfaces",
+      "confidence": 0.72,
+      "evidence": "HIDL/AIDL package namespace is emitted by hardware/interfaces"
+    },
+    {
+      "name": "AOSP framework hardware interfaces",
+      "pattern": "^android\\.frameworks\\.",
+      "project_path": "frameworks/hardware/interfaces",
+      "confidence": 0.72,
+      "evidence": "Android framework interface namespace is emitted by frameworks/hardware/interfaces"
+    }
+  ]
+}
