@@ -152,3 +152,27 @@ Unknown memory writes, field overlaps and getter branches are negative controls.
 The old generic fallback is disabled. This is not integrated into
 `BinaryInventory` and adds no product version coverage. The previous 0/4 result
 in the earlier report describes the earlier prototype, not the current one.
+
+The direct-library API census reads the two images again and checks every ELF
+against its earlier file-observation SHA-256. It excludes nested archive paths
+and bounds each read to 64 MiB. Its support comparison is explicitly pinned to
+`e872bd7`; the SQLite object adapter added afterwards is not part of that baseline.
+
+```sh
+PYTHONPATH=src python experiments/version_coverage/census_version_apis.py \
+  --system-image /home/kali/Desktop/work/project/vulnscan/system.img \
+  --allwinner-image reports/accuracy-20261118/evidence/allwinner-system.img \
+  --output reports/version-corpus-20261118/census.json
+```
+
+This uses `final-reviewed/{allwinner,system}/file-observations.json` from the
+previous production scan. Candidate records and distinct families are counted
+separately. Version-like symbol names are leads: libbpf's `v1.4` series, interface
+versions and module versions do not become exact whole-library releases.
+
+`object_version.py` now also recognizes SQLite's bounded read-only
+`sqlite3_version` array with three defined identity APIs. It records the library's
+declared identifier, independently of source-manifest and NOTICE labels. The two
+real semantic controls use `FIRMWARE_SYSTEM_IMAGE` (or `FREETYPE_SYSTEM_IMAGE`) to
+read the original ext4 image and assert fixed ELF hashes, avoiding a mounted-file
+dependency.

@@ -1,6 +1,9 @@
 """Static function-semantic version controls; compiled ELFs are never executed."""
 
+import hashlib
 import json
+import mmap
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -73,8 +76,8 @@ def test_import_only_undefined_getter_is_not_treated_as_a_definition(tmp_path, c
     "source",
     [
         "volatile int runtime_value; int LZ4_versionNumber(void) { return runtime_value; }\n",
-        "volatile int choose_version; int LZ4_versionNumber(void) { "
-        "if (choose_version) return 10902; return 10903; }\n",
+        ("volatile int choose_version; int LZ4_versionNumber(void) { "
+         "if (choose_version) return 10902; return 10903; }\n"),
     ],
     ids=("runtime-dependent", "conditional-return"),
 )
@@ -86,14 +89,32 @@ def test_nonconstant_and_conditional_getter_paths_are_refused(tmp_path, cc, sour
     assert SemanticVersionExtractor().extract(data) == []
 
 
+def _real_version_api_file(path_in_image, expected_sha256):
+    from firmware_scanner.android.ext4_reader import Ext4Reader
+
+    image = os.environ.get("FIRMWARE_SYSTEM_IMAGE") or os.environ.get("FREETYPE_SYSTEM_IMAGE")
+    if image:
+        with Path(image).open("rb") as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
+            reader = Ext4Reader(data)
+            assert reader.is_valid(), "real version-API control needs a valid ext4 image"
+            binary = reader.read_file(path_in_image, max_size=32 * 1024 * 1024)
+    else:
+        extracted = Path("/home/kali/Desktop/work/project/vulnscan/mnt_system") / path_in_image.lstrip("/")
+        if not extracted.is_file():
+            pytest.skip("set FIRMWARE_SYSTEM_IMAGE for the read-only version-API control")
+        binary = extracted.read_bytes()
+    assert hashlib.sha256(binary).hexdigest() == expected_sha256
+    return binary
+
+
 def test_arm_string_getter_preserves_vendor_suffix_from_real_file():
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 
-    path = Path("/home/kali/Desktop/work/project/vulnscan/mnt_system/system/lib/arm/libz.so")
-    if not path.is_file():
-        pytest.skip("the previously validated ARM zlib control file is unavailable")
-
-    matches = SemanticVersionExtractor().extract(path.read_bytes())
+    binary = _real_version_api_file(
+        "/system/lib/arm/libz.so",
+        "276054faa3ab5bd3626187805af092d54c25b1841d88ad93966dae5dee697eb4",
+    )
+    matches = SemanticVersionExtractor().extract(binary)
 
     assert ("zlib", "1.3.0.1-motley") in {(match.name, match.version) for match in matches}
 
@@ -101,11 +122,11 @@ def test_arm_string_getter_preserves_vendor_suffix_from_real_file():
 def test_icu_real_getter_keeps_static_version_match_output():
     from firmware_scanner.extraction.icu_version import extract_icu
 
-    path = Path("/home/kali/Desktop/work/project/vulnscan/mnt_system/system/lib64/arm64/libicuuc.so")
-    if not path.is_file():
-        pytest.skip("the previously validated AArch64 ICU control file is unavailable")
-
-    matches = extract_icu(path.read_bytes())
+    binary = _real_version_api_file(
+        "/system/lib64/arm64/libicuuc.so",
+        "de58b2d3c51fefdbdbb8d66831f9fb1ace3559e3d1f6f89f28341fc7ee3a42ca",
+    )
+    matches = extract_icu(binary)
 
     assert [(match.name, match.version, match.confidence) for match in matches] == [("ICU", "76.1", 0.98)]
     assert json.loads(matches[0].evidence)["probe"] == "icu-version-getter-v1"
@@ -189,11 +210,11 @@ def test_386_pic_cronet_getter_preserves_complete_release_string(tmp_path, cc):
 @pytest.mark.parametrize(
     "source",
     [
-        "extern int Cronet_Engine_GetVersionString(void);\n"
-        "int (*version_getter)(void) = Cronet_Engine_GetVersionString;\n",
-        "volatile int use_other; extern const char release_a[], release_b[];\n"
+        ("extern int Cronet_Engine_GetVersionString(void);\n"
+         "int (*version_getter)(void) = Cronet_Engine_GetVersionString;\n"),
+        ("volatile int use_other; extern const char release_a[], release_b[];\n"
         "const char *Cronet_Engine_GetVersionString(void) { "
-        "return use_other ? release_a : release_b; }\n",
+         "return use_other ? release_a : release_b; }\n"),
     ],
     ids=("undefined-import-only", "conditional-pointer-return"),
 )

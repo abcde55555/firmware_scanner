@@ -80,3 +80,13 @@ remain in force. A partial implementation commit does not complete this goal.
 - [ ] Establish independent ground truth for every output and a broad held-out compiler/architecture/vendor matrix. This has not been achieved and no overall accuracy is claimed.
 - [x] Iterate on material remaining gaps. Mark 50% PASS only when observed correct-version evidence meets the frozen gate; otherwise report the measured gap and its cause without claiming completion. Observed result: NOT_MET for both inputs.
 - [x] Review source/data changes, run `git diff --check`, commit validated work and provide concrete report paths. The commit records measured progress, not acceptance of the 50% objective.
+
+## Task 5: Reconcile Provenance and Remaining Library Version APIs
+
+- [x] Inspect both images for source/build metadata and license attribution. The system image contains a pinned manifest; the user has supplied no extra source or SBOM.
+- [x] Download the corresponding public GAPPS ZIP, verify its published whole-archive SHA-256, and compare its `system.img` member to the user's file. Record image identity separately from per-library source provenance.
+- [x] Reconcile actual SQLite/libevent declared values with pinned source metadata. Do not assume the version getter always reflects the upstream code release: the libevent Bionic header and configure metadata disagree within the same source commit.
+- [x] Census direct library version APIs with original ELF hashes and explicit exclusions. Seven candidate records represent six distinct families; interface and module identifiers remain candidates.
+- [x] Add the documented SQLite read-only release-object path with ELF32/ELF64, ownership and malformed-value controls. Independently read back five actual libraries; preserve the CryptoAuth path.
+- [x] Audit libbpf's actual `v1.4` value against official implementation. It only reports major/minor; do not manufacture a patch value or count it as an exact release.
+- [x] Finish the new real-scan comparison and review results; record the remaining gap in `docs/version-provenance-results-2026-11-19.md`. Fixed coverage remains 124/582 and 154/1129, native 22/312 and 26/774. Commit validated code and documentation; the 50% goal remains unmet.
