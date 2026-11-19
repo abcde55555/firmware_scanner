@@ -993,6 +993,10 @@ def _run_analysis(
     apply_component_taxonomy(components)
     total_before_dedup = len(components)
     context.components = _deduplicate_components(components)
+    from ..sbom.license_compliance import audit_firmware_licenses
+    context.metadata["license_stats"] = audit_firmware_licenses(
+        context.components
+    ).as_dict()
     console.print(f"[+] Total unique components: {len(context.components)}")
 
     if scan_log:
@@ -1673,6 +1677,8 @@ def _store_android_build_info(context: AnalysisContext, result) -> None:
         context.metadata["database_stats"] = result.database_stats
     if result.analysis_stats:
         context.metadata["analysis_stats"] = result.analysis_stats
+    if result.provenance_stats:
+        context.metadata["provenance_stats"] = result.provenance_stats
 
     if context.arch_info is None:
         from ..arch.models import ArchInfo, CPUFamily, Endianness, FileType
@@ -1727,6 +1733,7 @@ def _deduplicate_components(components: list) -> list:
             existing = seen[key]
             existing.versions.extend(v for v in comp.versions if v not in existing.versions)
             existing.properties.extend(p for p in comp.properties if p not in existing.properties)
+            existing.licenses = sorted(set(existing.licenses) | set(comp.licenses))
             if comp.resolved_version and (
                 not existing.resolved_version
                 or "unknown" in existing.resolved_version
@@ -1800,6 +1807,8 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
         "database_stats": context.metadata.get("database_stats", {}),
         "analysis_stats": context.metadata.get("analysis_stats", {}),
         "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
+        "provenance_stats": context.metadata.get("provenance_stats", {}),
+        "license_stats": context.metadata.get("license_stats", {}),
         "rules": context.metadata.get("rules", {}),
         "components": [c.model_dump() for c in context.components],
         "warnings": context.warnings,

@@ -10,7 +10,7 @@ from firmware_scanner.android.provenance import (
     parse_notice_attributions,
     source_manifest_matches_image,
 )
-from firmware_scanner.android.system_scanner import AndroidSystemScanner
+from firmware_scanner.android.system_scanner import AndroidScanResult, AndroidSystemScanner
 from firmware_scanner.extraction.models import Component, VersionConfidence
 from firmware_scanner.vuln.matcher import _is_scannable
 
@@ -57,6 +57,30 @@ def test_notice_and_manifest_attach_aosp_build_revision():
         "value": "estimated-source-revision",
     } in component.properties
     assert {"name": "firmware:source:project", "value": "frameworks/av"} in component.properties
+
+
+def test_android_scanner_attaches_licenses_from_notice_html():
+    notice = gzip.compress(b"""
+    <tr><td class="same-license">
+      <div class="file-list">/system/lib/libft2.so</div>
+      <pre class="license-text">The FreeType Project LICENSE</pre>
+    </td></tr>
+    """)
+
+    class Filesystem:
+        def read_file(self, path, max_size=16 * 1024 * 1024):
+            return notice if path == "/etc/NOTICE.html.gz" else None
+
+    component = native("libft2.so", "/lib/libft2.so")
+    result = AndroidScanResult(components=[component])
+    stats = AndroidSystemScanner(Filesystem())._apply_android_provenance(result)
+
+    assert component.licenses == ["FTL"]
+    assert stats["notice_license_attribution"] == {
+        "notice_files_matched": 1,
+        "components_licensed": 1,
+        "existing_licenses_preserved": 0,
+    }
 
 
 def test_unique_parent_apex_version_is_used_only_after_source_revision():

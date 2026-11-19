@@ -114,6 +114,7 @@ def test_license_normalization():
 def test_license_classification():
     assert classify_license("MIT") == LicenseRiskCategory.PERMISSIVE
     assert classify_license("Apache-2.0") == LicenseRiskCategory.PERMISSIVE
+    assert classify_license("FTL") == LicenseRiskCategory.PERMISSIVE
     assert classify_license("LGPL-2.1-only") == LicenseRiskCategory.WEAK_COPYLEFT
     assert classify_license("GPL-2.0-only") == LicenseRiskCategory.STRONG_COPYLEFT
     assert classify_license("AGPL-3.0-only") == LicenseRiskCategory.NETWORK_COPYLEFT
@@ -140,6 +141,45 @@ def test_license_audit_conflicts():
     report = audit_firmware_licenses([c4, c5])
     assert report.is_compliant is False
     assert any(i.severity == ComplianceSeverity.CRITICAL for i in report.compliance_issues)
+
+
+def test_license_audit_is_incomplete_when_components_lack_licenses():
+    licensed = Component(name="curl", licenses=["MIT"])
+    unknown = Component(name="vendor-library")
+
+    report = audit_firmware_licenses([licensed, unknown])
+
+    assert report.unlicensed_components == 1
+    assert report.status == "incomplete"
+    assert report.is_compliant is False
+
+    bom = CycloneDXGenerator().generate(
+        components=[licensed, unknown],
+        firmware_path="/tmp/firmware.bin",
+        firmware_hash_sha256="a" * 64,
+    )
+    properties = {
+        item["name"]: item["value"]
+        for item in bom["metadata"]["properties"]
+    }
+    assert properties["compliance:license:status"] == "incomplete"
+
+
+def test_license_audit_exports_final_coverage_statistics():
+    licensed = Component(name="curl", licenses=["MIT"])
+    unknown = Component(name="vendor-library")
+
+    stats = audit_firmware_licenses([licensed, unknown]).as_dict()
+
+    assert stats == {
+        "total_components": 2,
+        "licensed_components": 1,
+        "unlicensed_components": 1,
+        "coverage": 0.5,
+        "status": "incomplete",
+        "licenses_found": {"MIT": 1},
+        "risk_summary": {"Permissive": 1},
+    }
 
 
 def test_cyclonedx_and_html_report_license_integration(tmp_path):

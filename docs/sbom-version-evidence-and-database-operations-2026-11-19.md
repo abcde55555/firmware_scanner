@@ -172,6 +172,25 @@ when no ecosystem PURL is available. For example, `libft2.so` maps to the
 confirmed component `freetype`, producing the upstream CPE and OSV package
 query while preserving the firmware filename as the BOM component identity.
 
+## NOTICE license evidence
+
+Android NOTICE HTML is parsed as image-local license evidence. Attribution
+requires a strong license signature such as Apache 2.0, BSD, MIT, ISC, Zlib,
+OpenSSL or the FreeType Project License. General copyright statements and
+product names do not create an SPDX claim.
+
+`/system/...` paths receive one controlled alias without the `/system` prefix
+for older images whose filesystem root is the system partition. Existing
+licenses are preserved. New notice-derived licenses carry:
+
+- `firmware:license:evidence`;
+- `firmware:license:match-confidence=0.95`.
+
+The provenance report records pre-deduplication NOTICE binding counts, while
+`license_stats` reports final unique-component coverage after all deduplication
+and license merging. A component without a license makes the overall status
+`incomplete`; the scanner never emits `compliant` from partial data.
+
 Binary getters can also supply exact evidence when newer compilers inline the
 implementation. On the Allwinner ARM32 ICU libraries, `u_getVersion_51` loads a
 read-only `51.1.0.1` literal and parses its four numeric fields directly rather

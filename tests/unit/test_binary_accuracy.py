@@ -125,6 +125,38 @@ def test_cli_dedup_preserves_distinct_versions_and_merges_locations():
     assert {p['value'] for p in latest.properties} == {'/system/lib64/libpng.so', '/vendor/lib64/libpng.so'}
 
 
+def test_cli_dedup_merges_license_evidence_for_duplicate_components():
+    from firmware_scanner.cli.app import _deduplicate_components
+
+    comps = [
+        Component(
+            name='libdemo.so',
+            resolved_version='1.0',
+            versions=[VersionConfidence(version='1.0', confidence=.9)],
+            licenses=['Apache-2.0'],
+            properties=[{
+                'name': 'firmware:evidence:location',
+                'value': '/system/lib/libdemo.so',
+            }],
+        ),
+        Component(
+            name='libdemo.so',
+            resolved_version='1.0',
+            versions=[VersionConfidence(version='1.0', confidence=.9)],
+            licenses=['BSD-3-Clause'],
+            properties=[{
+                'name': 'firmware:evidence:location',
+                'value': '/vendor/lib/libdemo.so',
+            }],
+        ),
+    ]
+
+    result = _deduplicate_components(comps)
+
+    assert len(result) == 1
+    assert result[0].licenses == ['Apache-2.0', 'BSD-3-Clause']
+
+
 def test_apk_embedded_native_library_is_scanned():
     import io
     import zipfile

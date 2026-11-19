@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-11-19
+
+### Added
+- Conservative SPDX license attribution from Android NOTICE HTML
+- Final post-deduplication license coverage and risk statistics in JSON and BOM output
+- Provenance statistics in JSON and CycloneDX metadata
+
+### Changed
+- License compliance now reports `incomplete` whenever components lack verified licenses
+- Deduplication merges license evidence from duplicate component observations
+
 ## [0.3.0] - 2026-11-19
 
 ### Added

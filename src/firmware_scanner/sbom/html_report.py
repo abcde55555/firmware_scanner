@@ -232,11 +232,20 @@ def _render_license_audit(report) -> str:
         for k, v in sorted(report.licenses_found.items(), key=lambda x: -x[1])
     ])
 
-    compliance_badge = (
-        '<span class="badge" style="background:#c6f6d5;color:#22543d;">COMPLIANT</span>'
-        if report.is_compliant
-        else '<span class="badge" style="background:#fed7d7;color:#742a2a;">COMPLIANCE ALERTS</span>'
-    )
+    if report.status == "compliant":
+        compliance_badge = (
+            '<span class="badge" style="background:#c6f6d5;color:#22543d;">COMPLIANT</span>'
+        )
+    elif report.status == "incomplete":
+        compliance_badge = (
+            '<span class="badge" style="background:#fefcbf;color:#744210;">'
+            'LICENSE DATA INCOMPLETE</span>'
+        )
+    else:
+        compliance_badge = (
+            '<span class="badge" style="background:#fed7d7;color:#742a2a;">'
+            'COMPLIANCE ALERTS</span>'
+        )
 
     return f"""<div class="card">
         <h2>License Compliance & Audit {compliance_badge}</h2>

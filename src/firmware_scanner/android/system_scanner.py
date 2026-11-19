@@ -19,6 +19,7 @@ from typing import Protocol
 from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 from .axml import AndroidManifestInfo, AXMLParser
 from .build_prop import AndroidBuildInfo, BuildPropParser
+from .notice_licenses import apply_notice_licenses, parse_notice_licenses
 from .provenance import (
     apply_android_provenance,
     parse_notice_attributions,
@@ -127,6 +128,8 @@ BUILD_PROP_PATHS = [
 ]
 
 NOTICE_PATHS = [
+    "/etc/NOTICE.html.gz",
+    "/etc/NOTICE.html",
     "/system/etc/NOTICE.xml.gz",
     "/product/etc/NOTICE.xml.gz",
     "/vendor/etc/NOTICE.xml.gz",
@@ -364,6 +367,11 @@ class AndroidSystemScanner:
     def _apply_android_provenance(self, result: AndroidScanResult) -> dict:
         """Attach image-local NOTICE/source provenance and parent package versions."""
         attributions: dict[str, set[str]] = {}
+        license_stats = {
+            "notice_files_matched": 0,
+            "components_licensed": 0,
+            "existing_licenses_preserved": 0,
+        }
         for path in NOTICE_PATHS:
             data = self._fs.read_file(path, max_size=16 * 1024 * 1024)
             if not data:
@@ -373,18 +381,29 @@ class AndroidSystemScanner:
                     data = gzip.GzipFile(fileobj=io.BytesIO(data)).read(16 * 1024 * 1024 + 1)
                 if len(data) > 16 * 1024 * 1024:
                     raise ValueError("decompressed NOTICE exceeds 16 MiB")
-                for location, labels in parse_notice_attributions(data).items():
-                    attributions.setdefault(location, set()).update(labels)
+                if path.endswith((".html", ".html.gz")):
+                    stats = apply_notice_licenses(
+                        result.components,
+                        parse_notice_licenses(data),
+                        source=path,
+                    )
+                    for key, value in stats.items():
+                        license_stats[key] += value
+                else:
+                    for location, labels in parse_notice_attributions(data).items():
+                        attributions.setdefault(location, set()).update(labels)
             except (OSError, ValueError, EOFError, ET.ParseError) as exc:
                 self._coverage_warnings.add(
                     f"Cannot parse Android NOTICE attribution {path}: {type(exc).__name__}: {exc}"
                 )
-        return apply_android_provenance(
+        provenance = apply_android_provenance(
             result.components,
             notice_attributions=attributions,
             source_manifest=self._source_manifest,
             source_project_rules=self._source_project_rules,
         )
+        provenance["notice_license_attribution"] = license_stats
+        return provenance
 
     @staticmethod
     def _registered_source_manifest(image_sha256: str | None) -> dict | None:

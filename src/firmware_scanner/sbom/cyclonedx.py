@@ -42,7 +42,7 @@ class CycloneDXGenerator:
             meta["properties"] = []
         meta["properties"].append({
             "name": "compliance:license:status",
-            "value": "compliant" if audit_report.is_compliant else "non-compliant",
+            "value": audit_report.status,
         })
         meta["properties"].append({
             "name": "compliance:license:issues_count",
@@ -221,6 +221,16 @@ class CycloneDXGenerator:
             props.append({
                 "name": "firmware:family-provenance:stats",
                 "value": json.dumps(info["family_provenance_stats"], sort_keys=True),
+            })
+        if info.get("provenance_stats"):
+            props.append({
+                "name": "firmware:provenance:stats",
+                "value": json.dumps(info["provenance_stats"], sort_keys=True),
+            })
+        if info.get("license_stats"):
+            props.append({
+                "name": "firmware:license:stats",
+                "value": json.dumps(info["license_stats"], sort_keys=True),
             })
         rules = info.get("rules")
         if rules:

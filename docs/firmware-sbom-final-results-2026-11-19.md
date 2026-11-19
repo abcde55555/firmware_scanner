@@ -24,6 +24,8 @@ This round added:
 - post-analysis BLintDB identity reconciliation and diagnostic reference-version
   comparison;
 - CycloneDX round-trip preservation of resolution state, BLint identity and CPE.
+- conservative SPDX license attribution from Android NOTICE HTML;
+- explicit `incomplete` license status when any component lacks a license.
 
 The measured fixed-cohort version coverage improved on the modern Android image
 from **655/1,129 (58.02%) to 690/1,129 (61.12%)**. Native-library coverage
@@ -52,7 +54,8 @@ Input: `system.img`, 2,309,611,520 bytes, SHA-256
 | Unknown | 426 |
 | Source-declared exact versions applied | 22 |
 | BOM dependency records | 928 |
-| Android core scan time | 331.6 s |
+| Android core scan time | 332.0 s |
+| License coverage | 0/1,595, `incomplete` |
 
 The prior database-enabled scan took 408.2 seconds in the Android core scan.
 Reusing SQLite connections, content-cache hits and the revised rule path reduced
@@ -103,7 +106,8 @@ Input: `sun8iw6p1_android_perf3_v1_0_uart0.img`.
 | Unknown | 384 |
 | Fixed all-component coverage | 146/582, 25.09% |
 | Fixed native coverage | 48/312, 15.38% |
-| Android core scan time | 74.9 s |
+| License coverage | 184/591, 31.13%, `incomplete` |
+| Android core scan time | 78.6 s |
 
 The same-source family pass inherited seven values. The ICU donor itself was
 resolved exactly as `51.1.0.1`; its ARM32 `u_getVersion_51` wrapper loads that
@@ -127,6 +131,35 @@ baseline file match.
 Allwinner has no matching source manifest in the supplied material. Its version
 gains therefore come from binary evidence and parent-package attribution. It
 does not receive the modern image's source revisions or version pins.
+
+## License attribution
+
+The Allwinner image contains `/etc/NOTICE.html.gz`, which maps filesystem paths
+to embedded license text. The scanner now recognizes only strong license
+signatures and records the NOTICE path as evidence. It does not infer a license
+from product names or general copyright statements.
+
+| License | Unique components |
+|---|---:|
+| Apache-2.0 | 140 |
+| BSD-3-Clause | 25 |
+| BSD-2-Clause | 14 |
+| MIT | 12 |
+| Zlib | 5 |
+| ISC | 3 |
+| OpenSSL | 2 |
+| FTL | 1 |
+
+The raw NOTICE pass produced 189 component observations; final deduplication
+produced **184 unique licensed components (31.13%)**. The remaining 407
+components have no verified notice-based license. The final status is therefore
+`incomplete`, not `compliant`. This distinction is enforced in JSON, CycloneDX
+metadata and the HTML report.
+
+The modern Android image's NOTICE XML carries file-to-project attribution but
+no license text that can support a file-level SPDX claim. Its license status is
+conservatively `incomplete` with 0/1,595 licensed components. APK/archive
+license metadata remains a later coverage source.
 
 ## Taxonomy and generic database support
 
@@ -165,7 +198,7 @@ Its release and lock SHA-256 are present in both JSON and CycloneDX metadata.
 The 1.5 and 1.6 BOMs for both images validate against the official CycloneDX
 schemas. The 1.5 and 1.6 VEX artifacts also validate with zero schema errors.
 The machine-readable results are in
-`reports/version-estimates-20261119/schema-validation-freeetype-db-audit.json`.
+`reports/version-estimates-20261119/schema-validation-license-audit.json`.
 
 CycloneDX round-trip parsing now preserves component `properties` and the
 component-level `cpe`. This keeps resolution-state gates, BLint-confirmed
@@ -231,6 +264,8 @@ match.
 - No independent full-image version truth set exists. The percentages above are
   coverage against a frozen component cohort, not a 61.12% or 73.26% accuracy
   claim.
+- License coverage is a notice-evidence metric. Missing license data is reported
+  as incomplete and must not be interpreted as proof of compliance.
 - Database-enabled scans need more memory than the roadmap target. The 40 GB
   NSRL deployment should remain optional until memory and I/O budgets are tuned.
 

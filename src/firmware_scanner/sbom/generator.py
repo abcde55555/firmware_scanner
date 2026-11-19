@@ -28,18 +28,27 @@ class SBOMGenerator:
             context.metadata.get("database_stats")
             or context.metadata.get("analysis_stats")
             or context.metadata.get("family_provenance_stats")
+            or context.metadata.get("provenance_stats")
+            or context.metadata.get("license_stats")
             or context.metadata.get("rules")
         ):
             android_info = {
                 "database_stats": context.metadata.get("database_stats", {}),
                 "analysis_stats": context.metadata.get("analysis_stats", {}),
                 "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
+                "provenance_stats": context.metadata.get("provenance_stats", {}),
+                "license_stats": context.metadata.get("license_stats", {}),
                 "rules": context.metadata.get("rules", {}),
             }
         elif android_info is not None:
             overlays = {
                 key: context.metadata[key]
-                for key in ("family_provenance_stats", "rules")
+                for key in (
+                    "family_provenance_stats",
+                    "provenance_stats",
+                    "license_stats",
+                    "rules",
+                )
                 if context.metadata.get(key)
             }
             if overlays:

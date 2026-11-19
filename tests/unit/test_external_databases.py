@@ -543,6 +543,8 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
             "database_stats": {"files_queried": 7},
             "analysis_stats": {"content_cache_hits": 3},
             "family_provenance_stats": {"versions_inherited": 1},
+            "provenance_stats": {"notice_license_attribution": {"components_licensed": 2}},
+            "license_stats": {"licensed_components": 2, "total_components": 3},
             "rules": {
                 "release": "builtin-test",
                 "lock_sha256": "c" * 64,
@@ -555,6 +557,13 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
     assert report["database_stats"] == {"files_queried": 7}
     assert report["analysis_stats"] == {"content_cache_hits": 3}
     assert report["family_provenance_stats"] == {"versions_inherited": 1}
+    assert report["provenance_stats"] == {
+        "notice_license_attribution": {"components_licensed": 2}
+    }
+    assert report["license_stats"] == {
+        "licensed_components": 2,
+        "total_components": 3,
+    }
     assert report["rules"]["release"] == "builtin-test"
 
 
