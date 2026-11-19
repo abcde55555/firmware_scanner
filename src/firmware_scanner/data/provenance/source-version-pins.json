@@ -148,6 +148,20 @@
       "version": "1883",
       "source_url": "https://android.googlesource.com/platform/external/libyuv/+/741c38751c436f60c583110f617340b7f3322d94/include/libyuv/version.h",
       "authority": "LIBYUV_VERSION"
+    },
+    {
+      "project_path": "external/rust/crates/openssl",
+      "revision": "e5ef6ef50b72972ad9d0ba582906f27f0b8ba06b",
+      "version": "0.10.64",
+      "source_url": "https://android.googlesource.com/platform/external/rust/crates/openssl/+/e5ef6ef50b72972ad9d0ba582906f27f0b8ba06b/Cargo.toml",
+      "authority": "Cargo package version and Android.bp cargo_pkg_version"
+    },
+    {
+      "project_path": "external/openssh",
+      "revision": "60ca88651d39f699932f63d41409facc18c5ad19",
+      "version": "9.0p1",
+      "source_url": "https://raw.githubusercontent.com/LineageOS/android_external_openssh/60ca88651d39f699932f63d41409facc18c5ad19/version.h",
+      "authority": "SSH_VERSION and SSH_PORTABLE"
     }
   ]
 }

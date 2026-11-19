@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-11-20
+
+### Added
+- Conservative string, integer and structured version getters for 20 additional
+  native libraries, including libyaml, libjxl, seccomp and the nghttp2 family
+- GMP, GdkPixbuf and libunistring release-object probes
+- Manifest-bound ELF source-path evidence and source-project provenance for
+  Rust, ANGLE, OpenSSH, fsverity and Android platform libraries
+- Exact rust-openssl and OpenSSH source version pins tied to image-matched commits
+- Independent 20-library Debian validation suite alongside the 54-library
+  development suite
+- CLI-equivalent reproduction support for source manifests, family provenance
+  and component taxonomy in the version-coverage harness
+
+### Fixed
+- libbpf major/minor banners are generation estimates instead of false exact releases
+- Parent-package, source-revision, conflict and generation estimates can no longer
+  be counted as exact by the coverage evaluator
+- Deduplicated BOM rows can cover multiple fixed baseline paths
+
 ## [0.7.0] - 2026-11-19
 
 ### Added

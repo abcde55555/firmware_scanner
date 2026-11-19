@@ -2,6 +2,12 @@
 
 Date: 2026-11-19
 
+> **Superseded for version coverage:** the 0.8.0 evaluation corrects parent and
+> source revisions being counted as exact and adds source-path-bound provenance.
+> See `docs/firmware-sbom-roadmap-review-2026-11-20.md` for current numbers.
+> Database, license and vulnerability sections below remain historical evidence
+> for the 0.7.0 run.
+
 ## Outcome
 
 This round added:

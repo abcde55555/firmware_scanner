@@ -5,21 +5,24 @@ import re
 from collections import defaultdict
 from urllib.parse import quote
 
-from .models import Component, ExtractionMethod, VersionConfidence
+from .binary_reference import openssl_compatibility_only
 from .elf_deep_extractor import ELFDeepExtractor
 from .emba_rules import scan_binary_with_rules
-from .binary_reference import openssl_compatibility_only
+from .models import Component, ExtractionMethod, VersionConfidence
 
 _DEVELOPMENT = re.compile(
     r'dev|git|snapshot|alpha|beta|rc\d|-(?:\d+-)?g[0-9a-f]{7,40}(?:$|-dirty)',
     re.IGNORECASE,
 )
+_SOURCE_PATH = re.compile(
+    rb"(?:external|packages|system|bionic|frameworks|hardware|vendor)/"
+    rb"[A-Za-z0-9_.@+/-]{1,220}\.(?:rs|c|cc|cpp|cxx|h|hpp|S)"
+)
 
 
 def identity_key(name: str) -> str:
     name = name.rsplit('/', 1)[-1].lower().split('.so', 1)[0]
-    if name.startswith('lib'):
-        name = name[3:]
+    name = name.removeprefix('lib')
     name = name.replace('-', '').replace('_', '').replace(' ', '')
     return {
         'z': 'zlib', 'png16': 'png', 'png12': 'png', 'libpng': 'png',
@@ -35,6 +38,7 @@ def identity_key(name: str) -> str:
         'busyboxsmp': 'busybox', 'pppd': 'ppp',
         'speexwrapper': 'speex',
         'pcre28': 'pcre2', 'pcre216': 'pcre2', 'pcre232': 'pcre2',
+        'yaml0': 'yaml',
     }.get(name, name)
 
 
@@ -43,11 +47,11 @@ class BinaryInventory:
 
     _MAX_CONTENT_CACHE_ENTRIES = 4096
 
-    def __init__(self, database_enricher=None):
+    def __init__(self, database_enricher=None, source_manifest=None):
         from .binary_reference import BinaryReferenceMatcher
-        from .static_version import StaticVersionExtractor
-        from .semantic_version import SemanticVersionExtractor
         from .binary_samples import BinarySampleMatcher
+        from .semantic_version import SemanticVersionExtractor
+        from .static_version import StaticVersionExtractor
         self._reference = BinaryReferenceMatcher()
         self._static = StaticVersionExtractor()
         self._semantic = SemanticVersionExtractor()
@@ -56,6 +60,15 @@ class BinaryInventory:
         self._rust_estimator = RustVersionEstimator()
         self._deep = ELFDeepExtractor()
         self._database_enricher = database_enricher
+        self._source_project_paths = tuple(sorted(
+            {
+                str(project.get("path", "")).strip("/")
+                for project in (source_manifest or {}).get("projects", [])
+                if project.get("path")
+            },
+            key=len,
+            reverse=True,
+        ))
         self._content_cache: dict[tuple[str, str, str], list[Component]] = {}
         self._content_cache_hits = 0
 
@@ -73,6 +86,16 @@ class BinaryInventory:
             {'name': 'firmware:evidence:location', 'value': location},
             {'name': 'firmware:binary:sha256', 'value': digest},
         ]
+        if self._source_project_paths:
+            for evidence in self._source_project_evidence(data):
+                properties.append({
+                    'name': 'firmware:source:path-project',
+                    'value': evidence['project'],
+                })
+                properties.append({
+                    'name': 'firmware:source:path-evidence',
+                    'value': json.dumps(evidence, sort_keys=True),
+                })
         claims = []
         deep = self._deep.extract(filename, data)
         if deep:
@@ -101,13 +124,16 @@ class BinaryInventory:
         from .object_version import extract_object_versions
         for hit in extract_object_versions(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
+        from .structured_version import extract_structured_versions
+        for hit in extract_structured_versions(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
         if b'u_getVersion' in data and b'u_versionFromString' in data:
             from .icu_version import extract_icu
             for hit in extract_icu(data):
                 claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
         if b'FT_Library_Version' in data and b'FT_New_Library' in data:
-            from .freetype_version import extract_freetype
             from .freetype_legacy_version import extract_freetype_legacy_version
+            from .freetype_version import extract_freetype
             for hit in extract_freetype(data):
                 claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
             for hit in extract_freetype_legacy_version(data):
@@ -133,7 +159,7 @@ class BinaryInventory:
                 # substrings such as "bc" inside "glibc". Require a real
                 # product token in the observed text, beyond the rule label.
                 observed = claim.evidence.split(': ', 1)[-1]
-                if re.search(r'\b(?:not|without)\b', observed, re.I):
+                if re.search(r'\b(?:not|without)\b', observed, re.IGNORECASE):
                     continue
                 tokens = re.findall(r'[A-Za-z][A-Za-z0-9_+-]*', observed)
                 if not any(identity_key(token) == identity_key(hit.name) for token in tokens):
@@ -233,6 +259,23 @@ class BinaryInventory:
                 component.model_copy(deep=True) for component in components
             ]
         return components
+
+    def _source_project_evidence(self, data: bytes) -> list[dict]:
+        """Map embedded source-file paths to the longest manifest project."""
+        projects: dict[str, dict] = {}
+        for match in _SOURCE_PATH.finditer(data):
+            source_path = match.group(0).decode("ascii", errors="ignore").lstrip("./")
+            for project in self._source_project_paths:
+                if source_path.startswith(project + "/"):
+                    projects.setdefault(project, {
+                        "project": project,
+                        "source_path": source_path,
+                        "file_offset": match.start(),
+                    })
+                    break
+            if len(projects) >= 16:
+                break
+        return [projects[project] for project in sorted(projects)]
 
     @property
     def database_stats(self) -> dict:

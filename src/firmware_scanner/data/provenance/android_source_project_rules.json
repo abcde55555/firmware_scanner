@@ -231,6 +231,181 @@
       "project_path": "external/dng_sdk",
       "confidence": 0.9,
       "evidence": "DNG SDK Android native library naming"
+    },
+    {
+      "name": "Android Rust openssl crate",
+      "pattern": "^libopenssl\\.dylib\\.so$",
+      "project_path": "external/rust/crates/openssl",
+      "confidence": 0.94,
+      "evidence": "The binary embeds the rust-openssl source tree"
+    },
+    {
+      "name": "Android Rust utilities",
+      "pattern": "^librustutils\\.dylib\\.so$",
+      "project_path": "system/librustutils",
+      "confidence": 0.92,
+      "evidence": "The binary embeds system/librustutils source files"
+    },
+    {
+      "name": "ConfigInfrastructure Rust modules",
+      "pattern": "^libaconfig(?:d)?_.*\\.dylib\\.so$",
+      "project_path": "packages/modules/ConfigInfrastructure",
+      "confidence": 0.82,
+      "evidence": "Android Rust aconfig binary namespace"
+    },
+    {
+      "name": "liballoctop tool",
+      "pattern": "^liballoctop\\.dylib\\.so$",
+      "project_path": "system/memory/libmeminfo",
+      "confidence": 0.92,
+      "evidence": "The binary embeds libmeminfo alloctop source"
+    },
+    {
+      "name": "GUI Rust AIDL types",
+      "pattern": "^libgui_aidl_types_rs\\.dylib\\.so$",
+      "project_path": "frameworks/native",
+      "confidence": 0.92,
+      "evidence": "The binary embeds frameworks/native GUI Rust sources"
+    },
+    {
+      "name": "OpenSSH shared library",
+      "pattern": "^(?:libssh\\.so(?:\\.[0-9]+)*|openssh)$",
+      "project_path": "external/openssh",
+      "confidence": 0.94,
+      "evidence": "The binary embeds external/openssh source files"
+    },
+    {
+      "name": "ICU host-name alias",
+      "pattern": "^icu$",
+      "project_path": "external/icu",
+      "confidence": 0.94,
+      "evidence": "The ICU binary embeds external/icu source files"
+    },
+    {
+      "name": "Neven face detector",
+      "pattern": "^libFFTEm\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/neven",
+      "confidence": 0.9,
+      "evidence": "The binary embeds external/neven source files"
+    },
+    {
+      "name": "ANGLE GLES translator",
+      "pattern": "^libGLESv2_angle\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/angle",
+      "confidence": 0.9,
+      "evidence": "The binary embeds external/angle source files"
+    },
+    {
+      "name": "Compiler runtime",
+      "pattern": "^libcompiler_rt\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/compiler-rt",
+      "confidence": 0.9,
+      "evidence": "The binary embeds external/compiler-rt source files"
+    },
+    {
+      "name": "fsverity library",
+      "pattern": "^libfsverity\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/fsverity-utils",
+      "confidence": 0.9,
+      "evidence": "The binary embeds external/fsverity-utils source files"
+    },
+    {
+      "name": "libchrome platform library",
+      "pattern": "^libchrome\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/libchrome",
+      "confidence": 0.88,
+      "evidence": "The binary embeds external/libchrome source files"
+    },
+    {
+      "name": "Android base library",
+      "pattern": "^libbase\\.so(?:\\.[0-9]+)*$",
+      "project_path": "system/libbase",
+      "confidence": 0.9,
+      "evidence": "The binary embeds system/libbase source files"
+    },
+    {
+      "name": "Android logging libraries",
+      "pattern": "^liblog\\.so(?:\\.[0-9]+)*$",
+      "project_path": "system/logging",
+      "confidence": 0.88,
+      "evidence": "The binary embeds system/logging source files"
+    },
+    {
+      "name": "Android adbd filesystem helper",
+      "pattern": "^libadbd_fs\\.so(?:\\.[0-9]+)*$",
+      "project_path": "packages/modules/adb",
+      "confidence": 0.9,
+      "evidence": "The Android filesystem helper is built with modules/adb"
+    },
+    {
+      "name": "Android memory tools",
+      "pattern": "^lib(?:meminfo|memevents)\\.so(?:\\.[0-9]+)*$",
+      "project_path": "system/memory/libmeminfo",
+      "confidence": 0.9,
+      "evidence": "The binary embeds libmeminfo source files"
+    },
+    {
+      "name": "Android art palette",
+      "pattern": "^libartpalette-system\\.so(?:\\.[0-9]+)*$",
+      "project_path": "system/libartpalette",
+      "confidence": 0.9,
+      "evidence": "The binary embeds system/libartpalette source files"
+    },
+    {
+      "name": "Android ziparchive",
+      "pattern": "^libziparchive\\.so(?:\\.[0-9]+)*$",
+      "project_path": "system/libziparchive",
+      "confidence": 0.9,
+      "evidence": "The binary embeds system/libziparchive source files"
+    },
+    {
+      "name": "Android WiFi interface",
+      "pattern": "^libwifi-system-iface\\.so(?:\\.[0-9]+)*$",
+      "project_path": "frameworks/opt/net/wifi",
+      "confidence": 0.9,
+      "evidence": "The binary embeds frameworks/opt/net/wifi source files"
+    },
+    {
+      "name": "Android RenderScript host libraries",
+      "pattern": "(?i)^librs(?:cpu_ref|driver|_internal|support)?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "frameworks/rs",
+      "confidence": 0.9,
+      "evidence": "The binary embeds frameworks/rs source files"
+    },
+    {
+      "name": "Android core libraries",
+      "pattern": "^lib(?:appfuse|bootloader_message|cgrouprc|debuggerd_client|lp|processgroup_setup|snapshot)\\.so(?:\\.[0-9]+)*$",
+      "project_path": "system/core",
+      "confidence": 0.86,
+      "evidence": "The binary embeds system/core source files"
+    },
+    {
+      "name": "V4L2 camera HAL",
+      "pattern": "^camera\\.v4l2\\.so(?:\\.[0-9]+)*$",
+      "project_path": "hardware/libhardware",
+      "confidence": 0.9,
+      "evidence": "The binary embeds hardware/libhardware source files"
+    },
+    {
+      "name": "Android media native libraries",
+      "pattern": "^lib(?:camera2ndk|codec2_hal_common|stagefright_bufferqueue_helper)\\.so(?:\\.[0-9]+)*$",
+      "project_path": "frameworks/av",
+      "confidence": 0.9,
+      "evidence": "The binary embeds frameworks/av source files"
+    },
+    {
+      "name": "Android hardware interface support",
+      "pattern": "^lib(?:keymaster4support|keymaster4_1support|keymint_support)\\.so(?:\\.[0-9]+)*$",
+      "project_path": "hardware/interfaces",
+      "confidence": 0.9,
+      "evidence": "The binary embeds hardware/interfaces source files"
+    },
+    {
+      "name": "Android Neural Networks package metadata",
+      "pattern": "^libneuralnetworks_packageinfo\\.so(?:\\.[0-9]+)*$",
+      "project_path": "packages/modules/NeuralNetworks",
+      "confidence": 0.9,
+      "evidence": "The binary embeds NeuralNetworks module source files"
     }
   ]
 }

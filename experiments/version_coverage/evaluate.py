@@ -147,10 +147,20 @@ def _version_kind(value: str) -> str:
 def _output_kind(record: dict[str, Any]) -> str:
     """A single selected estimate is usable without becoming an observed release."""
     value = _version(record)
+    properties = record.get("properties", [])
+    state = next((
+        str(prop.get("value", ""))
+        for prop in properties
+        if isinstance(prop, dict)
+        and prop.get("name") == "firmware:version:resolution-state"
+    ), "") if isinstance(properties, list) else ""
+    if state == "estimated" or state.startswith("estimated-"):
+        return "estimated"
+    if state == "conflict-unresolved":
+        return "unknown"
     kind = _version_kind(value)
     if kind != "exact":
         return kind
-    properties = record.get("properties", [])
     if isinstance(properties, list) and any(
         isinstance(prop, dict) and prop.get("name") == "firmware:version:kind"
         and prop.get("value") == "estimated-release" for prop in properties
@@ -234,7 +244,7 @@ def _deduplicate(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _match(baseline: list[dict[str, Any]], current: list[dict[str, Any]]) -> dict[int, int]:
-    """Greedily make deterministic one-to-one matches, preferring most shared paths."""
+    """Match every baseline row even when one BOM row merged several paths."""
     edges: list[tuple[int, str, int, int]] = []
     for bi, base in enumerate(baseline):
         base_locations = set(_locations(base))
@@ -247,13 +257,11 @@ def _match(baseline: list[dict[str, Any]], current: list[dict[str, Any]]) -> dic
             if shared:
                 edges.append((-len(shared), observation_key(base), bi, ci))
     used_base: set[int] = set()
-    used_current: set[int] = set()
     matches: dict[int, int] = {}
     for _, _, bi, ci in sorted(edges):
-        if bi not in used_base and ci not in used_current:
+        if bi not in used_base:
             matches[bi] = ci
             used_base.add(bi)
-            used_current.add(ci)
     return matches
 
 

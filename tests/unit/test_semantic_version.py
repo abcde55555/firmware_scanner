@@ -58,6 +58,22 @@ def test_c_compiled_constant_getters_return_static_version_matches(tmp_path, cc)
     assert all(json.loads(match.evidence)["prototype"] == "function-version-semantics-v1" for match in matches)
 
 
+def test_jxl_version_integer_uses_its_decimal_generation_encoding(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "jxl_getter",
+        "int JxlDecoderVersion(void) { return 11001; }\n",
+        flags=("-O2",),
+    )
+
+    assert [(match.name, match.version) for match in SemanticVersionExtractor().extract(data)] == [
+        ("libjxl", "0.11.1")
+    ]
+
+
 def test_import_only_undefined_getter_is_not_treated_as_a_definition(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

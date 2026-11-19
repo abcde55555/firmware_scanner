@@ -25,8 +25,9 @@ from capstone.arm64 import (
     ARM64_INS_ADRP,
     ARM64_INS_LDR,
     ARM64_INS_RET,
+    ARM64_OP_IMM,
+    ARM64_OP_REG,
 )
-from capstone.arm64 import ARM64_OP_IMM, ARM64_OP_REG
 from capstone.x86 import (
     X86_INS_ENDBR64,
     X86_INS_LEA,
@@ -66,11 +67,26 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "opus_get_version_string": ("Opus", "prefixed"),
     "vpx_codec_version_str": ("libvpx", "vpx"),
     "event_get_version": ("libevent", "direct"),
-    "libbpf_version_string": ("libbpf", "vpx"),
+    "libbpf_version_string": ("libbpf", "libbpf_generation"),
     "dav1d_version": ("dav1d", "direct"),
     "opj_version": ("OpenJPEG", "direct"),
     "heif_get_version": ("libheif", "direct"),
     "avifVersion": ("libavif", "direct"),
+    "sf_version_string": ("libsndfile", "prefixed"),
+    "src_get_version": ("libsamplerate", "prefixed"),
+    "soxr_version": ("libsoxr", "prefixed"),
+    "yaml_get_version_string": ("libyaml", "direct"),
+    "lzo_version_string": ("liblzo2", "direct"),
+    "_lzo_version_string": ("liblzo2", "direct"),
+    "zip_libzip_version": ("libzip", "direct"),
+    "aom_codec_version_str": ("libaom", "leading_v"),
+    "pango_version_string": ("Pango", "direct"),
+    "cairo_version_string": ("Cairo", "direct"),
+    "pixman_version_string": ("Pixman", "direct"),
+    "psl_get_version": ("libpsl", "leading"),
+    "lzma_version_string": ("XZ Utils", "direct"),
+    "BZ2_bzlibVersion": ("bzip2", "bz2"),
+    "ffi_get_version": ("libffi", "direct"),
 }
 _VERSION = re.compile(r"v?(\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)\Z")
 
@@ -93,15 +109,29 @@ def _vaddr_to_offset(
 
 def _version_from_text(name: str, style: str, text: str) -> str | None:
     value = text.strip()
-    if style == "vpx":
+    if style in {"vpx", "leading_v"}:
         # VERSION_STRING_NOSP starts with 'v'; the integer API encodes the
         # same release without it. Preserve all development/vendor suffixes.
         match = _VERSION.fullmatch(value)
-        return match.group(1) if match and value.startswith("v") else None
+        if match and value.startswith("v"):
+            return match.group(1)
+        return match.group(1) if style == "leading_v" and match else None
+    if style == "libbpf_generation":
+        match = re.fullmatch(r"v?(\d+\.\d+)", value)
+        return f"{match.group(1)}.x" if match else None
+    if style == "leading":
+        match = re.match(r"v?(\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)", value)
+        return match.group(1) if match else None
+    if style == "bz2":
+        match = re.match(r"(\d+\.\d+(?:\.\d+)*),\s+\d{1,2}-[A-Za-z]{3}-\d{4}", value)
+        return match.group(1) if match else None
     if style == "prefixed":
         prefixes = {
             "libpcap": r"libpcap version\s+",
             "Opus": r"libopus\s+",
+            "libsndfile": r"libsndfile-",
+            "libsamplerate": r"libsamplerate-",
+            "libsoxr": r"libsoxr-",
         }
         prefix = prefixes[name]
         match = re.match(prefix + r"(v?\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)", value, re.IGNORECASE)
@@ -154,16 +184,33 @@ class StaticVersionExtractor:
                         continue
                     address = int(symbol["st_value"])
                     size = int(symbol["st_size"])
-                    if 0 < size <= 256:
+                    if 0 <= size <= 256:
                         functions.setdefault(symbol.name, (address, size))
 
             matches: list[StaticVersionMatch] = []
             for getter, (address, size) in functions.items():
                 component, style = _GETTERS[getter]
-                code_offset = _vaddr_to_offset(load_segments, address, size, executable=True)
-                if code_offset is None or code_offset + size > len(data):
+                requested_size = size or 4
+                code_offset = _vaddr_to_offset(
+                    load_segments,
+                    address,
+                    requested_size,
+                    executable=True,
+                )
+                if code_offset is None or code_offset + requested_size > len(data):
                     continue
-                code = data[code_offset:code_offset + size]
+                if size:
+                    code = data[code_offset:code_offset + size]
+                else:
+                    window = data[code_offset : min(len(data), code_offset + 64)]
+                    instructions = list(disassembler.disasm(window, address))
+                    terminal = next((
+                        insn for insn in instructions
+                        if insn.id in (X86_INS_RET, ARM64_INS_RET)
+                    ), None)
+                    if terminal is None:
+                        continue
+                    code = window[: terminal.address + terminal.size - address]
                 result_pointer = self._returned_pointer(disassembler, architecture, code, address)
                 if result_pointer is None:
                     continue
@@ -188,7 +235,8 @@ class StaticVersionExtractor:
                     f"NUL-terminated string at VA 0x{pointer:x} (file offset 0x{string_offset:x}): "
                     f"{text!r}; straight-line {architecture} return path"
                 )
-                matches.append(StaticVersionMatch(component, version, evidence))
+                confidence = 0.84 if style == "libbpf_generation" else 0.95
+                matches.append(StaticVersionMatch(component, version, evidence, confidence))
             return matches
         except (ELFError, CsError, OSError, ValueError, TypeError, KeyError, IndexError,
                 struct.error, OverflowError):

@@ -59,6 +59,34 @@ def _binary_sha256(component: Component) -> str:
     )
 
 
+def _source_path_projects(component: Component) -> set[str]:
+    return {
+        str(prop.get("value", ""))
+        for prop in component.properties
+        if prop.get("name") == "firmware:source:path-project"
+        and prop.get("value")
+    }
+
+
+def _source_path_evidence(component: Component) -> dict[str, dict]:
+    evidence = {}
+    for prop in component.properties:
+        if prop.get("name") != "firmware:source:path-evidence":
+            continue
+        try:
+            item = json.loads(str(prop.get("value", "")))
+        except (TypeError, ValueError):
+            continue
+        if (
+            isinstance(item, dict)
+            and item.get("project")
+            and item.get("source_path")
+            and isinstance(item.get("file_offset"), int)
+        ):
+            evidence.setdefault(str(item["project"]), item)
+    return evidence
+
+
 def _version_kind(component: Component) -> str:
     return next(
         (
@@ -226,6 +254,35 @@ def _apply_source_revision(
     candidates = [manifest[label] for label in sorted(labels) if label in manifest]
     rule_evidence = ""
     confidence = 0.68
+    source_path_projects = _source_path_projects(component)
+    source_path_evidence = _source_path_evidence(component)
+    if not candidates and source_path_projects:
+        for rule in source_project_rules:
+            project_path = str(rule.get("project_path", ""))
+            if project_path not in source_path_projects:
+                continue
+            try:
+                matched = re.search(str(rule.get("pattern", "")), component.name)
+            except re.error:
+                continue
+            if not matched:
+                continue
+            project = manifest.get(project_path)
+            if project is None:
+                continue
+            candidates = [project]
+            confidence = min(0.94, max(0.78, float(rule.get("confidence", 0.78))))
+            marker = source_path_evidence.get(project_path, {})
+            rule_evidence = (
+                str(rule.get("evidence", "SONAME source-project rule"))
+                + (
+                    f"; binary embeds {marker.get('source_path')!r} at file offset "
+                    f"0x{int(marker.get('file_offset', 0)):x}"
+                    if marker else
+                    f"; binary embeds a source path under {project_path}"
+                )
+            )
+            break
     if not candidates:
         for rule in source_project_rules:
             try:

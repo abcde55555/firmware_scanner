@@ -46,12 +46,73 @@ CATALOG = (
     CatalogItem("libuv1t64", "libuv.so.1", ("uv", "libuv")),
     CatalogItem("libssh2-1t64", "libssh2.so.1", ("ssh2", "libssh2")),
     CatalogItem("libjson-c5", "libjson-c.so.5", ("jsonc", "json-c", "libjson-c")),
+    CatalogItem("libogg0", "libogg.so.0", ("ogg", "libogg")),
+    CatalogItem("libvorbis0a", "libvorbis.so.0", ("vorbis", "libvorbis")),
+    CatalogItem("libvorbisenc2", "libvorbisenc.so.2", ("vorbis", "libvorbisenc")),
+    CatalogItem("libflac14", "libFLAC.so.14", ("flac", "libflac")),
+    CatalogItem("libsndfile1", "libsndfile.so.1", ("sndfile", "libsndfile")),
+    CatalogItem("libopus0", "libopus.so.0", ("opus", "libopus")),
+    CatalogItem("libspeex1", "libspeex.so.1", ("speex", "libspeex")),
+    CatalogItem("libsamplerate0", "libsamplerate.so.0", ("samplerate", "libsamplerate")),
+    CatalogItem("libsoxr0", "libsoxr.so.0", ("soxr", "libsoxr")),
+    CatalogItem("libexif12", "libexif.so.12", ("exif", "libexif")),
+    CatalogItem("libbpf1", "libbpf.so.1", ("bpf", "libbpf")),
+    CatalogItem("libyaml-0-2", "libyaml-0.so.2", ("yaml", "libyaml")),
+    CatalogItem("liblzo2-2", "liblzo2.so.2", ("lzo2", "liblzo2")),
+    CatalogItem("libdeflate0", "libdeflate.so.0", ("deflate", "libdeflate")),
+    CatalogItem("libsnappy1v5", "libsnappy.so.1", ("snappy", "libsnappy")),
+    CatalogItem("libzip5", "libzip.so.5", ("zip", "libzip")),
+    CatalogItem("libjxl0.11", "libjxl.so.0.11", ("jxl", "libjxl")),
+    CatalogItem("libavif16", "libavif.so.16", ("avif", "libavif")),
+    CatalogItem("libheif1", "libheif.so.1", ("heif", "libheif")),
+    CatalogItem("libdav1d7", "libdav1d.so.7", ("dav1d", "libdav1d")),
+    CatalogItem("libaom3", "libaom.so.3", ("aom", "libaom")),
+    CatalogItem("libopenjp2-7", "libopenjp2.so.7", ("openjp2", "openjpeg")),
+    CatalogItem("libtasn1-6", "libtasn1.so.6", ("tasn1", "libtasn1")),
+    CatalogItem("libnettle8t64", "libnettle.so.8", ("nettle", "libnettle")),
+    CatalogItem("libhogweed6t64", "libhogweed.so.6", ("hogweed", "libhogweed")),
+    CatalogItem("libgmp10", "libgmp.so.10", ("gmp", "libgmp")),
+    CatalogItem("libdbus-1-3", "libdbus-1.so.3", ("dbus", "libdbus")),
+    CatalogItem("libsystemd0", "libsystemd.so.0", ("systemd", "libsystemd")),
+    CatalogItem("libudev1", "libudev.so.1", ("udev", "libudev")),
+    CatalogItem("libnghttp2-14", "libnghttp2.so.14", ("nghttp2", "libnghttp2")),
+    CatalogItem("libnghttp3-9", "libnghttp3.so.9", ("nghttp3", "libnghttp3")),
+    CatalogItem("libngtcp2-16", "libngtcp2.so.16", ("ngtcp2", "libngtcp2")),
+    CatalogItem("libssh-4", "libssh.so.4", ("ssh", "libssh")),
+)
+
+INDEPENDENT_CATALOG = (
+    CatalogItem("libpango-1.0-0", "libpango-1.0.so.0", ("pango", "libpango")),
+    CatalogItem("libcairo2", "libcairo.so.2", ("cairo", "libcairo")),
+    CatalogItem("libpixman-1-0", "libpixman-1.so.0", ("pixman", "libpixman")),
+    CatalogItem(
+        "libgdk-pixbuf-2.0-0",
+        "libgdk_pixbuf-2.0.so.0",
+        ("gdkpixbuf20", "gdk-pixbuf"),
+    ),
+    CatalogItem("libgraphite2-3", "libgraphite2.so.3", ("graphite2", "libgraphite2")),
+    CatalogItem("libkrb5-3", "libkrb5.so.3", ("krb5", "libkrb5")),
+    CatalogItem("libgssapi-krb5-2", "libgssapi_krb5.so.2", ("gssapi-krb5",)),
+    CatalogItem("libldap2", "libldap.so.2", ("ldap", "libldap")),
+    CatalogItem("libsasl2-2", "libsasl2.so.2", ("sasl2", "libsasl2")),
+    CatalogItem("libp11-kit0", "libp11-kit.so.0", ("p11-kit", "libp11-kit")),
+    CatalogItem("libgnutls30t64", "libgnutls.so.30", ("gnutls", "libgnutls")),
+    CatalogItem("libunistring5", "libunistring.so.5", ("unistring", "libunistring")),
+    CatalogItem("libidn2-0", "libidn2.so.0", ("idn2", "libidn2")),
+    CatalogItem("libpsl5t64", "libpsl.so.5", ("psl", "libpsl")),
+    CatalogItem("libgpg-error0", "libgpg-error.so.0", ("gpg-error", "libgpg-error")),
+    CatalogItem("libgcrypt20", "libgcrypt.so.20", ("gcrypt", "libgcrypt")),
+    CatalogItem("liblzma5", "liblzma.so.5", ("lzma", "xzutils")),
+    CatalogItem("libbz2-1.0", "libbz2.so.1.0", ("bz2", "bzip2")),
+    CatalogItem("libffi8", "libffi.so.8", ("ffi", "libffi")),
+    CatalogItem("libseccomp2", "libseccomp.so.2", ("seccomp", "libseccomp")),
 )
 
 _OVERRIDES = {
     "libevent-2.1-7t64": "2.1.12-stable",
     "libjpeg62-turbo": "3.1.3",
     "libmagic1t64": "5.46",
+    "libgmp10": "6.3.0",
     "zlib1g": "1.3.1",
 }
 
@@ -77,10 +138,28 @@ def package_version(package: str) -> str:
         capture_output=True,
         text=True,
     )
-    return result.stdout.strip() if result.returncode == 0 else ""
+    if result.returncode == 0 and result.stdout.strip():
+        return result.stdout.strip()
+    cache = subprocess.run(
+        ["apt-cache", "show", package],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if cache.returncode == 0:
+        match = re.search(r"^Version:\s*(\S+)", cache.stdout, re.MULTILINE)
+        if match:
+            return match.group(1)
+    return ""
 
 
-def package_library(package: str, soname: str) -> Path | None:
+def package_library(
+    package: str,
+    soname: str,
+    *,
+    download_dir: Path | None = None,
+    extract_dir: Path | None = None,
+) -> tuple[Path | None, str]:
     result = subprocess.run(
         ["dpkg-query", "-L", package],
         check=False,
@@ -88,12 +167,43 @@ def package_library(package: str, soname: str) -> Path | None:
         text=True,
     )
     if result.returncode:
-        return None
-    for line in result.stdout.splitlines():
+        result_lines = []
+    else:
+        result_lines = result.stdout.splitlines()
+    for line in result_lines:
         if Path(line).name == soname and Path(line).exists():
-            return Path(line).resolve()
+            return Path(line).resolve(), "installed"
     fallback = COMMON_LIB / soname
-    return fallback.resolve() if fallback.exists() else None
+    if fallback.exists():
+        return fallback.resolve(), "installed"
+    if download_dir is None or extract_dir is None:
+        return None, "missing"
+
+    download_dir.mkdir(parents=True, exist_ok=True)
+    package_extract = extract_dir / package
+    package_extract.mkdir(parents=True, exist_ok=True)
+    existing = sorted(download_dir.glob(f"{package}_*.deb"))
+    if not existing:
+        subprocess.run(
+            ["apt-get", "download", package],
+            check=False,
+            cwd=download_dir,
+            capture_output=True,
+            text=True,
+        )
+        existing = sorted(download_dir.glob(f"{package}_*.deb"))
+    if existing:
+        archive = existing[-1]
+        subprocess.run(
+            ["dpkg-deb", "-x", str(archive), str(package_extract)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        for path in package_extract.rglob(soname):
+            if path.is_file():
+                return path.resolve(), "apt-download"
+    return None, "missing"
 
 
 def _sha256(path: Path) -> str:
@@ -193,7 +303,7 @@ def _metrics(records: list[dict]) -> dict:
     }
 
 
-def run(output: Path) -> dict:
+def run(output: Path, catalog=CATALOG) -> dict:
     from firmware_scanner import __version__
     from firmware_scanner.extraction.binary_inventory import BinaryInventory
 
@@ -203,9 +313,14 @@ def run(output: Path) -> dict:
     records = []
     skipped = []
     inventory = BinaryInventory()
-    for item in CATALOG:
+    for item in catalog:
         version = package_version(item.package)
-        path = package_library(item.package, item.library)
+        path, acquisition = package_library(
+            item.package,
+            item.library,
+            download_dir=output / "debs",
+            extract_dir=output / "extracted",
+        )
         if not version or path is None:
             skipped.append({"package": item.package, "library": item.library})
             continue
@@ -227,6 +342,7 @@ def run(output: Path) -> dict:
             continue
         record = evaluate_library(inventory, stripped, item, expected)
         record["package_version"] = version
+        record["acquisition"] = acquisition
         records.append(record)
 
     report = {
@@ -238,7 +354,7 @@ def run(output: Path) -> dict:
             "Catalog identity matching is based on explicit filename/component aliases and "
             "is not an independent identity-precision claim."
         ),
-        "catalog": [asdict(item) for item in CATALOG],
+        "catalog": [asdict(item) for item in catalog],
         "records": records,
         "skipped": skipped,
         "metrics": _metrics(records),
@@ -258,8 +374,14 @@ def main() -> int:
         type=Path,
         default=ROOT / "reports/heldout-debian-20261119",
     )
+    parser.add_argument(
+        "--suite",
+        choices=("development", "independent"),
+        default="development",
+    )
     args = parser.parse_args()
-    report = run(args.output)
+    catalog = INDEPENDENT_CATALOG if args.suite == "independent" else CATALOG
+    report = run(args.output, catalog)
     print(json.dumps({
         "output": str(args.output),
         "scanner_version": report["scanner_version"],

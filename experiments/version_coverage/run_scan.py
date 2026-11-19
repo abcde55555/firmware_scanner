@@ -46,9 +46,11 @@ def main():
     (output / 'source-sha256.json').write_text(json.dumps(manifest, indent=2) + '\n')
 
     from firmware_scanner.android.ext4_reader import Ext4Reader
+    from firmware_scanner.android.provenance import apply_component_taxonomy
     from firmware_scanner.android.system_scanner import AndroidSystemScanner
     from firmware_scanner.cli.app import _deduplicate_components
     from firmware_scanner.extraction.binary_inventory import BinaryInventory
+    from firmware_scanner.extraction.family_provenance import apply_family_version_provenance
     from firmware_scanner.sbom.cyclonedx import CycloneDXGenerator
 
     observations = []
@@ -76,10 +78,17 @@ def main():
         reader = Ext4Reader(data)
         if not reader.is_valid():
             raise SystemExit('Not a valid ext4 partition')
-        result = AndroidSystemScanner(reader).scan()
+        result = AndroidSystemScanner(
+            reader,
+            image_sha256=firmware['sha256'],
+        ).scan()
+        family_stats = apply_family_version_provenance(result.components)
+        apply_component_taxonomy(result.components)
         components = _deduplicate_components(result.components)
     payload = {'firmware': firmware, 'components': [c.model_dump(mode='json') for c in components],
                'warnings': result.warnings, 'build_info': dataclasses.asdict(result.build_info),
+               'provenance_stats': result.provenance_stats,
+               'family_provenance_stats': family_stats,
                'method': 'Product AndroidSystemScanner and CLI dedup; frozen source; read-only ext4; no target execution'}
     (output / 'system_analysis.json').write_text(json.dumps(payload, indent=2, ensure_ascii=False) + '\n')
     (output / 'file-observations.json').write_text(json.dumps(observations, indent=2) + '\n')

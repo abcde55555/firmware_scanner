@@ -42,6 +42,59 @@ def test_estimated_releases_count_as_usable_but_remain_distinct_from_observed_ve
     assert result["fixed"]["observations"][1]["version_kind"] == "estimated"
 
 
+@pytest.mark.parametrize(
+    "state",
+    [
+        "estimated",
+        "estimated-parent-package",
+        "estimated-source-revision",
+    ],
+)
+def test_resolution_state_prevents_parent_or_source_estimates_from_counting_as_exact(state):
+    baseline = [record("libalpha.so", "/system/lib/libalpha.so")]
+    current = record("libalpha.so", "/system/lib/libalpha.so", "360499999")
+    current["properties"] = [{
+        "name": "firmware:version:resolution-state",
+        "value": state,
+    }]
+
+    result = evaluate(baseline, [current], {})
+
+    metrics = result["fixed"]["all"]
+    assert metrics["exact_versions"] == 0
+    assert metrics["estimated_versions"] == 1
+    assert metrics["usable_versions"] == 1
+
+
+def test_explicit_estimated_generation_is_usable_but_not_exact():
+    baseline = [record("libbpf.so", "/system/lib64/libbpf.so")]
+    current = record("libbpf.so", "/system/lib64/libbpf.so", "1.4.x")
+    current["properties"] = [{
+        "name": "firmware:version:resolution-state",
+        "value": "estimated",
+    }]
+
+    result = evaluate(baseline, [current], {})
+
+    assert result["fixed"]["all"]["exact_versions"] == 0
+    assert result["fixed"]["all"]["estimated_versions"] == 1
+    assert result["fixed"]["all"]["ranges"] == 0
+
+
+def test_conflict_resolution_state_cannot_be_counted_as_exact():
+    baseline = [record("libalpha.so", "/system/lib/libalpha.so")]
+    current = record("libalpha.so", "/system/lib/libalpha.so", "1.2.3")
+    current["properties"] = [{
+        "name": "firmware:version:resolution-state",
+        "value": "conflict-unresolved",
+    }]
+
+    result = evaluate(baseline, [current], {})
+
+    assert result["fixed"]["all"]["exact_versions"] == 0
+    assert result["fixed"]["all"]["unknown"] == 1
+
+
 def test_explicit_taxonomy_gets_a_separate_coverage_breakdown():
     baseline = [
         record("libplatform-a.so", "/system/lib/libplatform-a.so"),
@@ -256,6 +309,29 @@ def test_duplicate_baseline_observations_each_remain_in_the_fixed_denominator():
 
     assert result["fixed"]["all"]["baseline"] == 2
     assert result["fixed"]["all"]["uncovered"] == 2
+
+
+def test_one_deduplicated_bom_row_covers_multiple_fixed_path_observations():
+    baseline = [
+        record("libalpha.so", "/system/lib64/libalpha.so"),
+        record("libalpha.so", "/system/apex/example.apex!/lib64/libalpha.so"),
+    ]
+    current = [{
+        **record("libalpha.so", "/system/lib64/libalpha.so", "1.2.3"),
+        "properties": [
+            {"name": "firmware:evidence:location", "value": "/system/lib64/libalpha.so"},
+            {
+                "name": "firmware:evidence:location",
+                "value": "/system/apex/example.apex!/lib64/libalpha.so",
+            },
+        ],
+    }]
+
+    result = evaluate(baseline, current, {})
+
+    assert result["fixed"]["all"]["matched"] == 2
+    assert result["fixed"]["all"]["uncovered"] == 0
+    assert result["fixed"]["all"]["exact_versions"] == 2
 
 
 def test_evidence_filename_without_absolute_path_is_a_source_location():

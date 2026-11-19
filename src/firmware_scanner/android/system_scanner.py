@@ -912,7 +912,10 @@ class AndroidSystemScanner:
     def _binary_inventory(self):
         if not hasattr(self, '_inventory'):
             from ..extraction.binary_inventory import BinaryInventory
-            self._inventory = BinaryInventory(database_enricher=self._database_enricher)
+            self._inventory = BinaryInventory(
+                database_enricher=self._database_enricher,
+                source_manifest=self._source_manifest,
+            )
         return self._inventory
 
     def _read_elf_bytes(self, path):

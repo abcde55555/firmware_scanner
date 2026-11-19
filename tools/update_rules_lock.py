@@ -11,7 +11,7 @@ from firmware_scanner.core.rules_manifest import build_rule_lock
 
 
 DEFAULT_DATA_ROOT = Path("src/firmware_scanner/data")
-DEFAULT_RELEASE = "builtin-2026.11.19.3"
+DEFAULT_RELEASE = "builtin-2026.11.20.1"
 
 
 def main() -> int:

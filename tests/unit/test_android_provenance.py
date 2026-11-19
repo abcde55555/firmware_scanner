@@ -1,4 +1,5 @@
 import gzip
+import json
 
 import pytest
 
@@ -11,6 +12,7 @@ from firmware_scanner.android.provenance import (
     source_manifest_matches_image,
 )
 from firmware_scanner.android.system_scanner import AndroidScanResult, AndroidSystemScanner
+from firmware_scanner.extraction.binary_inventory import BinaryInventory
 from firmware_scanner.extraction.models import Component, VersionConfidence
 from firmware_scanner.vuln.matcher import _is_scannable
 
@@ -311,6 +313,180 @@ def test_hal_namespace_rule_uses_declared_source_project_revision():
     } in component.properties
 
 
+def test_embedded_source_path_must_agree_with_the_filename_rule():
+    component = native("libopenssl.dylib.so", "/system/lib64/libopenssl.dylib.so")
+    component.properties.append({
+        "name": "firmware:source:path-project",
+        "value": "external/rust/crates/openssl",
+    })
+    component.properties.append({
+        "name": "firmware:source:path-evidence",
+        "value": (
+            '{"file_offset": 4096, "project": "external/rust/crates/openssl", '
+            '"source_path": "external/rust/crates/openssl/src/version.rs"}'
+        ),
+    })
+    stats = apply_android_provenance(
+        [component],
+        source_manifest={
+            "projects": [{
+                "path": "external/rust/crates/openssl",
+                "name": "platform/external/rust/crates/openssl",
+                "revision": "e5ef6ef50b72972ad9d0ba582906f27f0b8ba06b",
+            }],
+        },
+        source_project_rules=[{
+            "pattern": r"^libopenssl\.dylib\.so$",
+            "project_path": "external/rust/crates/openssl",
+            "confidence": 0.94,
+            "evidence": "rust-openssl source files",
+        }],
+    )
+
+    assert stats["source_versions_applied"] == 1
+    assert component.resolved_version == "0.10.64"
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "exact",
+    } in component.properties
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in component.properties
+    assert "src/version.rs" in component.versions[-1].evidence
+    assert "0x1000" in component.versions[-1].evidence
+
+
+def test_openssh_manifest_revision_and_version_header_supply_release():
+    component = native("libssh.so", "/product/lib64/libssh.so")
+    component.properties.append({
+        "name": "firmware:source:path-project",
+        "value": "external/openssh",
+    })
+    stats = apply_android_provenance(
+        [component],
+        source_manifest={
+            "projects": [{
+                "path": "external/openssh",
+                "name": "LineageOS/android_external_openssh",
+                "revision": "60ca88651d39f699932f63d41409facc18c5ad19",
+            }],
+        },
+        source_project_rules=[{
+            "pattern": r"^(?:libssh\.so(?:\.[0-9]+)*|openssh)$",
+            "project_path": "external/openssh",
+            "confidence": 0.94,
+        }],
+    )
+
+    assert stats["source_versions_applied"] == 1
+    assert component.resolved_version == "9.0p1"
+    assert {
+        "name": "firmware:source:version-authority",
+        "value": "SSH_VERSION and SSH_PORTABLE",
+    } in component.properties
+
+
+def test_binary_inventory_records_only_manifest_source_paths():
+    payload = (
+        b"\x7fELF"
+        + bytes(60)
+        + b"\0external/rust/crates/openssl/src/version.rs\0"
+        + b"unlisted/project/src/file.c\0"
+    )
+    component = BinaryInventory(source_manifest={
+        "projects": [
+            {"path": "external/rust/crates/openssl", "revision": "a" * 40},
+            {"path": "external/rust/android-crates-io", "revision": "b" * 40},
+        ],
+    }).extract(
+        payload,
+        "libopenssl.dylib.so",
+        "/system/lib64/libopenssl.dylib.so",
+    )[0]
+
+    assert [
+        prop["value"]
+        for prop in component.properties
+        if prop["name"] == "firmware:source:path-project"
+    ] == ["external/rust/crates/openssl"]
+    evidence = json.loads(next(
+        prop["value"]
+        for prop in component.properties
+        if prop["name"] == "firmware:source:path-evidence"
+    ))
+    assert evidence == {
+        "project": "external/rust/crates/openssl",
+        "source_path": "external/rust/crates/openssl/src/version.rs",
+        "file_offset": len(b"\x7fELF") + 60 + 1,
+    }
+
+
+def test_embedded_dependency_path_does_not_override_filename_rule():
+    component = native("libunrelated.so", "/system/lib64/libunrelated.so")
+    component.properties.extend([
+        {
+            "name": "firmware:source:path-project",
+            "value": "external/rust/crates/openssl",
+        },
+        {
+            "name": "firmware:source:path-project",
+            "value": "packages/modules/ConfigInfrastructure",
+        },
+    ])
+    apply_android_provenance(
+        [component],
+        source_manifest={
+            "projects": [
+                {
+                    "path": "external/rust/crates/openssl",
+                    "revision": "a" * 40,
+                },
+                {
+                    "path": "packages/modules/ConfigInfrastructure",
+                    "revision": "b" * 40,
+                },
+            ],
+        },
+        source_project_rules=[
+            {
+                "pattern": r"^libopenssl\.dylib\.so$",
+                "project_path": "external/rust/crates/openssl",
+            },
+            {
+                "pattern": r"^libaconfig_.*\.dylib\.so$",
+                "project_path": "packages/modules/ConfigInfrastructure",
+            },
+        ],
+    )
+
+    assert component.resolved_version == ""
+
+
+def test_adbd_helper_prefers_its_owner_over_an_embedded_logging_dependency():
+    component = native("libadbd_fs.so", "/system/lib64/libadbd_fs.so")
+    component.properties.append({
+        "name": "firmware:source:path-project",
+        "value": "system/logging",
+    })
+    apply_android_provenance(
+        [component],
+        source_manifest={
+            "projects": [
+                {"path": "system/logging", "revision": "a" * 40},
+                {"path": "packages/modules/adb", "revision": "b" * 40},
+            ],
+        },
+        source_project_rules=AndroidSystemScanner._load_source_project_rules(),
+    )
+
+    assert component.resolved_version == "git:" + "b" * 40
+    assert {
+        "name": "firmware:source:project",
+        "value": "packages/modules/adb",
+    } in component.properties
+
+
 def test_unrelated_system_namespace_is_not_assigned_to_hardware_interfaces():
     component = native(
         "android.system.keystore2-V1-ndk.so",
@@ -406,6 +582,11 @@ def test_source_project_rule_pack_covers_external_binary_families():
         if rule["project_path"] == "external/freetype"
     )
     assert __import__("re").search(freetype["pattern"], "libft2.so")
+    openssl = next(
+        rule for rule in rules
+        if rule["project_path"] == "external/rust/crates/openssl"
+    )
+    assert __import__("re").search(openssl["pattern"], "libopenssl.dylib.so")
 
 
 def test_exact_source_declared_release_can_generate_upstream_cpe():

@@ -47,6 +47,7 @@ INTEGER_GETTERS = {
     'BrotliEncoderVersion': ('Brotli', 'brotli'),
     'uv_version': ('libuv', 'packed8'),
     'vpx_codec_version': ('libvpx', 'packed8'),
+    'JxlDecoderVersion': ('libjxl', 'decimal1000'),
 }
 STRING_GETTERS = {
     'hb_version_string': ('HarfBuzz', ''),

@@ -276,28 +276,39 @@ native-library release.
 
 ## Held-out Debian truth set
 
-`debian_heldout.py` uses Debian package metadata as an independent initial truth
-set, resolves one explicitly mapped SONAME per package, copies it, and applies
-`strip --strip-all` before scanning.
+`debian_heldout.py` uses Debian package metadata as truth, resolves one
+explicitly mapped SONAME per package, copies it, and applies `strip --strip-all`
+before scanning. Missing packages can be downloaded as `.deb` and extracted with
+`dpkg-deb -x`; they are not installed.
 
 ```sh
-python3 experiments/version_coverage/debian_heldout.py \
-  --output reports/heldout-debian-20261119
+PYTHONPATH=src python3 experiments/version_coverage/debian_heldout.py \
+  --output reports/heldout-debian-54-20261120-final
+
+PYTHONPATH=src python3 experiments/version_coverage/debian_heldout.py \
+  --suite independent \
+  --output reports/heldout-debian-independent-20-20261120-final
 ```
 
-The current 21-library seed returns 19 exact versions, zero wrong versions and
-two unknowns (FreeType Debian build shape and Capstone's major/minor-only API).
-Catalog identity matching is explicit filename/component mapping, not a claim of
-independent identity precision. See
+The 54-library development suite returns 39 exact, 2 estimated, 13 unknown and
+zero wrong claims: 41/54 usable coverage and 100% precision among version
+claims. The separate 20-library suite was 2/20 on its first unseen run and 12/20
+after general public getters were added; it is no longer fully held out after
+that rule development. Catalog identity matching is explicit
+filename/component mapping, not a claim of independent identity precision. See
 `docs/heldout-debian-version-validation-2026-11-19.md`.
 
 ## Android source and parent provenance
 
-The production Android scanner now parses image-local NOTICE mappings and applies
+The production Android scanner parses image-local NOTICE mappings and applies
 source revisions only from an image-SHA-256-matched manifest. It also records
 APEX/APK parent versions and propagates provenance across byte-identical ELF
-copies by SHA-256. `provenance.py` keeps these values explicitly marked as
-estimates; they are excluded from CPE synthesis and OSV queries.
+copies by SHA-256. The inventory additionally extracts embedded source-file
+paths; a project revision is applied only when the component-name rule and one
+of the manifest project paths agree. Exact Rust crate/OpenSSH versions require a
+revision-bound `Cargo.toml` or version header. `provenance.py` keeps other
+revision values explicitly marked as estimates; they are excluded from CPE
+synthesis and OSV queries.
 
 The exact-image Waydroid source pack and HAL namespace rules are in
 `src/firmware_scanner/data/provenance/`. To evaluate a completed scan against the
@@ -310,7 +321,7 @@ PYTHONPATH=. python experiments/version_coverage/evaluate.py \
   --baseline-commit e890f0c
 ```
 
-The final measured result is 655/1,129 populated fields (58.02%) and 532/774
-native libraries (68.73%). Only 152 are exact fields; the remainder are labelled
-source-revision or parent-package estimates. See
-`docs/version-coverage-existing-databases-and-provenance-2026-11-19.md`.
+On the frozen 1,129/774 cohort, the 0.8.0 evidence update produces 744/1,129
+usable fields (65.90%) and 621/774 native libraries (80.23%): 177 exact and 567
+explicit estimates. These are coverage values, not independently verified
+accuracy. See `docs/firmware-sbom-roadmap-review-2026-11-20.md`.

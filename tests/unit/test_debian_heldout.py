@@ -19,8 +19,18 @@ def test_heldout_catalog_uses_explicit_upstream_aliases():
 
     pcre2 = next(item for item in CATALOG if item.package == "libpcre2-8-0")
     openssl = next(item for item in CATALOG if item.package == "libssl3t64")
+    opus = next(item for item in CATALOG if item.package == "libopus0")
 
+    assert len(CATALOG) >= 50
     assert pcre2.library == "libpcre2-8.so.0"
     assert "pcre2" in pcre2.aliases
     assert openssl.library == "libcrypto.so.3"
     assert {"openssl", "libcrypto"} <= set(openssl.aliases)
+    assert opus.library == "libopus.so.0"
+
+
+def test_independent_catalog_remains_a_separate_twenty_library_suite():
+    from experiments.version_coverage.debian_heldout import INDEPENDENT_CATALOG
+
+    assert len(INDEPENDENT_CATALOG) == 20
+    assert len({item.library for item in INDEPENDENT_CATALOG}) == 20

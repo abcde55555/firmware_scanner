@@ -91,6 +91,55 @@ def test_sqlite_object_is_attributed_to_its_library_not_vendor_container(tmp_pat
     assert own[0].resolved_version == "3.44.5"
 
 
+@pytest.mark.parametrize("flags", [(), ("-m32", "-nostdlib")], ids=["elf64", "elf32"])
+def test_gmp_pointer_release_object_uses_the_documented_symbol(tmp_path, flags):
+    import json
+
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(tmp_path, 'const char *__gmp_version = "6.3.0";', flags)
+    hits = extract_object_versions(data)
+    assert [(hit.name, hit.version) for hit in hits] == [("GMP", "6.3.0")]
+    evidence = json.loads(hits[0].evidence)
+    assert evidence["symbol"] == "__gmp_version"
+    assert evidence["value"] == "6.3.0"
+
+
+@pytest.mark.parametrize("value", ["GMP 6.3.0", "6.3.0 trailing", "dev"])
+def test_gmp_release_requires_a_bare_numeric_release(tmp_path, value):
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    assert extract_object_versions(
+        _elf(tmp_path, f'const char *__gmp_version = "{value}";')
+    ) == []
+
+
+def test_libunistring_packed_version_object_is_decoded(tmp_path):
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        "const unsigned int _libunistring_version = 0x010402u;",
+    )
+    assert [(hit.name, hit.version) for hit in extract_object_versions(data)] == [
+        ("libunistring", "1.4.2")
+    ]
+
+
+def test_gdk_pixbuf_documented_integer_triplet_is_combined(tmp_path):
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        "const unsigned int gdk_pixbuf_major_version = 2;"
+        "const unsigned int gdk_pixbuf_minor_version = 44;"
+        "const unsigned int gdk_pixbuf_micro_version = 5;",
+    )
+    assert [(hit.name, hit.version) for hit in extract_object_versions(data)] == [
+        ("GdkPixbuf", "2.44.5")
+    ]
+
+
 def test_cryptoauth_declared_release_date_is_its_own_version(tmp_path):
     from firmware_scanner.extraction.object_version import extract_object_versions
 

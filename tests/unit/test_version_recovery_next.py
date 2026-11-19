@@ -5,7 +5,7 @@ import subprocess
 
 import pytest
 
-from firmware_scanner.extraction.binary_inventory import BinaryInventory
+from firmware_scanner.extraction.binary_inventory import BinaryInventory, identity_key
 from firmware_scanner.extraction.binary_reference import BinaryReferenceMatcher
 from firmware_scanner.extraction.elf_deep_extractor import ELFDeepExtractor
 
@@ -111,7 +111,7 @@ def test_vpx_disagreeing_defined_apis_remain_unresolved(shared_elf):
     assert any(p["name"] == "firmware:version:conflict" for p in vpx.properties)
 
 
-def test_libbpf_defined_version_string_recovers_declared_release(shared_elf):
+def test_libbpf_major_minor_string_remains_an_estimated_generation(shared_elf):
     data = shared_elf(
         'const char *libbpf_version_string(void) { return "v1.4"; }\n'
         "unsigned libbpf_major_version(void) { return 1; }\n"
@@ -122,12 +122,16 @@ def test_libbpf_defined_version_string_recovers_declared_release(shared_elf):
         "libbpf.so",
         "/system/lib64/libbpf.so",
     )[0]
-    assert component.resolved_version == "1.4"
+    assert component.resolved_version == "1.4.x"
     assert any(
         prop["name"] == "firmware:version:resolution-state"
-        and prop["value"] == "exact"
+        and prop["value"] == "estimated"
         for prop in component.properties
     )
+
+
+def test_libyaml_abi_suffix_maps_to_yaml_identity():
+    assert identity_key("libyaml-0.so.2") == "yaml"
 
 
 @pytest.mark.parametrize(
@@ -154,6 +158,55 @@ def test_additional_defined_version_strings_are_attributed_by_api(
         "/system/lib64/libvendor.so",
     )
     component = next(item for item in matches if item.name == component_name)
+    assert component.resolved_version == version
+
+
+@pytest.mark.parametrize(
+    "function,component_name,string,version",
+    [
+        ("sf_version_string", "libsndfile", "libsndfile-1.2.2", "1.2.2"),
+        (
+            "src_get_version",
+            "libsamplerate",
+            "libsamplerate-0.2.2 (c) 2002-2008 Erik de Castro Lopo",
+            "0.2.2",
+        ),
+        ("yaml_get_version_string", "libyaml", "0.2.5", "0.2.5"),
+        ("lzo_version_string", "liblzo2", "2.10", "2.10"),
+        ("zip_libzip_version", "libzip", "1.11.4", "1.11.4"),
+        ("aom_codec_version_str", "libaom", "v3.13.1", "3.13.1"),
+        ("pango_version_string", "Pango", "1.57.0", "1.57.0"),
+        ("cairo_version_string", "Cairo", "1.18.4", "1.18.4"),
+        ("pixman_version_string", "Pixman", "0.46.4", "0.46.4"),
+        ("soxr_version", "libsoxr", "libsoxr-0.1.3", "0.1.3"),
+        (
+            "psl_get_version",
+            "libpsl",
+            "0.23.3 (+libidn2/2.3.8)",
+            "0.23.3",
+        ),
+        ("lzma_version_string", "XZ Utils", "5.8.2", "5.8.2"),
+        ("BZ2_bzlibVersion", "bzip2", "1.0.8, 13-Jul-2019", "1.0.8"),
+        ("ffi_get_version", "libffi", "3.5.2", "3.5.2"),
+    ],
+)
+def test_additional_owned_version_getters_accept_only_their_release_shape(
+    shared_elf,
+    function,
+    component_name,
+    string,
+    version,
+):
+    data = shared_elf(f'const char *{function}(void) {{ return "{string}"; }}\n')
+    component = next(
+        item
+        for item in BinaryInventory().extract(
+            data,
+            "libvendor.so",
+            "/system/lib64/libvendor.so",
+        )
+        if item.name == component_name
+    )
     assert component.resolved_version == version
 
 
