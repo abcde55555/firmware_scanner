@@ -676,6 +676,14 @@ def _run_analysis(
         file_hash_sha256=sha256,
         file_hash_md5=md5,
     )
+    from ..core.rules_manifest import verify_builtin_rule_lock
+
+    rules = verify_builtin_rule_lock()
+    context.metadata["rules"] = {
+        "release": rules["release"],
+        "lock_sha256": rules["lock_sha256"],
+        "file_count": len(rules["files"]),
+    }
 
     # Unpack
     console.print("[*] Unpacking firmware...")
@@ -1653,6 +1661,7 @@ def _store_android_build_info(context: AnalysisContext, result) -> None:
         "all_properties": all_props,
         "database_stats": result.database_stats,
         "analysis_stats": result.analysis_stats,
+        "rules": context.metadata.get("rules", {}),
     }
     if result.database_stats:
         context.metadata["database_stats"] = result.database_stats
@@ -1784,6 +1793,7 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
         },
         "database_stats": context.metadata.get("database_stats", {}),
         "analysis_stats": context.metadata.get("analysis_stats", {}),
+        "rules": context.metadata.get("rules", {}),
         "components": [c.model_dump() for c in context.components],
         "warnings": context.warnings,
         "errors": [e.model_dump() for e in context.errors],

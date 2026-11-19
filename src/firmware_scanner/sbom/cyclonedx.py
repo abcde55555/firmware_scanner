@@ -217,6 +217,18 @@ class CycloneDXGenerator:
                 "name": "firmware:analysis:stats",
                 "value": json.dumps(info["analysis_stats"], sort_keys=True),
             })
+        rules = info.get("rules")
+        if rules:
+            if rules.get("release"):
+                props.append({
+                    "name": "firmware:rules:release",
+                    "value": str(rules["release"]),
+                })
+            if rules.get("lock_sha256"):
+                props.append({
+                    "name": "firmware:rules:lock-sha256",
+                    "value": str(rules["lock_sha256"]),
+                })
 
         metadata["properties"] = props
         # Also populate properties on metadata.component for platforms inspecting the root component

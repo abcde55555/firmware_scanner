@@ -187,6 +187,10 @@ enabled by default and cached by inode, size, mtime and ctime. Use
 `--skip-database-integrity` only for a known file that was verified separately;
 the schema checks remain enabled.
 
+Built-in binary, provenance, signature and database-manifest data are verified
+against `rules.lock.json` at scan startup. The JSON analysis and CycloneDX
+metadata record the rules release and lock SHA-256.
+
 BLintDB contributes identity and reference-build candidates. NSRL contributes
 exact-file and distribution-package evidence. Neither source promotes a
 reference or distribution version into the target library version field.

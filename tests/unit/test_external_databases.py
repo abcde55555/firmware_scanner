@@ -424,6 +424,10 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
         metadata={
             "database_stats": {"files_queried": 7},
             "analysis_stats": {"content_cache_hits": 3},
+            "rules": {
+                "release": "builtin-test",
+                "lock_sha256": "c" * 64,
+            },
         },
     )
     output = tmp_path / "analysis.json"
@@ -431,6 +435,7 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
     report = json.loads(output.read_text())
     assert report["database_stats"] == {"files_queried": 7}
     assert report["analysis_stats"] == {"content_cache_hits": 3}
+    assert report["rules"]["release"] == "builtin-test"
 
 
 def test_generic_database_context_closes_connection_after_exception(monkeypatch):

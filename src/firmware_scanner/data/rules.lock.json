@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "release": "builtin-2026.11.19.2",
+  "files": [
+    {
+      "path": "binary_reference.json",
+      "sha256": "d7fa792bb775d1cbfa6a46e047159d9e9daf4d40da925ff7a26e3df9ed08abaf",
+      "kind": "binary-rule-pack"
+    },
+    {
+      "path": "binary_samples.json",
+      "sha256": "941c284b2da869aceee659b09f6a895395435b96733cad33143f6156d6f06f67",
+      "kind": "binary-sample-pack"
+    },
+    {
+      "path": "cve/offline_db.json",
+      "sha256": "a1a12e078c233c7f821b8cdada1cb57293cad1d3244de09a31c43d4e5e47a22f",
+      "kind": "offline-advisory-pack"
+    },
+    {
+      "path": "database_packs/blintdb-v4-arm64.json",
+      "sha256": "0d82cec414b342ca89effa0859bca7d9beba775bc8aea3f8e2b67aad4d6192aa",
+      "kind": "database-manifest"
+    },
+    {
+      "path": "database_packs/nsrl-rds-2026.03.1-android-minimal.json",
+      "sha256": "9eee97f4cc1ae86d236a8fc6e41ad6221b21c7a751c4b8cd9c65bb2062f39398",
+      "kind": "database-manifest"
+    },
+    {
+      "path": "emba_rules.json",
+      "sha256": "b6f950e195be167bf3f95ba0ca7c54ef9c21d01b0ff29efebd28961f8c7bca60",
+      "kind": "binary-rule-pack"
+    },
+    {
+      "path": "provenance/android_source_project_rules.json",
+      "sha256": "803e3fd3da3ed93c6d2b5089d8e1f8ed246a0a569675a5435f623e2c372b0554",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "provenance/source-version-pins.json",
+      "sha256": "bd4db399a9b4cd67061b216665881e20b2e6eb4884211bf399a21951456ebc96",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "provenance/waydroid-atv-20260403.json",
+      "sha256": "12ee1fbc00eb86aedd0e831db2217d9503e01c6026194a874828f9520f15fa18",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "rust_version_positions.json",
+      "sha256": "f49490ffa97cc6291a576fd0e66e61a77d4fdaf8c46e71a98df7ad423406d6d3",
+      "kind": "rust-version-pack"
+    },
+    {
+      "path": "signatures/components.json",
+      "sha256": "15d3acdd0cb507b1849ebbdbb404ac138781644fa2eaedd4fb9988dbfdcaa730",
+      "kind": "signature-pack"
+    },
+    {
+      "path": "signatures/dex_packages.json",
+      "sha256": "71e0894096d0d6efca81f5f55baf5e0c520f086b5517bce89be3b2a4cdb72b2d",
+      "kind": "signature-pack"
+    },
+    {
+      "path": "signatures/version_patterns.json",
+      "sha256": "17e794ffe812a678aa8b9accd24b3b1b0b9e0b4f70d81e8de338394e506fe3dc",
+      "kind": "signature-pack"
+    }
+  ]
+}

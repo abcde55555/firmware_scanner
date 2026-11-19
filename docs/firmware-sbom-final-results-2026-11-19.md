@@ -13,6 +13,8 @@ This round added:
 - strict separation of exact, estimated and unresolved versions;
 - target-package and version-branch filtering for OSV candidates;
 - dependency-edge deduplication and SONAME ambiguity suppression.
+- a fail-closed SHA-256 lock for bundled binary, provenance, signature,
+  database-manifest and offline advisory data.
 
 The measured fixed-cohort version coverage improved on the modern Android image
 from **655/1,129 (58.02%) to 690/1,129 (61.12%)**. Native-library coverage
@@ -125,6 +127,9 @@ the generic `SmartSectionAnalyzer` ELF path. A real `/bin/echo` smoke scan
 queried one unique ELF and wrote database/cache statistics to both JSON and
 CycloneDX metadata. The generic enricher is closed in a `finally` path, including
 when analysis raises.
+
+The bundled data lock release is `builtin-2026.11.19.2`, covering 13 JSON packs.
+Its release and lock SHA-256 are present in both JSON and CycloneDX metadata.
 
 ## BOM and VEX validation
 

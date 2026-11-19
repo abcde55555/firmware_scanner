@@ -116,6 +116,12 @@ Keep the core binary rules, source-project rules, source-version pins and
 packaged database manifests in this repository while their total volume remains
 small. This keeps code, tests, provenance and scan behavior atomic.
 
+`src/firmware_scanner/data/rules.lock.json` pins every bundled JSON data pack by
+SHA-256 and records a release identifier. Scans verify it before unpacking and
+write the release and lock digest into JSON and CycloneDX output. Run
+`PYTHONPATH=. python3 tools/update_rules_lock.py --check` in CI and regenerate
+the lock only when intentionally changing a rule or provenance file.
+
 Move large or frequently updated reference corpora to a separate
 `firmware-scanner-rules` repository. Consumers must pin an immutable tag and
 verify a `rules.lock.json` containing:
