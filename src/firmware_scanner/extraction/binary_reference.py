@@ -157,7 +157,7 @@ class BinaryReferenceMatcher:
             ):
                 candidates.append(("", f"explicit identity banner: {identity_banner}", True))
 
-            if not candidates:
+            if not candidates and (not rule.get("require_filename_hint", False) or filename_hint):
                 if name == "OpenSSL" and re.search(rb"boringssl", data, re.IGNORECASE):
                     continue
                 for group in rule.get("identity_symbols", []):

@@ -322,6 +322,40 @@ def test_cyclonedx_round_trip_preserves_platform_build_scan_gate(tmp_path):
     assert not _is_scannable(components[0])
 
 
+def test_cyclonedx_round_trip_preserves_no_canonical_osv_package_gate(tmp_path):
+    codec = Component(
+        name="3GPP AMR-WB decoder",
+        component_type="library",
+        resolved_version="6.0.0",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            },
+            {
+                "name": "firmware:vulnerability:query",
+                "value": "not-queryable-no-canonical-osv-package",
+            },
+        ],
+    )
+    context = AnalysisContext(
+        firmware_path=Path("firmware.img"),
+        file_hash_sha256="a" * 64,
+        components=[codec],
+    )
+    cdx_path = tmp_path / "codec.cdx.json"
+    cdx_path.write_text(
+        SBOMGenerator().generate_cyclonedx(context, spec_version="1.6"),
+        encoding="utf-8",
+    )
+
+    components, _ = parse_sbom_to_components(cdx_path)
+
+    assert len(components) == 1
+    assert components[0].resolved_version == "6.0.0"
+    assert not _is_scannable(components[0])
+
+
 def test_asrock_atv_sbom_metadata():
     """Verify that ATV-SBOM mandatory metadata fields and properties are generated."""
     context = _create_sample_context()

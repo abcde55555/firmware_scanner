@@ -9,7 +9,7 @@ from pathlib import Path
 from firmware_scanner.core.rules_manifest import build_rule_lock
 
 DEFAULT_DATA_ROOT = Path("src/firmware_scanner/data")
-DEFAULT_RELEASE = "builtin-2026.11.20.2"
+DEFAULT_RELEASE = "builtin-2026.11.20.3"
 
 
 def main() -> int:

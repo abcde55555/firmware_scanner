@@ -328,14 +328,30 @@ PYTHONPATH=. python experiments/version_coverage/evaluate.py \
   --baseline-commit e890f0c
 ```
 
-On the frozen 1,129/774 cohort, the 0.13.0 evidence update produces 785/1,129
+On the frozen 1,129/774 cohort, the 0.14.0 evidence update produces 785/1,129
 usable fields (69.53%) and 621/774 native libraries (80.23%): 225 exact and 560
 explicit estimates. The 39-row increase is a scoped Android framework platform
-baseline, not additional upstream releases or third-party exact matches. These
-are coverage values, not independently verified accuracy. See
+baseline, not additional upstream releases or third-party exact matches.
+
+Allwinner reaches 190/582 usable fields (32.65%) and 53/312 native libraries
+(16.99%): 120 exact and 70 explicit estimates. Five entries have independent
+AOSP-source expectations and evaluate 5/5 correct; this remains a development
+calibration subset rather than full-firmware accuracy.
+
+These are coverage values where no complete independent truth exists. See
 `docs/firmware-sbom-roadmap-review-2026-11-20.md` and
 `docs/database-and-rust-version-validation-2026-11-20.md`. The Allwinner
 evidence hardening and frozen-source version fix are recorded in
 `docs/version-evidence-hardening-2026-11-20.md`.
 The scan-time and cache measurements are in
 `docs/firmware-scanner-performance-2026-11-20.md`.
+
+Run the Allwinner calibration gate:
+
+```sh
+PYTHONPATH=. python experiments/version_coverage/evaluate.py \
+  reports/function-version-experiment-20261118/after/allwinner/system_analysis.json \
+  reports/version-coverage-getters-20261120/final-allwinner/system_analysis.json \
+  --baseline-commit e890f0c \
+  --verified experiments/version_coverage/verified/allwinner-ktu84q-aosp-4.4.4.json
+```

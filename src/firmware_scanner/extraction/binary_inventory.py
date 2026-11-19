@@ -18,6 +18,9 @@ _SOURCE_PATH = re.compile(
     rb"(?:external|packages|system|bionic|frameworks|hardware|vendor)/"
     rb"[A-Za-z0-9_.@+/-]{1,220}\.(?:rs|c|cc|cpp|cxx|h|hpp|S)"
 )
+_NO_CANONICAL_OSV_PACKAGE = {
+    "3GPP AMR-WB decoder",
+}
 
 
 def identity_key(name: str) -> str:
@@ -127,6 +130,24 @@ class BinaryInventory:
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
         from .object_version import extract_object_versions
         for hit in extract_object_versions(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
+        from .jpeg_abi_version import extract_jpeg_abi_evidence
+        jpeg_abi = extract_jpeg_abi_evidence(data)
+        if jpeg_abi is not None:
+            properties.extend(
+                [
+                    {
+                        "name": "firmware:jpeg:abi-version",
+                        "value": str(jpeg_abi.abi_version),
+                    },
+                    {
+                        "name": "firmware:jpeg:abi-evidence",
+                        "value": jpeg_abi.evidence,
+                    },
+                ]
+            )
+        from .amr_wb_version import extract_amr_wb_version
+        for hit in extract_amr_wb_version(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
         from .structured_version import extract_structured_versions
         for hit in extract_structured_versions(data):
@@ -390,6 +411,13 @@ class BinaryInventory:
         )
         if not any(prop.get("name") == "firmware:version:resolution-state" for prop in properties):
             properties.append({"name": "firmware:version:resolution-state", "value": state})
+        if name in _NO_CANONICAL_OSV_PACKAGE:
+            properties.append(
+                {
+                    "name": "firmware:vulnerability:query",
+                    "value": "not-queryable-no-canonical-osv-package",
+                }
+            )
         return Component(name=name, component_type=component_type, resolved_version=version,
                          purl=f'pkg:generic/{quote(name, safe="._-")}' + (f'@{quote(version, safe="._-+")}' if version else ''),
                          description=f'{"Native library" if component_type == "library" else "ELF executable"} at {location}',

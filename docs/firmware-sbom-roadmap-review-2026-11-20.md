@@ -1,4 +1,4 @@
-# 固件 SBOM 路线审查与 0.13.0 实测结论
+# 固件 SBOM 路线审查与 0.14.0 实测结论
 
 Date: 2026-11-20
 Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`
@@ -8,7 +8,7 @@ Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`
 路线图的长期方向可以作为架构参考，但不能按文档中的旧基线和时间表直接排期：
 
 - 文档仍以 `5691133` 的 21.3%/13.6% 作为当前起点，但当前固定分母基线已经达到
-  Android 785/1,129（其中 exact 225）、Allwinner 185/582（其中 exact 119）。
+  Android 785/1,129（其中 exact 225）、Allwinner 190/582（其中 exact 119）。
   两边各有 39 项来自明确隔离的平台构建基线，不能算作第三方上游版本命中。
 - “只扫第一个 DEX”和“缺少内容缓存”已经修复；“版本字段覆盖”仍不能称为
   “版本准确率”。
@@ -123,7 +123,7 @@ exact。现在：
 
 固定分母：1,129 个组件，其中原生库 774 个。
 
-| 指标 | 本轮前 | 0.13.0 |
+| 指标 | 本轮前 | 0.14.0 |
 |---|---:|---:|
 | 全部组件 usable | 690/1,129, 61.12% | **785/1,129, 69.53%** |
 | 原生库 usable | 567/774, 73.26% | **621/774, 80.23%** |
@@ -137,6 +137,13 @@ exact。现在：
 `platform-first-party` 的 framework build baseline；第三方 OSS 固定切片仍为
 100 项，其中 87 exact、13 estimated。因此 69.53% 是当前冻结分母的字段覆盖，
 不能与路线图中“第三方 OSS 50%”直接等同。
+
+0.14.0 没有改变 Modern 的分桶。Allwinner 增加 5 个固定分母版本，均为
+带 AOSP `android-4.4.4_r2` 来源的精确 build 估算；其中 libjpeg 还要求目标
+二进制执行 ABI 62 检查，但该 ABI 被多种兼容实现使用，因此不升级为 exact。
+另外四项是 libexif、SpeexDSP、STLport、Jhead。这 5 个条目有独立
+来源真值，评测结果为 **5/5 correct, 0 errors**；它们属于开发校准集，不是
+held-out。
 
 明确第三方 OSS 切片中，固定分母 100 项全部有非空版本：87 exact、13
 estimated。这里的 100% 是字段覆盖，不是 100% 准确率；该子集只包含已有明确
@@ -175,11 +182,12 @@ Allwinner：
 
 | 指标 | 结果 |
 |---|---:|
-| 全部组件 usable | 185/582, 31.79% |
-| 原生库 usable | 48/312, 15.38% |
+| 全部组件 usable | 190/582, 32.65% |
+| 原生库 usable | 53/312, 16.99% |
 | exact | 119 |
-| estimated | 66 |
-| unknown | 390 |
+| estimated | 71 |
+| unknown | 385 |
+| independently verified | **5，5 correct / 0 errors** |
 
 Allwinner 新增的 39 项同样是 `estimated-platform-build`。它没有与分区镜像
 哈希匹配的 source manifest，因此不得把 Modern Android 的 revision 映射外推
@@ -226,6 +234,8 @@ Allwinner 新增的 39 项同样是 `estimated-platform-build`。它没有与分
 - 不能让 `libbpf 1.6.x`、Capstone `5.0.x` 等 generation estimate 用于单点 CVE
   版本查询。
 - 不能把未复测的 BSim、Top 300/500 索引和 QEMU 结果写成已实现能力。
+- 不能把 5 条 AOSP 校准结果外推为 Allwinner 全镜像准确率；其余 577 条固定
+  记录仍没有独立真值。
 
 ## 机器可读结果
 
@@ -235,3 +245,5 @@ Allwinner 新增的 39 项同样是 `estimated-platform-build`。它没有与分
 - `reports/heldout-debian-54-20261120-final/heldout-report.json`
 - `reports/heldout-debian-independent-20-20261120-final/heldout-report.json`
 - `reports/version-coverage-getters-20261120/schema-validation.json`
+- `experiments/version_coverage/verified/allwinner-ktu84q-aosp-4.4.4.json`
+- `docs/firmware-sbom-roadmap-research-2026-11-20.md`

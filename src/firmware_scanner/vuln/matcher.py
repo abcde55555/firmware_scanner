@@ -138,6 +138,16 @@ _INVALID_VERSIONS = {"detected", "unknown", "n/a", "boringssl", ""}
 
 def _is_scannable(component: Component) -> bool:
     """Check if a component has enough info for a meaningful vulnerability query."""
+    query_disposition = next(
+        (
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:vulnerability:query"
+        ),
+        "",
+    )
+    if query_disposition == "not-queryable-no-canonical-osv-package":
+        return False
     source_project = next(
         (
             str(prop.get("value", ""))

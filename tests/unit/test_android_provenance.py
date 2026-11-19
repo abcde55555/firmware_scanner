@@ -215,6 +215,123 @@ def test_platform_build_scope_accepts_only_system_or_partition_root_framework(
     assert bool(framework.resolved_version) is expected
 
 
+@pytest.mark.parametrize(
+    ("filename", "identity", "expected_version", "project_path"),
+    [
+        ("libexif.so", "libexif", "0.6.21", "external/libexif"),
+        ("SpeexDSP", "SpeexDSP", "1.2beta3", "external/speex"),
+        ("libstlport.so", "STLport", "5.0", "external/stlport"),
+        ("libjhead.so", "Jhead", "2.87", "external/jhead"),
+    ],
+)
+def test_aosp_release_project_estimates_require_exact_build_and_identity(
+    filename: str,
+    identity: str,
+    expected_version: str,
+    project_path: str,
+):
+    component = native(filename, f"/lib/{filename}")
+    component.properties.append({"name": "firmware:identity", "value": identity})
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 1
+    assert component.resolved_version == expected_version
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-aosp-release",
+    } in component.properties
+    assert {
+        "name": "firmware:source:project",
+        "value": project_path,
+    } in component.properties
+    assert {
+        "name": "firmware:source:aosp-tag",
+        "value": "android-4.4.4_r2",
+    } in component.properties
+
+
+def test_aosp_release_estimate_can_version_an_identified_resampler_host():
+    host = native("libspeexresampler.so", "/lib/libspeexresampler.so")
+    contained = native("SpeexDSP", "/lib/libspeexresampler.so")
+    contained.properties.extend(
+        [
+            {"name": "firmware:identity", "value": "SpeexDSP"},
+            {"name": "firmware:relationship", "value": "contains-evidence-for"},
+        ]
+    )
+
+    stats = apply_android_provenance(
+        [host, contained],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 2
+    assert host.resolved_version == "1.2beta3"
+    assert contained.resolved_version == "1.2beta3"
+
+
+def test_jpeg_release_estimate_requires_the_observed_6b_compatibility_abi():
+    component = native("libjpeg.so", "/lib/libjpeg.so")
+    component.properties.extend(
+        [
+            {"name": "firmware:identity", "value": "libjpeg"},
+            {"name": "firmware:jpeg:abi-version", "value": "62"},
+        ]
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 1
+    assert component.resolved_version == "6b"
+    assert {
+        "name": "firmware:source:aosp-tag",
+        "value": "android-4.4.4_r2",
+    } in component.properties
+
+
+def test_aosp_release_project_estimate_does_not_apply_to_unknown_build_id():
+    component = native("libexif.so", "/lib/libexif.so")
+    component.properties.append({"name": "firmware:identity", "value": "libexif"})
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="vendor-unknown",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 0
+    assert component.resolved_version == ""
+
+
+def test_aosp_release_project_estimate_does_not_override_a_conflict():
+    component = native("libexif.so", "/lib/libexif.so")
+    component.properties.extend(
+        [
+            {"name": "firmware:identity", "value": "libexif"},
+            {"name": "firmware:version:conflict", "value": "0.6.20, 0.6.21"},
+        ]
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 0
+    assert component.resolved_version == ""
+
+
 def test_conflicting_parent_versions_leave_library_unknown_and_not_vulnerability_scannable():
     parent_a = Component(
         name="a",

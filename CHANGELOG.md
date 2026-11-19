@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-11-20
+
+### Added
+- Record the libjpeg ABI-62 compatibility guard and use it with the exact AOSP
+  Android 4.4.4 r2 source tag as an explicit release estimate
+- Attribute the official 3GPP AMR-WB v6.0.0 decoder inside vendor audio
+  containers
+- Estimate AOSP 4.4.4 project releases from an exact build ID, confirmed binary
+  identity and pinned AOSP source tags
+- Add SpeexDSP and STLport binary identity rules
+- Add a source-verified Allwinner calibration subset for version precision
+
+### Changed
+- Distinguish AOSP release-derived estimates from binary self-version evidence
+  and exclude both from exact upstream CVE queries
+- Advance the packaged rule lock to `builtin-2026.11.20.3`
+
+### Fixed
+- Keep libjpeg ABI 62 compatibility evidence separate from an IJG 6b
+  implementation release and reject banner-bearing libjpeg-turbo samples
+- Require filename corroboration for generic STLport and Jhead symbol sets
+- Prevent AOSP release estimates from overriding existing version conflicts
+
 ## [0.13.0] - 2026-11-20
 
 ### Added

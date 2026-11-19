@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "releases": [
+    {
+      "android_version": "4.4.4",
+      "build_ids": [
+        "KTU84Q"
+      ],
+      "aosp_tag": "android-4.4.4_r2",
+      "projects": [
+        {
+          "project_path": "external/jpeg",
+          "identities": [
+            "libjpeg"
+          ],
+          "filename_patterns": [
+            "libjpeg"
+          ],
+          "required_properties": {
+            "firmware:jpeg:abi-version": "62"
+          },
+          "component_name": "libjpeg",
+          "version": "6b",
+          "source_url": "https://android.googlesource.com/platform/external/jpeg/+/refs/tags/android-4.4.4_r2/jversion.h",
+          "version_authority": "JVERSION build definition"
+        },
+        {
+          "project_path": "external/libexif",
+          "identities": [
+            "libexif"
+          ],
+          "filename_patterns": [
+            "libexif"
+          ],
+          "component_name": "libexif",
+          "version": "0.6.21",
+          "source_url": "https://android.googlesource.com/platform/external/libexif/+/refs/tags/android-4.4.4_r2/configure.ac",
+          "version_authority": "AC_INIT package version"
+        },
+        {
+          "project_path": "external/speex",
+          "identities": [
+            "SpeexDSP"
+          ],
+          "filename_patterns": [
+            "libspeexresampler",
+            "speexdsp"
+          ],
+          "component_name": "SpeexDSP",
+          "version": "1.2beta3",
+          "source_url": "https://android.googlesource.com/platform/external/speex/+/refs/tags/android-4.4.4_r2/libspeex/arch.h",
+          "version_authority": "SPEEX_VERSION build definition"
+        },
+        {
+          "project_path": "external/stlport",
+          "identities": [
+            "STLport"
+          ],
+          "filename_patterns": [
+            "libstlport"
+          ],
+          "component_name": "STLport",
+          "version": "5.0",
+          "source_url": "https://android.googlesource.com/platform/external/stlport/+/refs/tags/android-4.4.4_r2/README",
+          "version_authority": "release README"
+        },
+        {
+          "project_path": "external/jhead",
+          "identities": [
+            "Jhead"
+          ],
+          "filename_patterns": [
+            "jhead"
+          ],
+          "component_name": "Jhead",
+          "version": "2.87",
+          "source_url": "https://android.googlesource.com/platform/external/jhead/+/refs/tags/android-4.4.4_r2/jhead.c",
+          "version_authority": "JHEAD_VERSION build definition"
+        }
+      ]
+    }
+  ]
+}

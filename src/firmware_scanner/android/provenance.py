@@ -582,6 +582,155 @@ def _platform_build_version(component: Component, baseline: str) -> dict | None:
     }
 
 
+@lru_cache(maxsize=1)
+def _android_release_estimate_projects() -> list[dict]:
+    path = files("firmware_scanner.data").joinpath(
+        "provenance",
+        "android-release-project-estimates.json",
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported Android release-project estimate schema")
+    return list(payload.get("releases", []))
+
+
+def _component_identities(component: Component) -> set[str]:
+    return {
+        str(prop.get("value", "")).casefold()
+        for prop in component.properties
+        if prop.get("name") == "firmware:identity" and prop.get("value")
+    }
+
+
+def _android_release_project_versions(
+    components: list[Component],
+    *,
+    android_version: str,
+    android_build_id: str,
+) -> list[dict]:
+    if not android_version or not android_build_id:
+        return []
+    rules = []
+    for release in _android_release_estimate_projects():
+        if str(release.get("android_version", "")) != android_version:
+            continue
+        if android_build_id not in {str(value) for value in release.get("build_ids", [])}:
+            continue
+        rules.extend(
+            {
+                **project,
+                "aosp_tag": str(release.get("aosp_tag", "")),
+            }
+            for project in release.get("projects", [])
+        )
+    contained_identities: dict[str, set[str]] = defaultdict(set)
+    for component in components:
+        identities = _component_identities(component)
+        if identities and any(
+            prop.get("name") == "firmware:relationship"
+            and prop.get("value") == "contains-evidence-for"
+            for prop in component.properties
+        ):
+            for location in _locations(component):
+                contained_identities[location].update(identities)
+    rows = []
+    for component in components:
+        if component.resolved_version or any(
+            prop.get("name") == "firmware:version:conflict" for prop in component.properties
+        ):
+            continue
+        identities = set(_component_identities(component))
+        for location in _locations(component):
+            identities.update(contained_identities.get(location, ()))
+        filename = Path(component.name).name.casefold()
+        for rule in rules:
+            rule_identities = {str(identity).casefold() for identity in rule.get("identities", [])}
+            filename_patterns = [
+                str(value).casefold() for value in rule.get("filename_patterns", [])
+            ]
+            required_properties = {
+                str(name): str(value) for name, value in rule.get("required_properties", {}).items()
+            }
+            component_properties = {
+                str(prop.get("name", "")): str(prop.get("value", ""))
+                for prop in component.properties
+            }
+            if any(
+                component_properties.get(name) != value
+                for name, value in required_properties.items()
+            ):
+                continue
+            if not identities.intersection(rule_identities):
+                continue
+            if filename_patterns and not any(pattern in filename for pattern in filename_patterns):
+                continue
+            version = str(rule.get("version", ""))
+            if not version:
+                continue
+            component.resolved_version = version
+            component.purl = f"pkg:generic/{quote(rule['component_name'], safe='._-')}@{quote(version, safe='._-+')}"
+            component.versions = [item for item in component.versions if item.version]
+            component.versions.append(
+                VersionConfidence(
+                    version=version,
+                    confidence=0.78,
+                    method=ExtractionMethod.VERSION_ESTIMATE,
+                    evidence=(
+                        f"The binary has the confirmed {rule['component_name']} identity for "
+                        f"Android {android_version} build {android_build_id}; the pinned AOSP "
+                        f"tag {rule['aosp_tag']} declares {version}. This estimate is not a "
+                        "binary-embedded version and may not reflect vendor patches."
+                    ),
+                )
+            )
+            _append_unique(
+                component.properties,
+                "firmware:version:kind",
+                "estimated-android-source-release",
+            )
+            _set_property(
+                component,
+                "firmware:version:resolution-state",
+                "estimated-aosp-release",
+            )
+            _set_property(
+                component,
+                "firmware:version:scope",
+                "aosp-release-derived-not-binary-self-version",
+            )
+            _append_unique(
+                component.properties,
+                "firmware:source:project",
+                str(rule["project_path"]),
+            )
+            _append_unique(
+                component.properties,
+                "firmware:source:aosp-tag",
+                str(rule["aosp_tag"]),
+            )
+            _append_unique(
+                component.properties,
+                "firmware:source:version-authority",
+                str(rule.get("version_authority", "")),
+            )
+            _append_unique(
+                component.properties,
+                "firmware:source:version-evidence",
+                str(rule.get("source_url", "")),
+            )
+            rows.append(
+                {
+                    "name": component.name,
+                    "version": version,
+                    "project_path": rule["project_path"],
+                    "aosp_tag": rule["aosp_tag"],
+                    "source_url": rule.get("source_url", ""),
+                }
+            )
+            break
+    return rows
+
+
 def apply_android_provenance(
     components: list[Component],
     *,
@@ -589,6 +738,8 @@ def apply_android_provenance(
     source_manifest: dict | None = None,
     source_project_rules: list[dict] | None = None,
     platform_baseline: str = "",
+    android_version: str = "",
+    android_build_id: str = "",
 ) -> dict:
     """Add scoped source, platform-build and parent-package provenance."""
     notice_attributions = notice_attributions or {}
@@ -692,6 +843,11 @@ def apply_android_provenance(
                     "donor_locations": _locations(donor),
                 }
             )
+    release_rows = _android_release_project_versions(
+        components,
+        android_version=android_version,
+        android_build_id=android_build_id,
+    )
     apply_component_taxonomy(components)
     return {
         "source_revisions_applied": len(source_rows),
@@ -700,10 +856,12 @@ def apply_android_provenance(
         ),
         "parent_package_versions_applied": len(parent_rows),
         "platform_build_versions_applied": len(platform_rows),
+        "aosp_release_versions_applied": len(release_rows),
         "byte_identical_provenance_propagated": len(propagated_rows),
         "source_rows": source_rows,
         "parent_package_rows": parent_rows,
         "platform_build_rows": platform_rows,
+        "aosp_release_rows": release_rows,
         "propagated_rows": propagated_rows,
         "scope": (
             "AOSP build revisions, platform builds and parent package versions are "

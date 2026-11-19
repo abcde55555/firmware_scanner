@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "release": "builtin-2026.11.20.2",
+  "release": "builtin-2026.11.20.3",
   "files": [
     {
       "path": "binary_reference.json",
-      "sha256": "93c845edc54b608a5df5bba08cf3c02227d2faf7bae64cef17b4eb94bda15bf3",
+      "sha256": "600e94b109dd8a408e6b97f6af38b8e6d53f5c221ff3f55a9c47884e67416955",
       "kind": "binary-rule-pack"
     },
     {
@@ -31,6 +31,11 @@
       "path": "emba_rules.json",
       "sha256": "b6f950e195be167bf3f95ba0ca7c54ef9c21d01b0ff29efebd28961f8c7bca60",
       "kind": "binary-rule-pack"
+    },
+    {
+      "path": "provenance/android-release-project-estimates.json",
+      "sha256": "9aa164dc805f88d13b6d2dee352aa480760adddf42cbaae98cfd2fe7c463e23c",
+      "kind": "provenance-pack"
     },
     {
       "path": "provenance/android_source_project_rules.json",

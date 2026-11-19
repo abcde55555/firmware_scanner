@@ -1,7 +1,7 @@
 # BLintDB, NSRL and Rust crate version validation
 
 Date: 2026-11-20
-Scanner: 0.13.0
+Scanner: 0.14.0
 
 ## Database releases
 
@@ -50,14 +50,14 @@ not measure total third-party recall.
 
 ## Android framework platform baseline
 
-Version 0.13.0 also attaches the enclosing Android build to unresolved
-first-party framework archives. This is a platform build identifier, not an
-upstream library release:
+Version 0.13.0 introduced attachment of the enclosing Android build to
+unresolved first-party framework archives. The 0.14.0 totals below retain that
+scope. This is a platform build identifier, not an upstream library release:
 
 | Image | Platform baseline | Framework rows | Fixed-cohort usable |
 |---|---|---:|---:|
 | Modern Android 16 | `16-BP2A.250805.005-1775195212` | 39 | **785/1,129 (69.53%)** |
-| Allwinner Android 4.4.4 | `4.4.4-KTU84Q-20180511` | 39 | **185/582 (31.79%)** |
+| Allwinner Android 4.4.4 | `4.4.4-KTU84Q-20180511` | 39 | **190/582 (32.65%)** |
 
 The 39 rows come from `/system/framework/` or the partition-root
 `/framework/`; `/vendor/framework/` and `/product/framework/` are excluded.
@@ -74,7 +74,9 @@ none of these component references appears in a VEX `affects` entry.
 | Unique ELF contents | 430 |
 | BLintDB candidate files | 5 |
 | BLintDB identity-confirmed components | 4 |
+| BLintDB reviewed components | 5 |
 | BLintDB exact target/reference disagreements | 3 |
+| BLintDB non-comparable target versions | 1 |
 | NSRL queried files | 430 |
 | NSRL exact file matches | 0 |
 | Database errors | 0 |
@@ -83,6 +85,28 @@ BLint confirmed four third-party identities and retained three comparable
 target/reference disagreements, but did not create additional upstream version
 claims. NSRL exact hashes also produced no match. Both databases remain
 installed and enabled because this result is target-specific.
+
+The `libjpeg` target is marked non-comparable: BLint confirms the libjpeg-turbo
+identity, while its v4 reference build contains 3.1.0. The target contributes
+ABI 62 evidence and an AOSP r2 source estimate; BLint's reference version is
+not copied into the target.
+
+## Source-verified AOSP calibration
+
+Version 0.14.0 adds an explicit calibration subset for `KTU84Q`. It is a
+development calibration set, not a held-out corpus:
+
+| Component | Expected | Evidence |
+|---|---:|---|
+| libjpeg | `6b` | Target ABI 62 plus AOSP `android-4.4.4_r2` `jversion.h`; estimated because ABI 62 is also used by compatibility builds |
+| libexif | `0.6.21` | AOSP `android-4.4.4_r2` `configure.ac` |
+| libspeexresampler | `1.2beta3` | AOSP `android-4.4.4_r2` `libspeex/arch.h` |
+| libstlport | `5.0` | AOSP `android-4.4.4_r2` release README |
+| libjhead | `2.87` | AOSP `android-4.4.4_r2` `JHEAD_VERSION` |
+
+The evaluator reports **5/5 correct, 0 errors** for this subset. The other
+577 fixed-cohort observations still have no independent truth, so this does
+not establish complete-firmware accuracy.
 
 ## Rust crate exact versions
 
@@ -151,4 +175,5 @@ reachability and vendor-status analysis before classifying exploitability.
 - `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6_vuln.json`
 - `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6_cyclonedx_1.6_vex.json`
 - `reports/version-coverage-getters-20261120/schema-validation.json`
-- `reports/version-coverage-getters-20261120/wheel-0.13.0/wheel-verification.json`
+- `experiments/version_coverage/verified/allwinner-ktu84q-aosp-4.4.4.json`
+- `reports/version-coverage-getters-20261120/wheel-0.14.0/wheel-verification.json`

@@ -143,6 +143,7 @@ def test_is_scannable_rejects_every_non_exact_version_resolution_state():
         "estimated-source-revision",
         "estimated-parent-package",
         "estimated-platform-build",
+        "estimated-aosp-release",
     ):
         component = Component(
             name="libsqlite.so",
@@ -257,6 +258,37 @@ def test_vuln_scan_does_not_query_platform_build_components():
     assert result.total_components_scanned == 0
     assert result.results == []
     assert client.queries == []
+
+
+def test_vuln_scan_does_not_query_components_without_a_canonical_osv_package():
+    component = Component(
+        name="3GPP AMR-WB decoder",
+        resolved_version="6.0.0",
+        properties=[
+            {
+                "name": "firmware:vulnerability:query",
+                "value": "not-queryable-no-canonical-osv-package",
+            }
+        ],
+    )
+
+    assert not _is_scannable(component)
+
+
+def test_ijg_6b_is_not_queried_as_a_numeric_semver_package():
+    component = Component(
+        name="libjpeg.so",
+        resolved_version="6b",
+        purl="pkg:generic/libjpeg@6b",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            }
+        ],
+    )
+
+    assert not _is_scannable(component)
 
 
 def test_normalize_name_maps_expanded_native_library_families_to_osv_names():

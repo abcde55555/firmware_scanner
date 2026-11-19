@@ -465,6 +465,8 @@ class AndroidSystemScanner:
                 )
                 if value
             ),
+            android_version=result.build_info.android_version,
+            android_build_id=result.build_info.build_id,
         )
         provenance["notice_license_attribution"] = license_stats
         return provenance

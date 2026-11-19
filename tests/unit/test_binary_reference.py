@@ -242,3 +242,61 @@ def test_catalog_identifies_additional_native_libraries_from_defined_symbols(tmp
         "LibRaw",
         "libtiff",
     }.issubset(matched)
+
+
+def test_android_44_speex_and_stlport_identities_require_specific_apis():
+    matcher = BinaryReferenceMatcher()
+    speex = matcher.match(
+        b"\x7fELF",
+        "libspeexresampler.so",
+        defined_symbols={
+            "speex_resampler_init",
+            "speex_resampler_process_float",
+            "speex_resampler_reset_mem",
+            "speex_resampler_set_rate_frac",
+        },
+    )
+    stlport = matcher.match(
+        b"\x7fELF",
+        "libstlport.so",
+        defined_symbols={
+            "_ZNSt6locale7classicEv",
+            "_ZNSt8ios_base4InitC1Ev",
+            "_ZNSt9exceptionC1Ev",
+            "_ZNSt6localeD2Ev",
+        },
+    )
+    jhead = matcher.match(
+        b"\x7fELF",
+        "libjhead.so",
+        defined_symbols={
+            "ReadJpegFile",
+            "RemoveThumbnail",
+            "WriteJpegToBuffer",
+        },
+    )
+
+    assert [(item.name, item.version) for item in speex] == [("SpeexDSP", "")]
+    assert [(item.name, item.version) for item in stlport] == [("STLport", "")]
+    assert [(item.name, item.version) for item in jhead] == [("Jhead", "")]
+    assert (
+        matcher.match(
+            b"\x7fELF",
+            "libgeneric.so",
+            defined_symbols={
+                "_ZNSt6locale7classicEv",
+                "_ZNSt8ios_base4InitC1Ev",
+                "_ZNSt9exceptionC1Ev",
+                "_ZNSt6localeD2Ev",
+            },
+        )
+        == []
+    )
+    assert (
+        matcher.match(
+            b"\x7fELF",
+            "libspeexresampler.so",
+            defined_symbols={"speex_resampler_init"},
+        )
+        == []
+    )

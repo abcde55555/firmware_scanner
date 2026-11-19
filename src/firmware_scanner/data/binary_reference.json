@@ -999,6 +999,49 @@
       "filename_patterns": ["tiff"]
     },
     {
+      "name": "SpeexDSP",
+      "source": "https://android.googlesource.com/platform/external/speex/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "speex_resampler_init",
+          "speex_resampler_process_float",
+          "speex_resampler_reset_mem",
+          "speex_resampler_set_rate_frac"
+        ]
+      ],
+      "filename_patterns": ["speexresampler"]
+    },
+    {
+      "name": "STLport",
+      "source": "https://android.googlesource.com/platform/external/stlport/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "_ZNSt6locale7classicEv",
+          "_ZNSt8ios_base4InitC1Ev",
+          "_ZNSt9exceptionC1Ev",
+          "_ZNSt6localeD2Ev"
+        ]
+      ],
+      "filename_patterns": ["stlport"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "Jhead",
+      "source": "https://android.googlesource.com/platform/external/jhead/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "ReadJpegFile",
+          "RemoveThumbnail",
+          "WriteJpegToBuffer"
+        ]
+      ],
+      "filename_patterns": ["jhead"],
+      "require_filename_hint": true
+    },
+    {
       "name": "Speex",
       "source": "https://github.com/xiph/speex",
       "version_policy": "banner",
