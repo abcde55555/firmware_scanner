@@ -1,9 +1,15 @@
 """Unit tests for CycloneDX 1.6 VEX and CPE synthesizer."""
 
 import json
-from firmware_scanner.extraction.models import Component, VersionConfidence, ExtractionMethod
+
 from firmware_scanner.extraction.cpe_synthesizer import synthesize_cpe
-from firmware_scanner.vuln.models import VulnScanResult, ComponentVulnResult, Vulnerability, Severity, VulnReference
+from firmware_scanner.vuln.models import (
+    ComponentVulnResult,
+    Severity,
+    Vulnerability,
+    VulnReference,
+    VulnScanResult,
+)
 from firmware_scanner.vuln.report_vex import generate_cyclonedx_vex
 
 
@@ -75,3 +81,38 @@ def test_cyclonedx_vex_generation():
     assert v["ratings"][0]["vector"] == "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
     assert v["analysis"]["state"] == "exploitable"
     assert v["affects"][0]["ref"] == "pkg:generic/curl@8.12.0"
+
+
+def test_cyclonedx_vex_merges_duplicate_ids_and_keeps_all_affected_refs():
+    vulnerability = Vulnerability(
+        id="CVE-2024-9999",
+        summary="Shared vulnerability",
+        severity=Severity.HIGH,
+        cvss_score=8.5,
+    )
+    result = VulnScanResult(
+        firmware_path="/test/path/firmware.img",
+        firmware_sha256="1234567890abcdef",
+        results=[
+            ComponentVulnResult(
+                component_name="curl",
+                component_version="8.12.0",
+                purl="pkg:generic/curl@8.12.0",
+                vulnerabilities=[vulnerability],
+            ),
+            ComponentVulnResult(
+                component_name="curl",
+                component_version="8.12.0",
+                purl="pkg:generic/curl-copy@8.12.0",
+                vulnerabilities=[vulnerability],
+            ),
+        ],
+    )
+    data = json.loads(generate_cyclonedx_vex(result))
+    assert len(data["vulnerabilities"]) == 1
+    assert {
+        item["ref"] for item in data["vulnerabilities"][0]["affects"]
+    } == {
+        "pkg:generic/curl@8.12.0",
+        "pkg:generic/curl-copy@8.12.0",
+    }

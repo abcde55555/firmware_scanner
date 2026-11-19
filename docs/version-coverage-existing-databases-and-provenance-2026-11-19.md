@@ -43,6 +43,29 @@ Both generated BOM files contain all 1,611 deduplicated findings:
 The 1.5 representation is therefore not a claim of 1,611 discovered versions.
 The actual populated count in the strict 1.6 artifact is 1,085 of 1,611.
 
+## Vulnerability candidates
+
+An OSV scan of the CycloneDX BOM selected 268 components with queryable
+upstream versions. It returned 555 component-vulnerability records, collapsing
+to 312 unique vulnerability IDs and 305 unique CVE IDs. The raw severity split
+is 76 critical, 239 high, 164 medium, 19 low and 57 unknown.
+
+These are vulnerability candidates, not 555 confirmed exploitable issues:
+
+- only 24 component/version records contain the findings;
+- several OSV records are distribution advisories rather than upstream release
+  definitions;
+- withdrawn/rejected CVE records were observed in the raw result;
+- no reachability or exploitation test was performed.
+
+Two findings are marked CISA KEV for `dnsmasq 2.51`:
+`CVE-2020-25681` and `CVE-2020-25682`. They should be investigated first,
+starting with `/system/bin/dnsmasq`.
+
+The VEX generator now merges duplicate vulnerability IDs and records every
+affected `bom-ref`. Both generated VEX files pass their corresponding official
+CycloneDX 1.5 and 1.6 schemas.
+
 ## What produced the increase
 
 The production scan now applies four provenance layers:
