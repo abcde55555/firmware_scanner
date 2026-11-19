@@ -100,7 +100,7 @@ def _source(
 
 
 def _extract(data: bytes):
-    from experiments.version_coverage.freetype_version import extract_freetype
+    from firmware_scanner.extraction.freetype_version import extract_freetype
 
     return extract_freetype(data)
 

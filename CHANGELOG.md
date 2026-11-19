@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-19
+
+### Added
+- Production x86-64/AArch64 FreeType paired-API version probe
+- PCRE2 release-date and libssh2 SSH-banner version evidence
+- Independent Debian stripped-library held-out evaluation harness
+
+### Fixed
+- Source checkouts report the pyproject version instead of stale installed metadata
+
 ## [0.6.0] - 2026-11-19
 
 ### Added

@@ -200,11 +200,12 @@ FREETYPE_SYSTEM_IMAGE=/home/kali/Desktop/work/project/vulnscan/system.img \
 ```
 
 The tightened proof currently matches two of the four real system libraries
-(x86-64 and AArch64, 2.13.2); i386/ARM and the Allwinner library are refused.
-Unknown memory writes, field overlaps and getter branches are negative controls.
-The old generic fallback is disabled. This is not integrated into
-`BinaryInventory` and adds no product version coverage. The previous 0/4 result
-in the earlier report describes the earlier prototype, not the current one.
+(x86-64 and AArch64, 2.13.2); i386/ARM builds with unsupported control flow are
+refused. Unknown memory writes, field overlaps and getter branches are negative
+controls. The old generic fallback is disabled. The probe is now packaged in
+`firmware_scanner.extraction.freetype_version` and wired into
+`BinaryInventory`; the separate legacy ARM32 probe handles the FreeType 2.4.12
+Allwinner shape.
 
 The direct-library API census reads the two images again and checks every ELF
 against its earlier file-observation SHA-256. It excludes nested archive paths
@@ -272,6 +273,23 @@ PYTHONPATH=src python experiments/version_coverage/nsrl_db_probe.py \
 
 `PKG.version` is a distribution version and is not promoted to an upstream
 native-library release.
+
+## Held-out Debian truth set
+
+`debian_heldout.py` uses Debian package metadata as an independent initial truth
+set, resolves one explicitly mapped SONAME per package, copies it, and applies
+`strip --strip-all` before scanning.
+
+```sh
+python3 experiments/version_coverage/debian_heldout.py \
+  --output reports/heldout-debian-20261119
+```
+
+The current 21-library seed returns 19 exact versions, zero wrong versions and
+two unknowns (FreeType Debian build shape and Capstone's major/minor-only API).
+Catalog identity matching is explicit filename/component mapping, not a claim of
+independent identity precision. See
+`docs/heldout-debian-version-validation-2026-11-19.md`.
 
 ## Android source and parent provenance
 

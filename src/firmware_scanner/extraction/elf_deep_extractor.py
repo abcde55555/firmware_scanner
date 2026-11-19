@@ -237,6 +237,7 @@ KNOWN_RODATA_PATTERNS: dict[str, list[tuple[bytes, str]]] = {
     ],
     "ssh2": [
         (rb'libssh2/([0-9]+\.[0-9]+\.[0-9]+)', "libssh2 version string"),
+        (rb'libssh2_([0-9]+\.[0-9]+\.[0-9]+)', "libssh2 SSH banner version"),
     ],
     "dropbear": [
         (rb'Dropbear\s+v?([0-9]{4}\.[0-9]+)', "Dropbear version string"),
@@ -521,6 +522,8 @@ class ELFDeepExtractor:
         so_idx = lib_key.find('.so')
         if so_idx > 0:
             lib_key = lib_key[:so_idx]
+        if lib_key.startswith("pcre2-"):
+            lib_key = "pcre2"
 
         patterns = KNOWN_RODATA_PATTERNS.get(lib_key)
         if not patterns:

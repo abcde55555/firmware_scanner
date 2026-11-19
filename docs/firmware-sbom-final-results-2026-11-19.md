@@ -41,6 +41,22 @@ The exact count increased from 152 to 176 in the fixed cohort. The remaining 514
 usable values are explicitly estimated. No broad held-out ground truth is
 available for this image.
 
+An independent Debian held-out seed adds evidence beyond the two firmware
+images. Twenty-one stripped system libraries are mapped to Debian package truth:
+
+| Metric | Result |
+|---|---:|
+| Exact version | 19/21 |
+| Wrong exact version | 0 |
+| Unknown | 2 |
+| Usable coverage | 90.48% |
+| Precision among exact claims | 19/19, 100% |
+
+The unknown items are a Debian FreeType build shape not accepted by the
+fail-closed probe and Capstone's major/minor-only API. This seed is not yet a
+large production accuracy gate. See
+`docs/heldout-debian-version-validation-2026-11-19.md`.
+
 ## Modern Android system image
 
 Input: `system.img`, 2,309,611,520 bytes, SHA-256
@@ -55,7 +71,7 @@ Input: `system.img`, 2,309,611,520 bytes, SHA-256
 | Unknown | 426 |
 | Source-declared exact versions applied | 22 |
 | BOM dependency records | 928 |
-| Android core scan time | 343.5 s |
+| Android core scan time | 336.3 s |
 | License coverage | 3/1,595, 0.19%, `incomplete` |
 
 The prior database-enabled scan took 408.2 seconds in the Android core scan.
@@ -108,7 +124,7 @@ Input: `sun8iw6p1_android_perf3_v1_0_uart0.img`.
 | Fixed all-component coverage | 146/582, 25.09% |
 | Fixed native coverage | 48/312, 15.38% |
 | License coverage | 187/591, 31.64%, `incomplete` |
-| Android core scan time | 76.5 s |
+| Android core scan time | 79.3 s |
 
 The same-source family pass inherited seven values. The ICU donor itself was
 resolved exactly as `51.1.0.1`; its ARM32 `u_getVersion_51` wrapper loads that
@@ -210,7 +226,7 @@ Its release and lock SHA-256 are present in both JSON and CycloneDX metadata.
 The 1.5 and 1.6 BOMs for both images validate against the official CycloneDX
 schemas. The 1.5 and 1.6 VEX artifacts also validate with zero schema errors.
 The machine-readable results are in
-`reports/version-estimates-20261119/schema-validation-taxonomy-identity.json`.
+`reports/version-estimates-20261119/schema-validation-0.7.json`.
 
 CycloneDX round-trip parsing now preserves component `properties` and the
 component-level `cpe`. This keeps resolution-state gates, BLint-confirmed

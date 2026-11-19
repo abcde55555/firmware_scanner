@@ -168,6 +168,30 @@ def test_speex_wrapper_release_banner_is_attributed_to_speex():
     assert component.resolved_version == "1.2beta3"
 
 
+def test_pcre2_abi_suffix_and_release_date_banner_are_attributed():
+    data = b"\x7fELF" + b"\0" * 60 + b"10.46 2025-08-27\0"
+
+    component = BinaryInventory().extract(
+        data,
+        "libpcre2-8.so.0",
+        "/lib/libpcre2-8.so.0",
+    )[0]
+
+    assert component.resolved_version == "10.46"
+
+
+def test_libssh2_banner_is_attributed_to_the_host_library():
+    data = b"\x7fELF" + b"\0" * 60 + b"SSH-2.0-libssh2_1.11.1\0"
+
+    component = BinaryInventory().extract(
+        data,
+        "libssh2.so.1",
+        "/lib/libssh2.so.1",
+    )[0]
+
+    assert component.resolved_version == "1.11.1"
+
+
 def test_vpx_imports_and_runtime_values_are_not_release_proofs(shared_elf):
     data = shared_elf(
         "extern const char *vpx_codec_version_str(void);\n"
