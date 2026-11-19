@@ -1,4 +1,4 @@
-# 固件 SBOM 路线审查与 0.8.0 实测结论
+# 固件 SBOM 路线审查与 0.9.0 实测结论
 
 Date: 2026-11-20
 Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`
@@ -8,7 +8,7 @@ Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`
 路线图的长期方向可以作为架构参考，但不能按文档中的旧基线和时间表直接排期：
 
 - 文档仍以 `5691133` 的 21.3%/13.6% 作为当前起点，但当前固定分母基线已经达到
-  Android 690/1,129、Allwinner 146/582。
+  Android 744/1,129（其中 exact 225）、Allwinner 146/582（其中 exact 119）。
 - “只扫第一个 DEX”和“缺少内容缓存”已经修复；“版本字段覆盖”仍不能称为
   “版本准确率”。
 - Rust 源码位置、NOTICE 项目路径和 LICENSE 只能提供候选或归因，不能单独证明
@@ -108,15 +108,44 @@ exact。现在：
 |---|---:|---:|
 | 全部组件 usable | 690/1,129, 61.12% | **744/1,129, 65.90%** |
 | 原生库 usable | 567/774, 73.26% | **621/774, 80.23%** |
-| exact | 172 | **177** |
-| explicit estimate/source revision/parent | 518 | **567** |
+| 全部 exact | 172 | **225** |
+| 原生库 exact | 54 | **102** |
+| 全部 explicit estimate/source revision/parent | 518 | **519** |
 | unknown | 428 | **377** |
 | independent accuracy | 未建立 | **未建立** |
 
-明确第三方 OSS 切片中，固定分母 92 项全部有非空版本：31 exact、61
+明确第三方 OSS 切片中，固定分母 100 项全部有非空版本：87 exact、13
 estimated。这里的 100% 是字段覆盖，不是 100% 准确率；该子集只包含已有明确
 source project 或外部 PURL 的记录，存在按可获得证据形成的选择偏差，也不能作为
 完整第三方 OSS 召回率。
+
+### 两个数据库的实际效果
+
+Modern Android：
+
+- BLintDB 查询 1,789 个唯一 ELF，21 个文件产生 23 个候选，归并后确认 9 个组件身份；
+- 8 个 exact 目标版本与 BLint 参考构建版本不同，保留为诊断信息，不覆盖目标版本；
+- 1 个 parent-package version 标为 `not-comparable`，不再伪装成版本错误；
+- NSRL 精确查询 1,789 个文件，命中 0。
+
+Allwinner：
+
+- BLintDB 查询 430 个唯一 ELF，确认 4 个第三方组件身份；
+- NSRL 查询 430 个文件，命中 0。
+
+因此数据库在这两份镜像上的主要价值是身份确认、taxonomy 证据和参考构建差异，
+不是直接补版本号。NSRL 的精确文件哈希机制可用，但这组重新编译固件没有命中；
+后续应保留数据库并继续用于其他固件，不能因为两份样本零命中而删除。
+
+### 精确版本与漏洞层验证
+
+- 43 个 Rust crate 由 revision-pinned `Cargo.toml` 转换为 Cargo PURL；
+- exact 总量从 177 提升到 225，原生库 exact 从 54 提升到 102；
+- modern BOM 的可查询组件从 223 增至 266；
+- OSV 找到 43 个 Cargo 查询中的 4 条 Rust 生态漏洞：
+  `anyhow 1.0.97`、`protobuf 3.2.0` 和 `rand 0.8.5`；
+- Modern 总计 470 条漏洞候选，Allwinner 总计 1,500 条漏洞候选。它们是候选，
+  尚未完成可达性、补丁回移或厂商状态确认。
 
 ### Allwinner Android 4.4
 

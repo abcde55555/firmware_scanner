@@ -20,18 +20,20 @@ from firmware_scanner.extraction.smart_analyzer import SmartSectionAnalyzer
 
 
 def manifest(kind: str, digest: str = "0" * 64) -> DatabaseManifest:
-    return DatabaseManifest.from_dict({
-        "schema_version": 1,
-        "kind": kind,
-        "name": kind,
-        "release": "test",
-        "database_sha256": digest,
-        "database_bytes": 1,
-        "database_schema_version": "3" if kind == "blintdb" else "RDSv3",
-        "source_url": "https://example.invalid/database",
-        "license": "test",
-        "architecture": "all",
-    })
+    return DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": kind,
+            "name": kind,
+            "release": "test",
+            "database_sha256": digest,
+            "database_bytes": 1,
+            "database_schema_version": "3" if kind == "blintdb" else "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
 
 
 def make_nsrl(path):
@@ -136,15 +138,15 @@ def test_blintdb_returns_reference_candidate_without_promoting_version(tmp_path,
     monkeypatch.setattr(
         database,
         "_symbol_sources",
-        lambda _data: {
-            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
-        },
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
     )
     candidates = database.candidates(b"ELF", "host.so")
-    assert candidates[0]["unique_component_versions"] == [{
-        "name": "libdemo",
-        "version": "1.2.3",
-    }]
+    assert candidates[0]["unique_component_versions"] == [
+        {
+            "name": "libdemo",
+            "version": "1.2.3",
+        }
+    ]
     assert candidates[0]["version_semantics"] == "reference-build-candidate-not-target-version"
 
 
@@ -155,9 +157,7 @@ def test_blintdb_reuses_one_read_only_connection_for_repeated_queries(tmp_path, 
     monkeypatch.setattr(
         database,
         "_symbol_sources",
-        lambda _data: {
-            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
-        },
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
     )
     assert database.candidates(b"ELF", "libdemo.so")
     original_connect = sqlite3.connect
@@ -180,17 +180,13 @@ def test_blintdb_filename_match_requires_informative_symbols(tmp_path, monkeypat
     monkeypatch.setattr(
         database,
         "_symbol_sources",
-        lambda _data: {
-            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
-        },
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
     )
     monkeypatch.setattr(
         database,
         "_low_information",
         lambda _connection, sources: {
-            (source, name)
-            for source, names in sources.items()
-            for name in names
+            (source, name) for source, names in sources.items() for name in names
         },
     )
     assert database.candidates(b"ELF", "libdemo.so") == []
@@ -206,9 +202,7 @@ def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, 
     monkeypatch.setattr(
         blint,
         "_symbol_sources",
-        lambda _data: {
-            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
-        },
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
     )
     component = Component(name="host.so")
     enricher = DatabaseEnricher(blint=blint, nsrl=nsrl)
@@ -234,17 +228,17 @@ def test_enricher_queries_blint_identity_even_when_target_version_is_known(
     monkeypatch.setattr(
         blint,
         "_symbol_sources",
-        lambda _data: {
-            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
-        },
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
     )
     component = Component(
         name="libdemo.so",
         resolved_version="1.0.0",
-        properties=[{
-            "name": "firmware:version:resolution-state",
-            "value": "exact",
-        }],
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            }
+        ],
     )
     enricher = DatabaseEnricher(blint=blint)
 
@@ -269,9 +263,7 @@ def test_enricher_reconciles_blint_identity_without_overwriting_target_version(
     monkeypatch.setattr(
         blint,
         "_symbol_sources",
-        lambda _data: {
-            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
-        },
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
     )
     component = Component(name="libdemo.so")
     enricher = DatabaseEnricher(blint=blint)
@@ -282,10 +274,12 @@ def test_enricher_reconciles_blint_identity_without_overwriting_target_version(
         "/lib/libdemo.so",
     )
     component.resolved_version = "1.0.0"
-    component.properties.append({
-        "name": "firmware:version:resolution-state",
-        "value": "exact",
-    })
+    component.properties.append(
+        {
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }
+    )
 
     enricher.reconcile([component])
 
@@ -296,11 +290,110 @@ def test_enricher_reconciles_blint_identity_without_overwriting_target_version(
         "components": ["libdemo"],
     }
     comparison = json.loads(properties["firmware:blintdb:reference-version-comparison"])
+    assert comparison["comparison_status"] == "comparable"
     assert comparison["target_version"] == "1.0.0"
     assert comparison["reference_versions"] == ["1.2.3"]
     assert comparison["decision"] == "diagnostic-only-no-version-overwrite"
     assert enricher.stats.blint_identity_confirmations == 1
     assert enricher.stats.blint_reference_version_mismatches == 1
+
+
+def test_blint_does_not_compare_parent_package_version_to_reference_release(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_sources",
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+    component.resolved_version = "360499999"
+    component.properties.extend(
+        [
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "estimated-parent-package",
+            },
+            {
+                "name": "firmware:version:kind",
+                "value": "estimated-apex-package-version",
+            },
+        ]
+    )
+
+    enricher.reconcile([component])
+
+    comparison = json.loads(
+        next(
+            item["value"]
+            for item in component.properties
+            if item["name"] == "firmware:blintdb:reference-version-comparison"
+        )
+    )
+    assert comparison["comparison_status"] == "not-comparable"
+    assert comparison["target_resolution_state"] == "estimated-parent-package"
+    assert enricher.stats.blint_reference_version_agreements == 0
+    assert enricher.stats.blint_reference_version_mismatches == 0
+    assert enricher.stats.blint_reference_version_not_comparable == 1
+
+
+def test_blint_does_not_compare_unrelated_dependency_versions(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    connection = sqlite3.connect(blint_path)
+    connection.execute(
+        "INSERT INTO Dependencies VALUES (?, ?, ?, ?, ?)",
+        (
+            1,
+            "import_dependencies",
+            "/tmp/blint/host/libother/9.9/shared-release/aarch64/lib/libdemo.so",
+            "",
+            "pkg:conan/libother@9.9",
+        ),
+    )
+    connection.commit()
+    connection.close()
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_sources",
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(component, b"\x7fELF" + b"\0" * 10, "libdemo.so", "/lib/libdemo.so")
+    component.resolved_version = "1.0.0"
+    component.properties.append(
+        {
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }
+    )
+
+    enricher.reconcile([component])
+
+    comparison = json.loads(
+        next(
+            item["value"]
+            for item in component.properties
+            if item["name"] == "firmware:blintdb:reference-version-comparison"
+        )
+    )
+    assert comparison["reference_versions"] == ["1.2.3"]
 
 
 def test_blint_identity_records_a_matching_component_from_an_aggregate_project(
@@ -310,18 +403,14 @@ def test_blint_identity_records_a_matching_component_from_an_aggregate_project(
     blint_path = tmp_path / "blint.db"
     make_blint(blint_path)
     connection = sqlite3.connect(blint_path)
-    connection.execute(
-        "UPDATE Projects SET name='aggregate', purl='pkg:conan/aggregate@9.0'"
-    )
+    connection.execute("UPDATE Projects SET name='aggregate', purl='pkg:conan/aggregate@9.0'")
     connection.commit()
     connection.close()
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         blint,
         "_symbol_sources",
-        lambda _data: {
-            "dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}
-        },
+        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
     )
     component = Component(name="libdemo.so")
     enricher = DatabaseEnricher(blint=blint)
@@ -344,18 +433,20 @@ def test_blint_identity_records_a_matching_component_from_an_aggregate_project(
 def test_enricher_paths_accept_cli_string_values(tmp_path, monkeypatch):
     nsrl_path = tmp_path / "nsrl.db"
     make_nsrl(nsrl_path)
-    compatible = DatabaseManifest.from_dict({
-        "schema_version": 1,
-        "kind": "nsrl",
-        "name": "small",
-        "release": "test",
-        "database_sha256": "0" * 64,
-        "database_bytes": nsrl_path.stat().st_size,
-        "database_schema_version": "RDSv3",
-        "source_url": "https://example.invalid/database",
-        "license": "test",
-        "architecture": "all",
-    })
+    compatible = DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": "nsrl",
+            "name": "small",
+            "release": "test",
+            "database_sha256": "0" * 64,
+            "database_bytes": nsrl_path.stat().st_size,
+            "database_schema_version": "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
     monkeypatch.setattr(manifest_module, "packaged_manifests", lambda: [compatible])
     enricher = DatabaseEnricher.from_paths(
         nsrl_path=str(nsrl_path),
@@ -371,18 +462,20 @@ def test_database_hash_verification_is_cached_by_immutable_file_metadata(tmp_pat
     database = tmp_path / "database.db"
     database.write_bytes(b"verified database")
     digest = hashlib.sha256(database.read_bytes()).hexdigest()
-    verified = DatabaseManifest.from_dict({
-        "schema_version": 1,
-        "kind": "nsrl",
-        "name": "small",
-        "release": "test",
-        "database_sha256": digest,
-        "database_bytes": database.stat().st_size,
-        "database_schema_version": "RDSv3",
-        "source_url": "https://example.invalid/database",
-        "license": "test",
-        "architecture": "all",
-    })
+    verified = DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": "nsrl",
+            "name": "small",
+            "release": "test",
+            "database_sha256": digest,
+            "database_bytes": database.stat().st_size,
+            "database_schema_version": "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
     monkeypatch.setattr(manifest_module, "packaged_manifests", lambda: [verified])
     calls = []
     original = manifest_module._sha256
@@ -404,18 +497,20 @@ def test_database_integrity_verification_can_be_skipped_without_reading_file(
 ):
     database = tmp_path / "database.db"
     database.write_bytes(b"database")
-    compatible = DatabaseManifest.from_dict({
-        "schema_version": 1,
-        "kind": "nsrl",
-        "name": "small",
-        "release": "test",
-        "database_sha256": "0" * 64,
-        "database_bytes": database.stat().st_size,
-        "database_schema_version": "RDSv3",
-        "source_url": "https://example.invalid/database",
-        "license": "test",
-        "architecture": "all",
-    })
+    compatible = DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": "nsrl",
+            "name": "small",
+            "release": "test",
+            "database_sha256": "0" * 64,
+            "database_bytes": database.stat().st_size,
+            "database_schema_version": "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
     monkeypatch.setattr(manifest_module, "packaged_manifests", lambda: [compatible])
 
     def unexpected_hash_read(_path):
@@ -443,10 +538,12 @@ def test_binary_inventory_reuses_content_evidence_at_a_new_location(monkeypatch)
 
         def enrich(self, component, data, filename, location):
             calls.append(location)
-            component.properties.extend([
-                {"name": "firmware:evidence:container", "value": location},
-                {"name": "test:content-evidence", "value": "cached"},
-            ])
+            component.properties.extend(
+                [
+                    {"name": "firmware:evidence:container", "value": location},
+                    {"name": "test:content-evidence", "value": "cached"},
+                ]
+            )
 
     inventory = BinaryInventory(database_enricher=Enricher())
     monkeypatch.setattr(inventory._deep, "extract", lambda _filename, _data: None)
@@ -461,14 +558,8 @@ def test_binary_inventory_reuses_content_evidence_at_a_new_location(monkeypatch)
     assert inventory.analysis_stats["content_cache_hits"] == 1
     assert second[0].resolved_version != "mutated"
     assert "/first/" not in second[0].description
-    assert all(
-        "/first/" not in version.evidence
-        for version in second[0].versions
-    )
-    assert not any(
-        item["name"] == "test:mutation"
-        for item in second[0].properties
-    )
+    assert all("/first/" not in version.evidence for version in second[0].versions)
+    assert not any(item["name"] == "test:mutation" for item in second[0].properties)
     assert {
         item["value"]
         for item in second[0].properties
@@ -494,10 +585,12 @@ def test_smart_section_analyzer_passes_external_database_evidence_for_generic_fi
 
         def enrich(self, component, data, filename, location):
             calls.append((filename, location))
-            component.properties.append({
-                "name": "firmware:nsrl:file-matched",
-                "value": "true",
-            })
+            component.properties.append(
+                {
+                    "name": "firmware:nsrl:file-matched",
+                    "value": "true",
+                }
+            )
 
     analyzer = SmartSectionAnalyzer(database_enricher=Enricher())
     monkeypatch.setattr(
@@ -557,9 +650,7 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
     assert report["database_stats"] == {"files_queried": 7}
     assert report["analysis_stats"] == {"content_cache_hits": 3}
     assert report["family_provenance_stats"] == {"versions_inherited": 1}
-    assert report["provenance_stats"] == {
-        "notice_license_attribution": {"components_licensed": 2}
-    }
+    assert report["provenance_stats"] == {"notice_license_attribution": {"components_licensed": 2}}
     assert report["license_stats"] == {
         "licensed_components": 2,
         "total_components": 3,
@@ -578,7 +669,9 @@ def test_generic_database_context_closes_connection_after_exception(monkeypatch)
         "firmware_scanner.cli.app._create_external_database_enricher",
         lambda _config: Enricher(),
     )
-    with pytest.raises(ValueError, match="scan failed"):
-        with _external_database_enricher(AnalysisConfig()):
-            raise ValueError("scan failed")
+    with (
+        pytest.raises(ValueError, match="scan failed"),
+        _external_database_enricher(AnalysisConfig()),
+    ):
+        raise ValueError("scan failed")
     assert closed == [True]

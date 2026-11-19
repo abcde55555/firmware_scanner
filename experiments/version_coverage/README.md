@@ -15,7 +15,9 @@ PYTHONPATH=src python experiments/version_coverage/run_scan.py \
 
 PYTHONPATH=src python experiments/version_coverage/run_scan.py \
   /home/kali/Desktop/work/project/vulnscan/system.img \
-  reports/version-coverage-50-20261118/reproduction/system
+  reports/version-coverage-50-20261118/reproduction/system \
+  --blintdb reports/existing-databases-20261119/blint.db \
+  --nsrl-db reports/existing-databases-20261119/nsrl/android_minimal.db
 
 python experiments/version_coverage/evaluate.py \
   reports/function-version-experiment-20261118/after/system/system_analysis.json \
@@ -304,11 +306,16 @@ The production Android scanner parses image-local NOTICE mappings and applies
 source revisions only from an image-SHA-256-matched manifest. It also records
 APEX/APK parent versions and propagates provenance across byte-identical ELF
 copies by SHA-256. The inventory additionally extracts embedded source-file
-paths; a project revision is applied only when the component-name rule and one
-of the manifest project paths agree. Exact Rust crate/OpenSSH versions require a
-revision-bound `Cargo.toml` or version header. `provenance.py` keeps other
-revision values explicitly marked as estimates; they are excluded from CPE
-synthesis and OSV queries.
+paths with their file offsets; a project revision is applied only when the
+component-name rule and one of the manifest project paths agree.
+
+`source-subproject-version-pins.json` resolves individual crates inside a
+revision-pinned monorepo. Crate name/alias matching takes precedence over an
+embedded dependency path, preventing linked code from selecting the wrong
+release. Exact Rust crate and OpenSSH versions require a revision-bound
+`Cargo.toml` or version header. Confirmed Rust crates receive
+`pkg:cargo/<crate>@<version>` PURLs and can be queried by OSV. Other revision
+values remain explicitly estimated and are excluded from CPE/OSV queries.
 
 The exact-image Waydroid source pack and HAL namespace rules are in
 `src/firmware_scanner/data/provenance/`. To evaluate a completed scan against the
@@ -321,7 +328,8 @@ PYTHONPATH=. python experiments/version_coverage/evaluate.py \
   --baseline-commit e890f0c
 ```
 
-On the frozen 1,129/774 cohort, the 0.8.0 evidence update produces 744/1,129
-usable fields (65.90%) and 621/774 native libraries (80.23%): 177 exact and 567
+On the frozen 1,129/774 cohort, the 0.9.0 evidence update produces 744/1,129
+usable fields (65.90%) and 621/774 native libraries (80.23%): 225 exact and 519
 explicit estimates. These are coverage values, not independently verified
-accuracy. See `docs/firmware-sbom-roadmap-review-2026-11-20.md`.
+accuracy. See `docs/firmware-sbom-roadmap-review-2026-11-20.md` and
+`docs/database-and-rust-version-validation-2026-11-20.md`.

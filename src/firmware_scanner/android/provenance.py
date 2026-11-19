@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from functools import lru_cache
 from importlib.resources import files
+from pathlib import Path
+from urllib.parse import quote
 
 from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 
@@ -63,8 +65,7 @@ def _source_path_projects(component: Component) -> set[str]:
     return {
         str(prop.get("value", ""))
         for prop in component.properties
-        if prop.get("name") == "firmware:source:path-project"
-        and prop.get("value")
+        if prop.get("name") == "firmware:source:path-project" and prop.get("value")
     }
 
 
@@ -127,9 +128,7 @@ def _append_unique(properties: list[dict], name: str, value: str) -> None:
 
 
 def _set_property(component: Component, name: str, value: str) -> None:
-    component.properties = [
-        prop for prop in component.properties if prop.get("name") != name
-    ]
+    component.properties = [prop for prop in component.properties if prop.get("name") != name]
     component.properties.append({"name": name, "value": value})
 
 
@@ -142,16 +141,18 @@ def classify_source_project(project_path: str) -> str:
         return "vendor-proprietary"
     if path.startswith("external/"):
         return "third-party-oss"
-    if path.startswith((
-        "frameworks/",
-        "system/",
-        "hardware/",
-        "packages/modules/",
-        "art/",
-        "bionic/",
-        "build/",
-        "libnativehelper/",
-    )):
+    if path.startswith(
+        (
+            "frameworks/",
+            "system/",
+            "hardware/",
+            "packages/modules/",
+            "art/",
+            "bionic/",
+            "build/",
+            "libnativehelper/",
+        )
+    ):
         return "platform-first-party"
     return "unknown"
 
@@ -177,8 +178,7 @@ def apply_component_taxonomy(components: list[Component]) -> None:
         if any(prop.get("name") == "firmware:taxonomy" for prop in component.properties):
             continue
         if any(
-            prop.get("name") == "firmware:blintdb:identity-confirmed"
-            and prop.get("value")
+            prop.get("name") == "firmware:blintdb:identity-confirmed" and prop.get("value")
             for prop in component.properties
         ):
             _append_unique(component.properties, "firmware:taxonomy", "third-party-oss")
@@ -200,49 +200,126 @@ def apply_component_taxonomy(components: list[Component]) -> None:
 
 @lru_cache(maxsize=1)
 def load_source_version_pins() -> tuple[dict, ...]:
-    path = files("firmware_scanner.data").joinpath(
-        "provenance",
-        "source-version-pins.json",
-    )
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("schema_version") != 1:
-        raise ValueError("Unsupported source version pin schema")
-    pins = []
+    pins: list[dict] = []
     keys = set()
-    for item in payload.get("pins", []):
-        project_path = str(item.get("project_path", "")).strip()
-        revision = str(item.get("revision", "")).strip()
-        version = str(item.get("version", "")).strip()
-        source_url = str(item.get("source_url", "")).strip()
-        authority = str(item.get("authority", "")).strip()
-        if not project_path or len(revision) != 40 or not version:
-            raise ValueError("Invalid source version pin")
-        if not source_url.startswith("https://") or not authority:
-            raise ValueError("Source version pins require HTTPS provenance")
-        key = (project_path, revision)
-        if key in keys:
-            raise ValueError(f"Duplicate source version pin: {project_path}@{revision}")
-        keys.add(key)
-        pins.append({
-            "project_path": project_path,
-            "revision": revision,
-            "version": version,
-            "source_url": source_url,
-            "authority": authority,
-        })
+    for file_name in (
+        "source-version-pins.json",
+        "source-subproject-version-pins.json",
+    ):
+        path = files("firmware_scanner.data").joinpath("provenance", file_name)
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("schema_version") != 1:
+            raise ValueError("Unsupported source version pin schema")
+        for item in payload.get("pins", []):
+            project_path = str(item.get("project_path", "")).strip()
+            revision = str(item.get("revision", "")).strip()
+            version = str(item.get("version", "")).strip()
+            source_url = str(item.get("source_url", "")).strip()
+            authority = str(item.get("authority", "")).strip()
+            subpath_prefix = str(item.get("subpath_prefix", "")).strip().strip("/")
+            ecosystem = str(item.get("ecosystem", "")).strip()
+            package_name = str(item.get("package_name", "")).strip()
+            aliases = item.get("component_aliases", [])
+            if not project_path or len(revision) != 40 or not version:
+                raise ValueError("Invalid source version pin")
+            if not source_url.startswith("https://") or not authority:
+                raise ValueError("Source version pins require HTTPS provenance")
+            if subpath_prefix and (
+                subpath_prefix.startswith("/") or ".." in subpath_prefix.split("/")
+            ):
+                raise ValueError("Invalid source version pin subpath")
+            if ecosystem and ecosystem != "cargo":
+                raise ValueError(f"Unsupported source version ecosystem: {ecosystem}")
+            if ecosystem == "cargo" and not package_name:
+                raise ValueError("Cargo source pins require a package name")
+            if not isinstance(aliases, list) or not all(
+                isinstance(alias, str) and alias.strip() for alias in aliases
+            ):
+                raise ValueError("Invalid source version component aliases")
+            key = (project_path, revision, subpath_prefix)
+            if key in keys:
+                raise ValueError(
+                    f"Duplicate source version pin: {project_path}@{revision}/{subpath_prefix}"
+                )
+            keys.add(key)
+            pins.append(
+                {
+                    "project_path": project_path,
+                    "revision": revision,
+                    "version": version,
+                    "source_url": source_url,
+                    "authority": authority,
+                    "subpath_prefix": subpath_prefix,
+                    "ecosystem": ecosystem,
+                    "package_name": package_name,
+                    "component_aliases": [alias.strip() for alias in aliases],
+                }
+            )
     return tuple(pins)
 
 
-def _source_version_pin(project: dict) -> dict | None:
-    key = (str(project.get("path", "")), str(project.get("revision", "")))
-    return next(
-        (
+def _source_component_key(value: str, *, strip_lib_prefix: bool) -> str:
+    name = Path(value).name.casefold()
+    changed = True
+    while changed:
+        changed = False
+        for suffix in (".dylib", ".so", ".dll"):
+            if name.endswith(suffix):
+                name = name[: -len(suffix)]
+                changed = True
+    if strip_lib_prefix:
+        name = name.removeprefix("lib")
+    return "".join(character for character in name if character.isalnum())
+
+
+def _source_version_pin(
+    project: dict,
+    component_name: str,
+    source_paths: set[str],
+) -> dict | None:
+    project_path = str(project.get("path", ""))
+    revision = str(project.get("revision", ""))
+    candidates = [
+        pin
+        for pin in load_source_version_pins()
+        if pin["project_path"] == project_path and pin["revision"] == revision
+    ]
+    subprojects = [pin for pin in candidates if pin["subpath_prefix"]]
+    if subprojects:
+        component_key = _source_component_key(
+            component_name,
+            strip_lib_prefix=True,
+        )
+        name_matches = [
             pin
-            for pin in load_source_version_pins()
-            if (pin["project_path"], pin["revision"]) == key
-        ),
-        None,
-    )
+            for pin in subprojects
+            if any(
+                _source_component_key(value, strip_lib_prefix=False) == component_key
+                for value in (
+                    Path(pin["subpath_prefix"]).name,
+                    pin["package_name"],
+                    *pin["component_aliases"],
+                )
+            )
+        ]
+        if len(name_matches) == 1:
+            return name_matches[0]
+        path_matches = sorted(
+            (
+                pin
+                for pin in subprojects
+                if any(
+                    path.startswith(f"{project_path}/{pin['subpath_prefix']}/")
+                    for path in source_paths
+                )
+            ),
+            key=lambda pin: len(pin["subpath_prefix"]),
+            reverse=True,
+        )
+        if path_matches:
+            return path_matches[0]
+    top_level = [pin for pin in candidates if not pin["subpath_prefix"]]
+    return top_level[0] if len(top_level) == 1 else None
 
 
 def _apply_source_revision(
@@ -273,14 +350,11 @@ def _apply_source_revision(
             candidates = [project]
             confidence = min(0.94, max(0.78, float(rule.get("confidence", 0.78))))
             marker = source_path_evidence.get(project_path, {})
-            rule_evidence = (
-                str(rule.get("evidence", "SONAME source-project rule"))
-                + (
-                    f"; binary embeds {marker.get('source_path')!r} at file offset "
-                    f"0x{int(marker.get('file_offset', 0)):x}"
-                    if marker else
-                    f"; binary embeds a source path under {project_path}"
-                )
+            rule_evidence = str(rule.get("evidence", "SONAME source-project rule")) + (
+                f"; binary embeds {marker.get('source_path')!r} at file offset "
+                f"0x{int(marker.get('file_offset', 0)):x}"
+                if marker
+                else f"; binary embeds a source path under {project_path}"
             )
             break
     if not candidates:
@@ -303,7 +377,11 @@ def _apply_source_revision(
         return None
     project = candidates[0]
     revision = str(project["revision"])
-    pin = _source_version_pin(project)
+    pin = _source_version_pin(
+        project,
+        component.name,
+        {str(item.get("source_path", "")) for item in source_path_evidence.values()},
+    )
     version = pin["version"] if pin else f"git:{revision}"
     component.resolved_version = version
     component.versions = [version for version in component.versions if version.version]
@@ -335,6 +413,27 @@ def _apply_source_revision(
     _append_unique(component.properties, "firmware:source:project", str(project["path"]))
     _append_unique(component.properties, "firmware:source:repository", str(project.get("name", "")))
     _append_unique(component.properties, "firmware:source:revision", revision)
+    if pin and pin["subpath_prefix"]:
+        _append_unique(
+            component.properties,
+            "firmware:source:subproject",
+            pin["subpath_prefix"],
+        )
+    if pin and pin["ecosystem"] == "cargo":
+        component.purl = (
+            f"pkg:cargo/{quote(pin['package_name'], safe='._-')}"
+            f"@{quote(pin['version'], safe='._-+')}"
+        )
+        _append_unique(
+            component.properties,
+            "firmware:upstream:component",
+            pin["package_name"],
+        )
+        _append_unique(
+            component.properties,
+            "firmware:upstream:purl",
+            component.purl,
+        )
     taxonomy = classify_source_project(str(project["path"]))
     if taxonomy != "unknown":
         _append_unique(component.properties, "firmware:taxonomy", taxonomy)
@@ -349,7 +448,13 @@ def _apply_source_revision(
     _append_unique(
         component.properties,
         "firmware:version:scope",
-        "source-project-declared-release" if pin else "source-project-build-revision",
+        (
+            "source-subproject-declared-release"
+            if pin and pin["subpath_prefix"]
+            else "source-project-declared-release"
+            if pin
+            else "source-project-build-revision"
+        ),
     )
     _set_property(
         component,
@@ -516,8 +621,7 @@ def apply_android_provenance(
     return {
         "source_revisions_applied": len(source_rows),
         "source_versions_applied": sum(
-            row["version"].startswith("git:") is False
-            for row in source_rows
+            row["version"].startswith("git:") is False for row in source_rows
         ),
         "parent_package_versions_applied": len(parent_rows),
         "byte_identical_provenance_propagated": len(propagated_rows),

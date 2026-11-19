@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-11-20
+
+### Added
+- Crate-level release pins inside revision-pinned Android Rust source monorepos
+- Cargo PURLs for 43 confirmed Rust crates, enabling package-aware OSV and VEX queries
+- Exact source declarations for Perfetto, fsverity-utils and Piex
+- Reproducible database-enabled scans with BLintDB and NSRL command-line options
+- Unique-component BLint reconciliation metrics and non-comparable parent-version reporting
+
+### Changed
+- Modern Android fixed-cohort exact versions increased from 177 to 225 without changing usable coverage
+- Rust dylib components with a confirmed Cargo PURL are queryable even though the firmware keeps a `.dylib.so` filename
+- External database reference-build versions remain diagnostic and never replace target versions
+
+### Fixed
+- Embedded dependency source paths no longer override the host crate version
+- Parent-package versions are no longer compared with upstream BLint reference releases
+- Duplicate pre-dedup BLint rows no longer inflate component reconciliation statistics
+
 ## [0.8.0] - 2026-11-20
 
 ### Added

@@ -162,6 +162,27 @@
       "version": "9.0p1",
       "source_url": "https://raw.githubusercontent.com/LineageOS/android_external_openssh/60ca88651d39f699932f63d41409facc18c5ad19/version.h",
       "authority": "SSH_VERSION and SSH_PORTABLE"
+    },
+    {
+      "project_path": "external/perfetto",
+      "revision": "94a71474cc396db2b0fcff6755b8f2d3f7e304d0",
+      "version": "49.0",
+      "source_url": "https://android.googlesource.com/platform/external/perfetto/+/94a71474cc396db2b0fcff6755b8f2d3f7e304d0/CHANGELOG",
+      "authority": "Perfetto CHANGELOG release v49.0"
+    },
+    {
+      "project_path": "external/fsverity-utils",
+      "revision": "6ad1287446ceffcacd987d2b21389c58ab069c63",
+      "version": "1.6",
+      "source_url": "https://android.googlesource.com/platform/external/fsverity-utils/+/6ad1287446ceffcacd987d2b21389c58ab069c63/NEWS.md",
+      "authority": "fsverity-utils NEWS.md Version 1.6"
+    },
+    {
+      "project_path": "external/piex",
+      "revision": "6d3d1e7dc6e4b0d348c60160f5a9397a28eae630",
+      "version": "0.27",
+      "source_url": "https://android.googlesource.com/platform/external/piex/+/6d3d1e7dc6e4b0d348c60160f5a9397a28eae630/METADATA",
+      "authority": "PIEX METADATA third_party version v0.27"
     }
   ]
 }

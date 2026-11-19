@@ -11,6 +11,9 @@ Android system scanner.
   product SONAMEs to the AOSP project that emits them.
 - `source-version-pins.json` records releases declared by exact project
   revisions. Every row includes the source file that declares the version.
+- `source-subproject-version-pins.json` records crate-level releases inside a
+  revision-pinned monorepo. Rows include a relative subproject path, Cargo
+  package identity and the revision-bound `Cargo.toml` URL.
 
 The image-specific manifest is never selected by filename, build fingerprint,
 or project name alone. The scanner must calculate the input image SHA-256 and
@@ -32,6 +35,11 @@ the same rule.
   40-character revision match. It must identify a file in that exact source
   tree, not a mutable branch, release note from another revision, or guess from
   the repository name.
+- A monorepo revision does not establish the version of every component inside
+  it. Subproject pins additionally require the component filename/alias to
+  match the crate; an embedded dependency path cannot override the owned crate.
+- Confirmed Cargo pins use `pkg:cargo/<package>@<version>`. The monorepo Git
+  revision remains evidence metadata and is not substituted for crate release.
 - Parent package versions remain estimates and are excluded from upstream CPE
   generation and OSV version queries.
 

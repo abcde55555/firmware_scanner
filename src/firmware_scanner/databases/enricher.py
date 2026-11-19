@@ -1,4 +1,5 @@
 """Attach external database evidence without promoting candidate versions."""
+
 from __future__ import annotations
 
 import hashlib
@@ -25,6 +26,7 @@ class DatabaseStats:
     blint_identity_confirmations: int = 0
     blint_reference_version_agreements: int = 0
     blint_reference_version_mismatches: int = 0
+    blint_reference_version_not_comparable: int = 0
     errors: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
@@ -40,6 +42,7 @@ class DatabaseStats:
             "blint_identity_confirmations": self.blint_identity_confirmations,
             "blint_reference_version_agreements": self.blint_reference_version_agreements,
             "blint_reference_version_mismatches": self.blint_reference_version_mismatches,
+            "blint_reference_version_not_comparable": (self.blint_reference_version_not_comparable),
             "errors": list(self.errors),
         }
 
@@ -105,7 +108,9 @@ class DatabaseEnricher:
                     self.stats.nsrl_matched_files += 1
                     self.stats.nsrl_distribution_rows += len(matches)
                     self._append_property(component, "firmware:nsrl:file-matched", "true")
-                    self._append_property(component, "firmware:nsrl:database-release", self.nsrl.manifest.release)
+                    self._append_property(
+                        component, "firmware:nsrl:database-release", self.nsrl.manifest.release
+                    )
                     self._append_property(
                         component,
                         "firmware:nsrl:distributions",
@@ -116,13 +121,19 @@ class DatabaseEnricher:
             try:
                 candidates = self.blint.candidates(data, filename)
             except Exception as exc:  # noqa: BLE001 - retain file-scoped DB evidence errors
-                self.stats.errors.append(f"BLintDB lookup failed for {location}: {type(exc).__name__}")
+                self.stats.errors.append(
+                    f"BLintDB lookup failed for {location}: {type(exc).__name__}"
+                )
             else:
                 if candidates:
                     self.stats.blint_candidate_files += 1
                     self.stats.blint_candidate_rows += len(candidates)
-                    self._append_property(component, "firmware:blintdb:candidate-count", str(len(candidates)))
-                    self._append_property(component, "firmware:blintdb:database-release", self.blint.manifest.release)
+                    self._append_property(
+                        component, "firmware:blintdb:candidate-count", str(len(candidates))
+                    )
+                    self._append_property(
+                        component, "firmware:blintdb:database-release", self.blint.manifest.release
+                    )
                     self._append_property(
                         component,
                         "firmware:blintdb:candidates",
@@ -133,12 +144,19 @@ class DatabaseEnricher:
         """Compare final component versions with BLint reference candidates."""
         from ..extraction.binary_inventory import identity_key
 
+        reviewed = set()
+        confirmed = set()
+        compared: dict[tuple, bool] = {}
+        not_comparable = set()
         for component in components:
-            raw_candidates = next((
-                str(prop.get("value", ""))
-                for prop in component.properties
-                if prop.get("name") == "firmware:blintdb:candidates"
-            ), "")
+            raw_candidates = next(
+                (
+                    str(prop.get("value", ""))
+                    for prop in component.properties
+                    if prop.get("name") == "firmware:blintdb:candidates"
+                ),
+                "",
+            )
             if not raw_candidates:
                 continue
             try:
@@ -148,8 +166,13 @@ class DatabaseEnricher:
             if not isinstance(candidates, list) or not candidates:
                 continue
 
-            self.stats.blint_reviewed_components += 1
             target_identity = identity_key(component.name)
+            component_key = (
+                target_identity,
+                component.name.casefold(),
+                component.resolved_version,
+            )
+            reviewed.add(component_key)
             candidate_identities = set()
             confirmed_projects = set()
             confirmed_components = set()
@@ -171,11 +194,11 @@ class DatabaseEnricher:
                         candidate_identities.add(identity_key(name))
                         if identity_key(name) == target_identity:
                             confirmed_components.add(name)
-                    if version:
+                    if version and identity_key(name) == target_identity:
                         reference_versions.add(version)
 
             if target_identity in candidate_identities:
-                self.stats.blint_identity_confirmations += 1
+                confirmed.add(component_key)
                 self._set_property(
                     component,
                     "firmware:blintdb:identity-confirmed",
@@ -190,8 +213,38 @@ class DatabaseEnricher:
 
             if not component.resolved_version or not reference_versions:
                 continue
+            resolution_state = next(
+                (
+                    str(prop.get("value", ""))
+                    for prop in component.properties
+                    if prop.get("name") == "firmware:version:resolution-state"
+                ),
+                "",
+            )
+            if resolution_state != "exact":
+                not_comparable.add(component_key)
+                self._set_property(
+                    component,
+                    "firmware:blintdb:reference-version-comparison",
+                    json.dumps(
+                        {
+                            "comparison_status": "not-comparable",
+                            "reason": (
+                                "target is not an exact release; parent-package "
+                                "or source-revision versions are not compared"
+                            ),
+                            "target_resolution_state": resolution_state,
+                            "target_version": component.resolved_version,
+                            "reference_versions": sorted(reference_versions),
+                            "decision": "diagnostic-only-no-version-overwrite",
+                        },
+                        sort_keys=True,
+                    ),
+                )
+                continue
             agreement = component.resolved_version in reference_versions
             comparison = {
+                "comparison_status": "comparable",
                 "target_version": component.resolved_version,
                 "reference_versions": sorted(reference_versions),
                 "agreement": agreement,
@@ -202,10 +255,14 @@ class DatabaseEnricher:
                 "firmware:blintdb:reference-version-comparison",
                 json.dumps(comparison, sort_keys=True),
             )
-            if agreement:
-                self.stats.blint_reference_version_agreements += 1
-            else:
-                self.stats.blint_reference_version_mismatches += 1
+            compared[component_key] = agreement
+        self.stats.blint_reviewed_components = len(reviewed)
+        self.stats.blint_identity_confirmations = len(confirmed)
+        self.stats.blint_reference_version_agreements = sum(compared.values())
+        self.stats.blint_reference_version_mismatches = sum(
+            not agreement for agreement in compared.values()
+        )
+        self.stats.blint_reference_version_not_comparable = len(not_comparable)
 
     def close(self) -> None:
         if self.blint is not None:
@@ -221,8 +278,5 @@ class DatabaseEnricher:
 
     @staticmethod
     def _set_property(component: Component, name: str, value: str) -> None:
-        component.properties = [
-            prop for prop in component.properties
-            if prop.get("name") != name
-        ]
+        component.properties = [prop for prop in component.properties if prop.get("name") != name]
         component.properties.append({"name": name, "value": value})

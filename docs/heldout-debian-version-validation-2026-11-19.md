@@ -1,7 +1,7 @@
 # Debian stripped-library version validation
 
 Date: 2026-11-20
-Scanner: 0.8.0
+Scanner: 0.9.0
 
 ## Purpose and boundary
 
@@ -42,7 +42,7 @@ The final run also adds conservative getters and version objects for libjxl,
 libsndfile, libsamplerate, libsoxr, libyaml, LZO, libzip, libaom, GMP, seccomp,
 nghttp2, nghttp3 and ngtcp2.
 
-| Metric | Initial 54 run | Final 0.8.0 |
+| Metric | Initial 54 run | Final 0.9.0 |
 |---|---:|---:|
 | Catalog identity matched | 53/54 | 54/54 |
 | Exact version | 27 | 39 |
