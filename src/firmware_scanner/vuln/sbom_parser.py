@@ -126,9 +126,9 @@ def parse_sbom_to_components(path: Path) -> tuple[list[Component], dict]:
             continue
 
         purl = comp_data.get("purl", "")
-        cpe = ""
+        cpe = str(comp_data.get("cpe", "") or "")
         for ext_ref in comp_data.get("externalReferences", []):
-            if ext_ref.get("type") == "cpe":
+            if not cpe and ext_ref.get("type") == "cpe":
                 cpe = ext_ref.get("url", "")
                 break
 
@@ -140,6 +140,14 @@ def parse_sbom_to_components(path: Path) -> tuple[list[Component], dict]:
             lid = license_obj.get("id", "") or license_obj.get("name", "")
             if lid:
                 licenses_list.append(lid)
+        properties = [
+            {
+                "name": str(prop.get("name", "")),
+                "value": str(prop.get("value", "")),
+            }
+            for prop in comp_data.get("properties", [])
+            if isinstance(prop, dict) and prop.get("name")
+        ]
 
         components.append(Component(
             name=name,
@@ -149,6 +157,7 @@ def parse_sbom_to_components(path: Path) -> tuple[list[Component], dict]:
             purl=purl,
             cpe=cpe,
             licenses=licenses_list,
+            properties=properties,
         ))
 
     return components, meta

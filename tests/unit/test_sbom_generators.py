@@ -4,10 +4,11 @@ import json
 from pathlib import Path
 
 from firmware_scanner.core.context import AnalysisContext
-from firmware_scanner.extraction.models import Component, VersionConfidence, ExtractionMethod
+from firmware_scanner.extraction.models import Component, ExtractionMethod, VersionConfidence
 from firmware_scanner.sbom.cyclonedx import CycloneDXGenerator
-from firmware_scanner.sbom.spdx3 import SPDX3Generator
 from firmware_scanner.sbom.generator import SBOMGenerator
+from firmware_scanner.sbom.spdx3 import SPDX3Generator
+from firmware_scanner.vuln.matcher import _is_scannable
 from firmware_scanner.vuln.sbom_parser import is_sbom_file, parse_sbom_to_components
 
 
@@ -22,12 +23,14 @@ def _create_sample_context() -> AnalysisContext:
         licenses=["GPL-2.0-only"],
         description="BusyBox utilities",
     )
-    comp1.versions.append(VersionConfidence(
-        version="1.35.0",
-        confidence=0.9,
-        method=ExtractionMethod.STRING_PATTERN,
-        evidence="BusyBox v1.35.0 multi-call binary",
-    ))
+    comp1.versions.append(
+        VersionConfidence(
+            version="1.35.0",
+            confidence=0.9,
+            method=ExtractionMethod.STRING_PATTERN,
+            evidence="BusyBox v1.35.0 multi-call binary",
+        )
+    )
 
     comp2 = Component(
         name="libsqlite.so",
@@ -35,6 +38,16 @@ def _create_sample_context() -> AnalysisContext:
         resolved_version="3.40.1",
         component_type="library",
         purl="pkg:generic/libsqlite.so@3.40.1",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            },
+            {
+                "name": "firmware:blintdb:identity-confirmed",
+                "value": '{"components": ["sqlite3"], "projects": []}',
+            },
+        ],
     )
 
     context = AnalysisContext(
@@ -62,10 +75,181 @@ def test_cyclonedx_1_6_generation():
     assert data["bomFormat"] == "CycloneDX"
     assert data["specVersion"] == "1.6"
     assert "urn:uuid:" in data["serialNumber"]
+    assert {"name", "version", "type"}.isdisjoint(data["metadata"])
+    assert data["metadata"]["component"]["type"] == "firmware"
     assert len(data["components"]) == 2
     assert data["components"][0]["name"] == "busybox"
     assert data["components"][0]["version"] == "1.35.0"
     assert data["components"][0]["purl"] == "pkg:generic/busybox@1.35.0"
+
+
+def test_cyclonedx_dependencies_only_emit_unambiguous_declared_needed_edges():
+    generator = CycloneDXGenerator()
+    provider = Component(
+        name="libz.so",
+        resolved_version="1.3.1",
+        purl="pkg:generic/libz.so@1.3.1",
+        properties=[{"name": "firmware:elf:soname", "value": "libz.so.1"}],
+    )
+    consumer = Component(
+        name="tool",
+        resolved_version="1.0",
+        purl="pkg:generic/tool@1.0",
+        properties=[{"name": "firmware:elf:needed", "value": "libz.so.1"}],
+    )
+    bom = generator.generate(
+        [consumer, provider],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+    )
+    assert bom["dependencies"] == [
+        {
+            "ref": "pkg:generic/tool@1.0",
+            "dependsOn": ["pkg:generic/libz.so@1.3.1"],
+        }
+    ]
+
+
+def test_cyclonedx_omits_dependency_when_soname_has_multiple_providers():
+    generator = CycloneDXGenerator()
+    providers = [
+        Component(
+            name=f"libz-{index}.so",
+            resolved_version="1.3.1",
+            purl=f"pkg:generic/libz-{index}.so@1.3.1",
+            properties=[{"name": "firmware:elf:soname", "value": "libz.so.1"}],
+        )
+        for index in range(2)
+    ]
+    consumer = Component(
+        name="tool",
+        resolved_version="1.0",
+        purl="pkg:generic/tool@1.0",
+        properties=[{"name": "firmware:elf:needed", "value": "libz.so.1"}],
+    )
+    bom = generator.generate(
+        [consumer, *providers],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+    )
+    assert "dependencies" not in bom
+
+
+def test_cyclonedx_merges_duplicate_consumer_refs_into_one_dependency():
+    generator = CycloneDXGenerator()
+    provider = Component(
+        name="libz.so",
+        resolved_version="1.3.1",
+        purl="pkg:generic/libz.so@1.3.1",
+        properties=[{"name": "firmware:elf:soname", "value": "libz.so.1"}],
+    )
+    consumers = [
+        Component(
+            name="tool",
+            resolved_version="1.0",
+            purl="pkg:generic/tool@1.0",
+            properties=[{"name": "firmware:elf:needed", "value": "libz.so.1"}],
+        )
+        for _ in range(2)
+    ]
+    bom = generator.generate(
+        [*consumers, provider],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+    )
+    assert bom["dependencies"] == [
+        {
+            "ref": "pkg:generic/tool@1.0",
+            "dependsOn": ["pkg:generic/libz.so@1.3.1"],
+        }
+    ]
+
+
+def test_cyclonedx_records_scan_analysis_stats_as_metadata():
+    generator = CycloneDXGenerator()
+    bom = generator.generate(
+        [],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+        build_info={
+            "analysis_stats": {
+                "content_cache_hits": 12,
+                "content_cache_entries": 40,
+            },
+        },
+    )
+    assert {
+        "name": "firmware:analysis:stats",
+        "value": '{"content_cache_entries": 40, "content_cache_hits": 12}',
+    } in bom["metadata"]["properties"]
+
+
+def test_cyclonedx_metadata_carries_database_provenance():
+    generator = CycloneDXGenerator()
+    provenance = {
+        "schema_version": 1,
+        "databases": [
+            {
+                "kind": "nsrl",
+                "release": "2026.03.1",
+                "database_sha256": "b" * 64,
+            }
+        ],
+    }
+
+    bom = generator.generate(
+        [],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+        build_info={"database_provenance": provenance},
+    )
+
+    prop = next(
+        item
+        for item in bom["metadata"]["properties"]
+        if item["name"] == "firmware:database:provenance"
+    )
+    assert json.loads(prop["value"]) == provenance
+
+
+def test_sbom_generator_propagates_generic_database_stats_without_android_info():
+    context = AnalysisContext(
+        firmware_path=Path("firmware.bin"),
+        file_hash_sha256="a" * 64,
+        components=[],
+        metadata={
+            "database_stats": {"files_queried": 9},
+            "database_provenance": {
+                "schema_version": 1,
+                "databases": [{"kind": "blintdb", "release": "v4"}],
+            },
+            "analysis_stats": {"content_cache_hits": 2},
+            "family_provenance_stats": {"versions_inherited": 1},
+            "provenance_stats": {"notice_license_attribution": {"components_licensed": 2}},
+            "license_stats": {"licensed_components": 2, "total_components": 3},
+            "rules": {
+                "release": "builtin-test",
+                "lock_sha256": "b" * 64,
+            },
+        },
+    )
+    bom = json.loads(SBOMGenerator().generate_cyclonedx(context, spec_version="1.6"))
+    properties = {item["name"]: item["value"] for item in bom["metadata"]["properties"]}
+    assert properties["firmware:database:stats"] == '{"files_queried": 9}'
+    assert json.loads(properties["firmware:database:provenance"]) == {
+        "schema_version": 1,
+        "databases": [{"kind": "blintdb", "release": "v4"}],
+    }
+    assert properties["firmware:analysis:stats"] == '{"content_cache_hits": 2}'
+    assert properties["firmware:family-provenance:stats"] == '{"versions_inherited": 1}'
+    assert properties["firmware:provenance:stats"] == (
+        '{"notice_license_attribution": {"components_licensed": 2}}'
+    )
+    assert properties["firmware:license:stats"] == (
+        '{"licensed_components": 2, "total_components": 3}'
+    )
+    assert properties["firmware:rules:release"] == "builtin-test"
+    assert properties["firmware:rules:lock-sha256"] == "b" * 64
 
 
 def test_spdx_3_0_1_generation():
@@ -119,19 +303,93 @@ def test_sbom_parser_supports_cyclonedx_1_6_and_spdx_3_0_1(tmp_path):
     cdx_path = tmp_path / "test_cdx.json"
     cdx_path.write_text(sbom_gen.generate_cyclonedx(context), encoding="utf-8")
     assert is_sbom_file(cdx_path)
-    cdx_comps, cdx_meta = parse_sbom_to_components(cdx_path)
+    cdx_comps, _cdx_meta = parse_sbom_to_components(cdx_path)
     assert len(cdx_comps) == 2
     assert cdx_comps[0].name == "busybox"
     assert cdx_comps[0].resolved_version == "1.35.0"
+    assert cdx_comps[0].cpe == "cpe:2.3:a:busybox:busybox:1.35.0:*:*:*:*:*:*:*"
+    sqlite_properties = {item["name"]: item["value"] for item in cdx_comps[1].properties}
+    assert sqlite_properties["firmware:version:resolution-state"] == "exact"
+    assert sqlite_properties["firmware:blintdb:identity-confirmed"] == (
+        '{"components": ["sqlite3"], "projects": []}'
+    )
 
     # SPDX 3.0.1
     spdx_path = tmp_path / "test_spdx.json"
     spdx_path.write_text(sbom_gen.generate_spdx(context), encoding="utf-8")
     assert is_sbom_file(spdx_path)
-    spdx_comps, spdx_meta = parse_sbom_to_components(spdx_path)
+    spdx_comps, _spdx_meta = parse_sbom_to_components(spdx_path)
     assert len(spdx_comps) == 2
     assert any(c.name == "busybox" and c.resolved_version == "1.35.0" for c in spdx_comps)
     assert any(c.name == "libsqlite.so" and c.resolved_version == "3.40.1" for c in spdx_comps)
+
+
+def test_cyclonedx_round_trip_preserves_platform_build_scan_gate(tmp_path):
+    framework = Component(
+        name="framework/core",
+        component_type="framework",
+        resolved_version="16-BP2A.250805.005-1775195212",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "estimated-platform-build",
+            },
+            {
+                "name": "firmware:version:scope",
+                "value": "platform-build-not-upstream-release",
+            },
+        ],
+    )
+    context = AnalysisContext(
+        firmware_path=Path("firmware.img"),
+        file_hash_sha256="a" * 64,
+        components=[framework],
+    )
+    cdx_path = tmp_path / "framework.cdx.json"
+    cdx_path.write_text(
+        SBOMGenerator().generate_cyclonedx(context, spec_version="1.6"),
+        encoding="utf-8",
+    )
+
+    components, _ = parse_sbom_to_components(cdx_path)
+
+    assert len(components) == 1
+    assert components[0].resolved_version == "16-BP2A.250805.005-1775195212"
+    assert not _is_scannable(components[0])
+
+
+def test_cyclonedx_round_trip_preserves_no_canonical_osv_package_gate(tmp_path):
+    codec = Component(
+        name="3GPP AMR-WB decoder",
+        component_type="library",
+        resolved_version="6.0.0",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            },
+            {
+                "name": "firmware:vulnerability:query",
+                "value": "not-queryable-no-canonical-osv-package",
+            },
+        ],
+    )
+    context = AnalysisContext(
+        firmware_path=Path("firmware.img"),
+        file_hash_sha256="a" * 64,
+        components=[codec],
+    )
+    cdx_path = tmp_path / "codec.cdx.json"
+    cdx_path.write_text(
+        SBOMGenerator().generate_cyclonedx(context, spec_version="1.6"),
+        encoding="utf-8",
+    )
+
+    components, _ = parse_sbom_to_components(cdx_path)
+
+    assert len(components) == 1
+    assert components[0].resolved_version == "6.0.0"
+    assert not _is_scannable(components[0])
 
 
 def test_asrock_atv_sbom_metadata():
@@ -152,10 +410,8 @@ def test_asrock_atv_sbom_metadata():
     )
 
     meta = data["metadata"]
-    # 1. Mandatory metadata fields
-    assert meta["name"] == "waydroid_tv_x86_64"
-    assert meta["version"] == "BP2A.250805.005"
-    assert meta["type"] == "firmware"
+    # 1. CycloneDX-compliant root component metadata
+    assert {"name", "version", "type"}.isdisjoint(meta)
     assert meta["lifecycles"] == [{"phase": "build"}]
     assert meta["component"]["name"] == "waydroid_tv_x86_64"
     assert meta["component"]["version"] == "BP2A.250805.005"
@@ -171,7 +427,7 @@ def test_asrock_atv_sbom_metadata():
     # 3. Components have bom-ref and non-empty version in 1.5
     for c in data["components"]:
         assert "bom-ref" in c
-        assert "version" in c and c["version"]
+        assert c.get("version")
 
     # 4. Strict CycloneDX 1.5 root compliance: no illegal additionalProperties at root
     assert "name" not in data
@@ -184,4 +440,3 @@ def test_asrock_atv_sbom_metadata():
     comp_props = {p["name"]: p["value"] for p in meta["component"]["properties"]}
     assert comp_props["asrock:chip-model"] == "x86_64"
     assert comp_props["asrock:target-product"] == "waydroid_tv_x86_64"
-

@@ -1,19 +1,16 @@
 """Unit tests for Cryptographic Bill of Materials (CBOM) and AI Bill of Materials (AIBOM)."""
 
-import pytest
-from firmware_scanner.extraction.cbom import (
-    CBOMScanner,
-    ALGO_CATALOG,
-    VULNERABLE,
-    SYMMETRIC,
-    PQC,
-    BROKEN,
-    NEUTRAL,
-)
 from firmware_scanner.extraction.aibom import (
     AIBOMScanner,
-    MODEL_FORMATS,
-    RUNTIMES,
+)
+from firmware_scanner.extraction.cbom import (
+    ALGO_CATALOG,
+    BROKEN,
+    PQC,
+    SYMMETRIC,
+    VULNERABLE,
+    CBOMScanner,
+    cyclonedx_primitive,
 )
 
 
@@ -31,6 +28,12 @@ def test_cbom_algorithm_catalog():
     assert "ml-dsa" in keys
     assert "des" in keys
     assert "rc4" in keys
+
+
+def test_internal_primitives_map_to_cyclonedx_enum_values():
+    assert cyclonedx_primitive("public-key") == "pke"
+    assert cyclonedx_primitive("key-agreement") == "key-agree"
+    assert cyclonedx_primitive("hash") == "hash"
 
 
 def test_cbom_scanner_detection():
@@ -81,6 +84,30 @@ def test_cbom_scanner_detection():
     assert broken_statuses == {BROKEN}
 
 
+def test_cbom_scanner_uses_one_regex_pass_per_binary():
+    scanner = CBOMScanner()
+
+    assets = scanner.scan_binary(
+        "libtest.so",
+        b"\x00AES_set_encrypt_key\x00RSA_public_encrypt\x00pqcrystals_kyber768_ref\x00",
+    )
+
+    assert len(assets) == 3
+    assert scanner.last_prefilter_passes == 1
+    assert scanner.last_detail_passes == 3
+
+
+def test_binary_asset_scanners_use_a_two_mib_prefix_window():
+    data = b"AES_set_encrypt_key\0" + b"\0" * (3 * 1024 * 1024)
+    cbom = CBOMScanner()
+    aibom = AIBOMScanner()
+
+    assert cbom.scan_binary("libcrypto.so", data)
+    assert aibom.scan_binary_for_runtimes("libai.so", data) == []
+    assert cbom.last_scan_bytes == 2 * 1024 * 1024
+    assert aibom.last_scan_bytes == 2 * 1024 * 1024
+
+
 def test_cbom_to_components_and_cyclonedx():
     """Test converting CBOM assets to native components and CycloneDX format."""
     scanner = CBOMScanner()
@@ -127,7 +154,9 @@ def test_aibom_model_formats():
     assert m_pte.format_key == "executorch"
 
     # Embedded TFLite C array
-    c_array_data = b"const unsigned char model_data[] = { 0x1c, 0x00, 0x54, 0x46, 0x4c, 0x33, 0x00 };"
+    c_array_data = (
+        b"const unsigned char model_data[] = { 0x1c, 0x00, 0x54, 0x46, 0x4c, 0x33, 0x00 };"
+    )
     m_arr = scanner.scan_file_header("model_data.c", c_array_data, len(c_array_data))
     assert m_arr is not None
     assert "Embedded Array" in m_arr.format_name
@@ -149,6 +178,8 @@ def test_aibom_runtimes_and_components():
     assert "onnxruntime" in keys
     assert "llama-cpp" in keys
     assert "cmsis-nn" in keys
+    assert scanner.last_prefilter_passes == 1
+    assert scanner.last_detail_passes == 5
 
     # Convert to components
     models = [

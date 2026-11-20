@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Any
 
 from firmware_scanner import __version__
+
 from ..extraction.models import Component
-from .license_compliance import normalize_license, audit_firmware_licenses
+from .license_compliance import audit_firmware_licenses, normalize_license
 
 
 class CycloneDXGenerator:
@@ -42,7 +43,7 @@ class CycloneDXGenerator:
             meta["properties"] = []
         meta["properties"].append({
             "name": "compliance:license:status",
-            "value": "compliant" if audit_report.is_compliant else "non-compliant",
+            "value": audit_report.status,
         })
         meta["properties"].append({
             "name": "compliance:license:issues_count",
@@ -59,11 +60,53 @@ class CycloneDXGenerator:
                 self._component_to_cdx(c, spec_version=spec_version) for c in components
             ],
         }
+        dependencies = self._build_declared_dependencies(components, spec_version)
+        if dependencies:
+            bom["dependencies"] = dependencies
 
         if vulnerabilities:
             bom["vulnerabilities"] = vulnerabilities
 
         return bom
+
+    def _build_declared_dependencies(
+        self,
+        components: list[Component],
+        spec_version: str,
+    ) -> list[dict]:
+        """Emit only unambiguous DT_NEEDED edges backed by a known SONAME."""
+        refs_by_soname: dict[str, set[str]] = {}
+        for component in components:
+            sonames = {
+                str(prop.get("value"))
+                for prop in component.properties
+                if prop.get("name") == "firmware:elf:soname" and prop.get("value")
+            }
+            if not sonames:
+                continue
+            ref = self._component_to_cdx(component, spec_version=spec_version)["bom-ref"]
+            for soname in sonames:
+                refs_by_soname.setdefault(soname, set()).add(ref)
+        dependency_targets: dict[str, set[str]] = {}
+        for component in components:
+            needed = {
+                str(prop.get("value"))
+                for prop in component.properties
+                if prop.get("name") == "firmware:elf:needed" and prop.get("value")
+            }
+            targets = sorted({
+                next(iter(refs_by_soname[soname]))
+                for soname in needed
+                if len(refs_by_soname.get(soname, ())) == 1
+            })
+            if targets:
+                ref = self._component_to_cdx(component, spec_version=spec_version)["bom-ref"]
+                dependency_targets.setdefault(ref, set()).update(targets)
+        return [
+            {"ref": ref, "dependsOn": sorted(targets)}
+            for ref, targets in sorted(dependency_targets.items())
+            if targets
+        ]
 
     def _build_metadata(
         self,
@@ -120,10 +163,6 @@ class CycloneDXGenerator:
 
         metadata: dict[str, Any] = {
             "timestamp": now_iso,
-            # Top-level required fields for ATV-SBOM platforms
-            "name": target_product,
-            "version": build_id,
-            "type": "firmware",
             "lifecycles": [
                 {
                     "phase": "build"
@@ -169,6 +208,48 @@ class CycloneDXGenerator:
             props.append({"name": "android:security_patch", "value": str(info["security_patch"])})
         if info.get("build_fingerprint"):
             props.append({"name": "android:build_fingerprint", "value": str(info["build_fingerprint"])})
+        if info.get("database_stats"):
+            props.append({
+                "name": "firmware:database:stats",
+                "value": json.dumps(info["database_stats"], sort_keys=True),
+            })
+        if info.get("database_provenance"):
+            props.append({
+                "name": "firmware:database:provenance",
+                "value": json.dumps(info["database_provenance"], sort_keys=True),
+            })
+        if info.get("analysis_stats"):
+            props.append({
+                "name": "firmware:analysis:stats",
+                "value": json.dumps(info["analysis_stats"], sort_keys=True),
+            })
+        if info.get("family_provenance_stats"):
+            props.append({
+                "name": "firmware:family-provenance:stats",
+                "value": json.dumps(info["family_provenance_stats"], sort_keys=True),
+            })
+        if info.get("provenance_stats"):
+            props.append({
+                "name": "firmware:provenance:stats",
+                "value": json.dumps(info["provenance_stats"], sort_keys=True),
+            })
+        if info.get("license_stats"):
+            props.append({
+                "name": "firmware:license:stats",
+                "value": json.dumps(info["license_stats"], sort_keys=True),
+            })
+        rules = info.get("rules")
+        if rules:
+            if rules.get("release"):
+                props.append({
+                    "name": "firmware:rules:release",
+                    "value": str(rules["release"]),
+                })
+            if rules.get("lock_sha256"):
+                props.append({
+                    "name": "firmware:rules:lock-sha256",
+                    "value": str(rules["lock_sha256"]),
+                })
 
         metadata["properties"] = props
         # Also populate properties on metadata.component for platforms inspecting the root component

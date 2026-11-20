@@ -1,0 +1,1085 @@
+{
+  "samples": [
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "159636525ec6fa4567ce7d9120235719507f3fe6d2492b9cdcb30aaf5d6a2e60",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha01/graphics-path-1.0.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "35c624b737c9d8f5511d2ded6353fa1f2a403c549f78d85d574f2ec8a36ee8ec",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha01/graphics-path-1.0.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "41866a31d716143a825b8f58780d0e72a8fd56d179e01997733a0fdecb6722e3",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha01/graphics-path-1.0.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "b75ab3b3e77c80d562aeaac3eb4b3277600dd588a5d09cb38fc00e52cbd91015",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha01/graphics-path-1.0.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "05e4c2322ddeb039fd041c3ea1a794939777c505c91bed4e05d91251070c2ec3",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha02/graphics-path-1.0.0-alpha02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "8de3429f4365a5bc65cd6d90fd0abc806f94b1fbd87e3159e2b244e2a17941c2",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha02/graphics-path-1.0.0-alpha02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "ded9f48cc696f6004d9189f61d3ab50e9c2005495a47a7b2c4f7a9064daea369",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha02/graphics-path-1.0.0-alpha02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "5f59b1abd4c913f143ffd4cf3cc4ebc2c16bf28d75a1a9f25a21f028f9eed749",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-alpha02/graphics-path-1.0.0-alpha02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-alpha02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "11a61dd5255e99424f078ba28899ee1950c1877f9f97b8e6a7954c34cb8e5b61",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta01/graphics-path-1.0.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "7b2ba41867af5ccb30aea6e14b4355c03535f6acef778c91f7d5f9516b7342a6",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta01/graphics-path-1.0.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "3d70388ae6d729026f5e905ea24fbc841e4a0ff14473b981d34617d1c441f66b",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta01/graphics-path-1.0.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "2e680db6d08a1deeb22b5b0acde1faa0699da848fa5a9488057cf05968a9db3a",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta01/graphics-path-1.0.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "1c978d40a2219e2fe655e6975d7ee29433ee9d36c21c3aa3649835bf41627000",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta02/graphics-path-1.0.0-beta02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "7c28f1523b81a2cb18ecd338d6a932bbb9d0daf555991aa498f227e4bbd5f827",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta02/graphics-path-1.0.0-beta02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "1ee94c13ee3aed4793fd18f190de43b7fb0c7393ed573e3d4306df4657629d68",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta02/graphics-path-1.0.0-beta02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "639ec5a567b59870e421ab66c7d56c8044643e6cf2d195c93dff7f4b41964301",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-beta02/graphics-path-1.0.0-beta02.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-beta02",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "ec6c4f6fbd37f82d4c3f3340a7da479b812233f8c3a5891cfac196982821752d",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-rc01/graphics-path-1.0.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "4960bec7540e80c68ebd1f09c1dadb62ef10b934c305e10262d6984231e47d4d",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-rc01/graphics-path-1.0.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "631bb4c12663682bb0dcb5b75159d935eeae86d7f9780f052bd849cdd29a9447",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-rc01/graphics-path-1.0.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "9f22953dff10e025e5c8c1dbd7ed5632c344b4cab5a7fe551e745c566fe3ec09",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0-rc01/graphics-path-1.0.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "ec6c4f6fbd37f82d4c3f3340a7da479b812233f8c3a5891cfac196982821752d",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0/graphics-path-1.0.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "4960bec7540e80c68ebd1f09c1dadb62ef10b934c305e10262d6984231e47d4d",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0/graphics-path-1.0.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "631bb4c12663682bb0dcb5b75159d935eeae86d7f9780f052bd849cdd29a9447",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0/graphics-path-1.0.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "9f22953dff10e025e5c8c1dbd7ed5632c344b4cab5a7fe551e745c566fe3ec09",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.0/graphics-path-1.0.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "4e56c996f13670e70082658de7880c4020eabf4f25e43387f88ed78a713fc9f0",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.1/graphics-path-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "41e9a793c43a0f4fddb19e33f346bace464f30f888ba7b9eaf96294ea115bfb6",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.1/graphics-path-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "41399eba6fc2a60f6f14642375c1824f3cf25eb8fec7397d753730a3ceda3e2b",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.1/graphics-path-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "eb0570b41fd3bff25d8204a967c03bd7550719e768b791f680cc40cbe35f29af",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.1/graphics-path-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "19a836beebd576c6c7a74a0aa63da62c8ad9d6fb5856966c9f0fae9753ec74f9",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-alpha01/graphics-path-1.1.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "bd3f9122d6072efe71b039afb2a66f2a15583dfc64b4ef85aec03802c7c055a6",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-alpha01/graphics-path-1.1.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "1bbfd821272f4a5b70081881544c6d3af33e1522744e536bbf3fa39ab7925cb7",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-alpha01/graphics-path-1.1.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "a14a5eaf6dd075d70a7aaf6c0523ba0d3b3169d03d72be216a2c987e20ccd93e",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-alpha01/graphics-path-1.1.0-alpha01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-alpha01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "f442b939c6a2a918e4a0f91b96e01bef7c799292f7330387db934bce7db31768",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-beta01/graphics-path-1.1.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "154ba7558f21f603f680d5a4ba16f81bc2504ece3f992137690d0f0268df527e",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-beta01/graphics-path-1.1.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "d6300c9acf9050d1cfb0bce6a2d705552b8312af1d750a2ab4220579c15e30c5",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-beta01/graphics-path-1.1.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "2720c31b0e018678ba095735b947b4d9162575195b6459b4858b659dd9c352bf",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-beta01/graphics-path-1.1.0-beta01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-beta01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "17ee8d0a8f3c2a7b7b2f0b4e1a93c09e4fbdd1c9bfb335fee238c2767c2c03c1",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-rc01/graphics-path-1.1.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "fb5c883968299dda07f2c8552f506aa69a7fff988f8f56285744e08797c4f7cc",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-rc01/graphics-path-1.1.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "eec49b40872d5cde5f5156c22c94eee46beaa2d03f603eafc7700c1e7ab7070c",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-rc01/graphics-path-1.1.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "c48fe70862aae15ba6fdb173d31a0285b3ae7ae2588f5d724f8d502a2208364c",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0-rc01/graphics-path-1.1.0-rc01.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0-rc01",
+      "version_kind": "artifact-prerelease"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "17ee8d0a8f3c2a7b7b2f0b4e1a93c09e4fbdd1c9bfb335fee238c2767c2c03c1",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0/graphics-path-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "fb5c883968299dda07f2c8552f506aa69a7fff988f8f56285744e08797c4f7cc",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0/graphics-path-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "eec49b40872d5cde5f5156c22c94eee46beaa2d03f603eafc7700c1e7ab7070c",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0/graphics-path-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libandroidx.graphics.path.so",
+      "name": "libandroidx.graphics.path.so",
+      "sha256": "c48fe70862aae15ba6fdb173d31a0285b3ae7ae2588f5d724f8d502a2208364c",
+      "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.1.0/graphics-path-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "f48ae7c05f02f7039346af5d5d6c8fa889bf2b06042530dc3cea11a6384a544a",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.10.0/tensorflow-lite-2.10.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.10.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "ff4be1ae34799e65d120aa7348398a659a48cb1b617a3cbe9c3ff2644fc688a3",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.10.0/tensorflow-lite-2.10.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.10.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "8806487e65d335f73308820cae6e4154bdb02c206627e8fbdbd43273fd4dffed",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.10.0/tensorflow-lite-2.10.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.10.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "a0bf1df56fba81459edc1b80399cc4c244b3dc76d727b8c397b479dfeab931c7",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.10.0/tensorflow-lite-2.10.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.10.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "2c8f5c522c6da0c1d2d984b6161a7a7f4bf2288c8ca33b8e5b006def1a503fcb",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.11.0/tensorflow-lite-2.11.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.11.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "0c863214fd130cf9c5a97f92c21caa2741745ba854793c276c987b10ed107d7a",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.11.0/tensorflow-lite-2.11.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.11.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "70b61c5f030ba010c0402ce8c5198cb72e3038d965d218ad3b29d8db8f30329e",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.11.0/tensorflow-lite-2.11.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.11.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "8076885353b2b575b7cd8cda03863a5ef29bed97ee6d2f7b46b5ab6e06bc4953",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.11.0/tensorflow-lite-2.11.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.11.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "98c27d60fd04e64523aeefd9f2996e8bc92a48ab81f13dd2173c1b1ee93a00eb",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.12.0/tensorflow-lite-2.12.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.12.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "a7032d753cc6feb2df98766a4994809dce9551d85fc1ba80d312a295ac793645",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.12.0/tensorflow-lite-2.12.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.12.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "206ef3e80357999ce7750750e0c5428c731ad92c34568eab0fd2ddd54393e0cc",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.12.0/tensorflow-lite-2.12.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.12.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "a9289ddf00171cf9dfe455aadad8e328be08a0f36f7a6509d15d1c3a4b6c6814",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.12.0/tensorflow-lite-2.12.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.12.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "f01ff2806e53621c199713c615e4afa9c161cf05e214cc2c283fca05adb636c5",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.13.0/tensorflow-lite-2.13.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.13.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "2186e7ec9850398891bb87eb4f96a491fbd6df8265b5f76be86581602016f37b",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.13.0/tensorflow-lite-2.13.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.13.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "c864b9003e34a7a87463c0a0681c72c15b4b8650f7b02cab1f78eb222aa18d52",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.13.0/tensorflow-lite-2.13.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.13.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "f7b9e8c6b278c28bd8dc1dee25fe0a06e6de4e71b7521a5c866212ded5ac0314",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.13.0/tensorflow-lite-2.13.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.13.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "36c7443b10e2eaf78c3b59f5de50c9aaee294ce02d2781f5b6a38323db9ecf3c",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.14.0/tensorflow-lite-2.14.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.14.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "ecf0f3fbf3ded8c9ac5e68b6a905c95996acccb5737a399f9aad91a7d915e98b",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.14.0/tensorflow-lite-2.14.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.14.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "0a6e1c75cfd37b3b7569cf9c734570af73acb91844cbc876157cf55fa684148d",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.14.0/tensorflow-lite-2.14.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.14.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "2d8db1462698f50730fb9d7dc1469778bea8aa47d84009f9a7678df9ee131ee4",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.14.0/tensorflow-lite-2.14.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.14.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "54b7e7c9a5a5c8055fb2b4964245ed52d6b175c41872c5d959629bb77d719739",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.15.0/tensorflow-lite-2.15.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.15.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "6cdb634d8522c3fdede9b591b06b144c8bbc70657ae2272f8119683b581191fe",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.15.0/tensorflow-lite-2.15.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.15.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "e467b0eb58a6ea6753d33d4b080d7766a2b2031b9211960061a94840d1d7dc3f",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.15.0/tensorflow-lite-2.15.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.15.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "ce4a2b7497638af01daf8046c38bac0828c2086b23145e79a558a4b59db559d1",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.15.0/tensorflow-lite-2.15.0.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.15.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "a4f950ebb6ddb191cfaf77a4c821b577c5a3200a02b3b338bfa68d00c7446623",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.16.1/tensorflow-lite-2.16.1.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.16.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "b70400266545734bd8acbeb3d3add45f1e0823073cab6fb08f58948607477fdb",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.16.1/tensorflow-lite-2.16.1.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.16.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "82d1c401ef7b6c0ff5e0bc87307ec42aa8836da917753ac50f6a5d8b6894d117",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.16.1/tensorflow-lite-2.16.1.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.16.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "21f2570e650fc120ad28a379d927392c1883f9738895a3fd5efa0a32ae784507",
+      "source": "https://repo.maven.apache.org/maven2/org/tensorflow/tensorflow-lite/2.16.1/tensorflow-lite-2.16.1.aar",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "version": "2.16.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "cfecb1f2da022a555dc916fd890df385221034cc3bd27365706a3f91847a1990",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.0.1/litert-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "ec828382c802100edc6ec54d298aaddbce039c918e5792ce1e56fcbdf5d636a0",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.0.1/litert-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "33c40903d63c46ad7f7b220409d1851a5dc6138715c18f47410cdc5fc51fc8bc",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.0.1/litert-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "5c5228f09bd767f0f5226f2510dba84abe8266f52034811ed468e43f566c3c5d",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.0.1/litert-1.0.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.0.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "d5727021099cac90345c6413e37fed2255fa88200fe1de12d7765507093332fa",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.0/litert-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "03f4166ac1fff460c74db9a68115f95a307359c355b99c9821f199bb97a74b5f",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.0/litert-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "ddaad999357d82c5ef778e7b465a2d43943c8a301185120611b831fd5358c1b9",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.0/litert-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "587ee2b2406a7f8097ebc198af3457f7fb2d3129c52e72dce76bc81f9241fceb",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.0/litert-1.1.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "9d255ed054bbed46497d50cb6e42bcffb8c4c40f6d54b67c20893f5880f7f32f",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.1/litert-1.1.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "40ec2dff416482e83f6e14c46800434624463febee448d2c130912dd35240fc1",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.1/litert-1.1.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "84b150cf7ff3004a02c86baa4ba19085897d74c52cbb2f081a68b312bac64594",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.1/litert-1.1.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "ee1bf3b8b2a936f2ba2d08f32e1261c05f5d4b051eae3c0b5147ec8a830a38dd",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.1/litert-1.1.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "3f3f9096a39e4b80b0cfc6da4803541c6126c8299e3de98290a6dc7b8978ee78",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.2/litert-1.1.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.2",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "6ac88d260a1afa3c7218886c150f555319dbd341a218dd619f377f9486c66580",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.2/litert-1.1.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.2",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "49f9e7cfd5c20968336181c2372ce744a98a3fe919702bc3c5e9b85940ef00be",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.2/litert-1.1.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.2",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "9c17f3a9890287b1c2774248f38062236aa27c3ccb9aca80ed83b1c1bef9dea8",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.1.2/litert-1.1.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.1.2",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "7775cc7f797afc90b8de5c49dca12db7595cfc69e4f7928d412c1bc53f5bb058",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.2.0/litert-1.2.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.2.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "38fe1a1ef672d9de572934889264b2d8e718733ca97567bc3651597dc6c9fcb8",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.2.0/litert-1.2.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.2.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "95aa3422cf8c70673b25007e72f31d77073cff4222fb98f873208ff29ef40e52",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.2.0/litert-1.2.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.2.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "d9d78a366073f54746864ab19c6d3288e5d214abecf5fefbe5056f20917c8f7b",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.2.0/litert-1.2.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.2.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "bf1e41307c82069e880d950f57931623c3f9777222877e0d4f9db24be312045c",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.3.0/litert-1.3.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.3.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "2da92141e882e2cc4d053170d798706672259e1af4b3dd46b824076fae0cc4e4",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.3.0/litert-1.3.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.3.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "3b160f8a2355c8e0d58aba3088081daf0cb77416726c055806d6958669998979",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.3.0/litert-1.3.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.3.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "601fe2bc112f484b85bf0b20586c724ccb2b863057154aab32a1948a08e8c0b1",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.3.0/litert-1.3.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.3.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "f9a6224f22f60426ae1b9d35f06ea040f2b108335932604a04c061d612f7f08f",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.0/litert-1.4.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "1194c6ea953eb4903f8cdcc3c2b81f44cef3a2e6f64b85500700f6941a4f6928",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.0/litert-1.4.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "ba824cc92711237e30fabb61cb116f0fc360d86fc2844116a0903bd637929b04",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.0/litert-1.4.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "b1fdd3d23e58df54f8ce47c704ed4bc0882be37e479fe86a87108d5f8153c422",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.0/litert-1.4.0.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.0",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "85b97f038170c1c3137ba5e2f70d1435cc2cda5a7b07570e2192a38a0b5bdda8",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.1/litert-1.4.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "4531965835c33601f7e317299ba19100337c830e99d26f0665b2f786353e3010",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.1/litert-1.4.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "2936768e762e4f007d0005a419fbe1d7fc7b65c22892e43484a72e75981eacaf",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.1/litert-1.4.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "935c6a66556fd8e0c1d061733d1cfa5f46eb950f1ac8f02347e0d2ee09833aa8",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.1/litert-1.4.1.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.1",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "arm64-v8a",
+      "artifact_path": "jni/arm64-v8a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "e2328caf39606382a13dc08f06ed03eb0119a490208d375e3f42b80e4dabc465",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.2/litert-1.4.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.2",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "armeabi-v7a",
+      "artifact_path": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "1ef7f586c996fb95c944c3e25555d121f01874153b330d5b26503f369fd54d0a",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.2/litert-1.4.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.2",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86",
+      "artifact_path": "jni/x86/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "bd625a7422a8c19466a021b2cdfac3e964aa4945452e698c2ad2ecc7235b364c",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.2/litert-1.4.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.2",
+      "version_kind": "artifact-release"
+    },
+    {
+      "architecture": "x86_64",
+      "artifact_path": "jni/x86_64/libtensorflowlite_jni.so",
+      "name": "libtensorflowlite_jni.so",
+      "sha256": "59fb31cc5aae55fd764ef74b0855db7549e981427e7debe31ef3a3f2792dc0d5",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert/1.4.2/litert-1.4.2.aar",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "version": "1.4.2",
+      "version_kind": "artifact-release"
+    }
+  ],
+  "schema_version": 1
+}

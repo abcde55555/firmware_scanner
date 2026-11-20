@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "release": "builtin-2026.11.20.13",
+  "files": [
+    {
+      "path": "binary_reference.json",
+      "sha256": "c9f902c45a0b4d318873cd8faef80701dac9fd07e4a8898981d4ce60b2c54285",
+      "kind": "binary-rule-pack"
+    },
+    {
+      "path": "binary_samples.json",
+      "sha256": "941c284b2da869aceee659b09f6a895395435b96733cad33143f6156d6f06f67",
+      "kind": "binary-sample-pack"
+    },
+    {
+      "path": "cve/offline_db.json",
+      "sha256": "a1a12e078c233c7f821b8cdada1cb57293cad1d3244de09a31c43d4e5e47a22f",
+      "kind": "offline-advisory-pack"
+    },
+    {
+      "path": "database_packs/blintdb-v4-arm64.json",
+      "sha256": "0d82cec414b342ca89effa0859bca7d9beba775bc8aea3f8e2b67aad4d6192aa",
+      "kind": "database-manifest"
+    },
+    {
+      "path": "database_packs/nsrl-rds-2026.03.1-android-minimal.json",
+      "sha256": "9eee97f4cc1ae86d236a8fc6e41ad6221b21c7a751c4b8cd9c65bb2062f39398",
+      "kind": "database-manifest"
+    },
+    {
+      "path": "emba_rules.json",
+      "sha256": "b6f950e195be167bf3f95ba0ca7c54ef9c21d01b0ff29efebd28961f8c7bca60",
+      "kind": "binary-rule-pack"
+    },
+    {
+      "path": "provenance/android-release-project-estimates.json",
+      "sha256": "b83876f62fe1366f2b6401ae219ece93d7bbb8009e9c2eb1699cc2c3b3c06673",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "provenance/android_source_project_rules.json",
+      "sha256": "56793e84f0a57b93360c01517c5f5405bacb0e47cc8856375e049838d1729d0e",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "provenance/source-subproject-version-pins.json",
+      "sha256": "37b334b5524c04f1d2cc3f2662b005dae8040684709de26d4e485d8066e4817e",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "provenance/source-version-pins.json",
+      "sha256": "4135b745d63a6b064802ea2bfdb18e0752b324c150ea536e138ca574e9e785b4",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "provenance/waydroid-atv-20260403.json",
+      "sha256": "12ee1fbc00eb86aedd0e831db2217d9503e01c6026194a874828f9520f15fa18",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "rust_version_positions.json",
+      "sha256": "f49490ffa97cc6291a576fd0e66e61a77d4fdaf8c46e71a98df7ad423406d6d3",
+      "kind": "rust-version-pack"
+    },
+    {
+      "path": "signatures/components.json",
+      "sha256": "15d3acdd0cb507b1849ebbdbb404ac138781644fa2eaedd4fb9988dbfdcaa730",
+      "kind": "signature-pack"
+    },
+    {
+      "path": "signatures/dex_packages.json",
+      "sha256": "71e0894096d0d6efca81f5f55baf5e0c520f086b5517bce89be3b2a4cdb72b2d",
+      "kind": "signature-pack"
+    },
+    {
+      "path": "signatures/version_patterns.json",
+      "sha256": "17e794ffe812a678aa8b9accd24b3b1b0b9e0b4f70d81e8de338394e506fe3dc",
+      "kind": "signature-pack"
+    }
+  ]
+}

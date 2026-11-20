@@ -1,13 +1,13 @@
 """Vulnerability matcher - orchestrates component scanning against OSV."""
 
 import urllib.error
-from typing import Callable
+from collections.abc import Callable
 
+from ..extraction.component_identity import confirmed_upstream_identity
 from ..extraction.models import Component
-from .models import ComponentVulnResult, VulnScanResult, Severity
+from .models import ComponentVulnResult, Severity, VulnScanResult
 from .osv_client import OSVClient
-from .threat_intel import is_cisa_kev, get_cisa_kev_info, get_epss_score, get_cnvd_cnnvd_ids
-
+from .threat_intel import get_cisa_kev_info, get_cnvd_cnnvd_ids, get_epss_score, is_cisa_kev
 
 # Maps firmware library names to upstream project names recognized by OSV
 _NAME_ALIASES: dict[str, str] = {
@@ -89,6 +89,27 @@ _NAME_ALIASES: dict[str, str] = {
     "miniupnpc": "miniupnpc",
     "miniupnpd": "miniupnpd",
     "libminiupnpc": "miniupnpc",
+    "libexif": "libexif",
+    "libdrm": "libdrm",
+    "libfuse": "libfuse",
+    "libbpf": "libbpf",
+    "libdav1d": "dav1d",
+    "libyuv": "libyuv",
+    "libheif": "libheif",
+    "libavif": "libavif",
+    "libjxl": "libjxl",
+    "libzip": "libzip",
+    "libopenjp2": "openjpeg",
+    "openjp2": "openjpeg",
+    "libraw": "libraw",
+    "snappy": "snappy",
+    "libjsoncpp": "jsoncpp",
+    "libntfs-3g": "ntfs-3g",
+    "libminijail": "minijail",
+    "libperfetto": "perfetto",
+    "libpiex": "piex",
+    "libselinux": "selinux",
+    "libtinyalsa": "tinyalsa",
     "android": "Android",
 }
 
@@ -98,8 +119,7 @@ def _normalize_name(name: str) -> str:
     lower = name.lower().strip()
     # Strip common suffixes
     for suffix in (".so", ".a", ".dylib", ".dll"):
-        if lower.endswith(suffix):
-            lower = lower[: -len(suffix)]
+        lower = lower.removesuffix(suffix)
     # Strip version suffixes like libcrypto.so.1.1
     while lower and lower[-1].isdigit() or lower.endswith("."):
         lower = lower.rstrip("0123456789.")
@@ -118,6 +138,47 @@ _INVALID_VERSIONS = {"detected", "unknown", "n/a", "boringssl", ""}
 
 def _is_scannable(component: Component) -> bool:
     """Check if a component has enough info for a meaningful vulnerability query."""
+    query_disposition = next(
+        (
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:vulnerability:query"
+        ),
+        "",
+    )
+    if query_disposition == "not-queryable-no-canonical-osv-package":
+        return False
+    source_project = next(
+        (
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:source:project"
+        ),
+        "",
+    )
+    if source_project == "external/lzma":
+        # Android's external/lzma is the 7-Zip LZMA SDK, not XZ Utils.
+        return False
+    resolution_state = next(
+        (
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:version:resolution-state"
+        ),
+        "",
+    )
+    if resolution_state and resolution_state != "exact":
+        return False
+    estimated_kind = next(
+        (
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:version:kind"
+        ),
+        "",
+    )
+    if estimated_kind.startswith(("estimated-source-revision", "estimated-apex", "estimated-apk")):
+        return False
     ver = component.resolved_version.strip().lower()
     if not ver or ver in _INVALID_VERSIONS:
         return False
@@ -135,11 +196,19 @@ def _is_scannable(component: Component) -> bool:
     if "aosp" in ver or "bp2a" in ver:
         return False
     # Skip pure Android framework components and HAL interfaces
-    if component.name.startswith("framework/") or component.name.startswith("android.") or "@" in component.name:
+    if (
+        component.name.startswith("framework/")
+        or component.name.startswith("android.")
+        or "@" in component.name
+    ):
         return False
     # Skip Android APK packages (pkg:apk/...) - they're not tracked in OSV
     if component.purl and component.purl.startswith("pkg:apk/"):
         return False
+    # A non-generic ecosystem purl identifies the upstream package even when
+    # the firmware keeps an Android Rust-style .dylib.so filename.
+    if component.purl and not component.purl.startswith("pkg:generic/"):
+        return True
     # Skip Android internal Rust dylibs
     if component.name.endswith(".dylib.so"):
         return False
@@ -148,11 +217,8 @@ def _is_scannable(component: Component) -> bool:
         parts = component.name.split(".")
         if len(parts) >= 2 and all(p.replace("_", "").isalnum() for p in parts):
             return False
-    # Has a non-generic ecosystem purl (npm, pypi, maven, etc.) - always scan
-    if component.purl and not component.purl.startswith("pkg:generic/"):
-        return True
     # Known upstream project mapping
-    normalized = _normalize_name(component.name)
+    normalized = _normalize_name(confirmed_upstream_identity(component))
     if normalized.lower() != component.name.lower():
         return _is_real_version(ver)
     # For libraries or binaries without known alias mapping:
@@ -208,10 +274,14 @@ class VulnMatcher:
 
         is_fresh, age = self._client.check_cache_freshness()
         if age is not None and not is_fresh:
-            result.errors.append(f"Vulnerability cache is {age:.1f}h old (>24h), refreshing from OSV...")
+            result.errors.append(
+                f"Vulnerability cache is {age:.1f}h old (>24h), refreshing from OSV..."
+            )
 
         if self._progress:
-            self._progress(0, len(unique_queries), f"Querying OSV ({len(unique_queries)} unique packages)...")
+            self._progress(
+                0, len(unique_queries), f"Querying OSV ({len(unique_queries)} unique packages)..."
+            )
 
         try:
             unique_results = self._client.query_with_cache(unique_queries)
@@ -228,6 +298,8 @@ class VulnMatcher:
                 raw_vulns,
                 comp_version=comp.resolved_version,
                 comp_name=comp.name,
+                ecosystem=self._infer_ecosystem(comp),
+                target_name=_normalize_name(confirmed_upstream_identity(comp)),
             )
             comp_result = ComponentVulnResult(
                 component_name=comp.name,
@@ -240,7 +312,11 @@ class VulnMatcher:
             result.total_vulnerabilities += len(vulns)
             for v in vulns:
                 # Threat intelligence enrichment (CISA KEV, EPSS, CNVD/CNNVD)
-                cve_id = v.id if v.id.startswith("CVE-") else next((a for a in v.aliases if a.startswith("CVE-")), "")
+                cve_id = (
+                    v.id
+                    if v.id.startswith("CVE-")
+                    else next((a for a in v.aliases if a.startswith("CVE-")), "")
+                )
                 if cve_id:
                     if is_cisa_kev(cve_id):
                         v.is_cisa_kev = True
@@ -279,7 +355,7 @@ class VulnMatcher:
                 "name": component.name,
                 "version": component.resolved_version,
             }
-        normalized = _normalize_name(component.name)
+        normalized = _normalize_name(confirmed_upstream_identity(component))
         ecosystem = self._infer_ecosystem(component)
         return {
             "name": normalized,

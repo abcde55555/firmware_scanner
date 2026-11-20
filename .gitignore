@@ -6,6 +6,7 @@ __pycache__/
 .Python
 build/
 dist/
+dist-wheels*/
 *.egg-info/
 .eggs/
 
@@ -26,6 +27,7 @@ htmlcov/
 unpacked/
 reports/
 output/
+work/
 *.log
 
 # IDE / OS

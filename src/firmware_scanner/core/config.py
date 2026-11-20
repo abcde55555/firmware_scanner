@@ -1,6 +1,7 @@
 """Configuration management."""
 
 from pathlib import Path
+
 from pydantic import BaseModel
 
 
@@ -23,3 +24,7 @@ class AnalysisConfig(BaseModel):
     android_max_total_files: int = 2000
     android_max_single_file: int = 64 * 1024 * 1024  # 64MB for large APKs
     android_external_tools_dir: str = ""
+    android_source_manifest: str = ""
+    blintdb_path: str = ""
+    nsrl_db_path: str = ""
+    verify_database_integrity: bool = True

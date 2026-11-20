@@ -1,0 +1,245 @@
+# NULL-argument version APIs and database provenance
+
+Date: 2026-11-20  
+Scanner: 0.18.0  
+Rule release: `builtin-2026.11.20.4`
+
+## Result
+
+Version 0.17.0 added a bounded proof for public `check_version(NULL)` APIs and
+promoted external database metadata into auditable scan-level evidence. Version
+0.18.0 extends the same evidence model to object triplets, output parameters and
+architectural version boundaries.
+
+The third independent Debian catalog was not used to invent ABI-only versions.
+The frozen stripped files from the previous run were replayed with the new
+extractor:
+
+| Metric | 0.16.0 | 0.17.0 |
+|---|---:|---:|
+| Identity matched | 20/20 | 20/20 |
+| Exact versions | 7 | **12** |
+| Estimated | 0 | 0 |
+| Wrong exact / estimated | 0 / 0 | 0 / 0 |
+| Unknown | 13 | 8 |
+| Usable coverage | 35% | **60%** |
+
+The five additions are c-ares `1.34.6`, libgpg-error `1.59`, libidn2
+`2.3.8`, libtasn1 `4.21.0` and liburing `2.14`. GnuTLS `3.8.13` was already
+recovered by existing banner evidence, and the new path provides a second
+independent proof.
+
+## Fourth black-box catalog
+
+A fourth 20-library Debian catalog was selected before evaluating the current
+scanner. It is disjoint from the development, independent, independent-2 and
+independent-3 catalogs.
+
+| Metric | 0.17.0 blind | 0.18.0 after documented API expansion |
+|---|---:|---:|
+| Catalog identity matched | 18/20 | 20/20 |
+| Exact versions | 2 | **10** |
+| Estimated | 2 | 0 |
+| Wrong exact / estimate | 0 / 0 | 0 / 0 |
+| Unknown | 16 | 10 |
+| Usable coverage | 20% | **50%** |
+
+The eight usable additions/upgrades are:
+
+- GLib `2.88.3` from three exported integer version objects;
+- FriBidi `1.0.16` from its version-info pointer plus Unicode-data version;
+- ATK `2.59.1` from major/minor/micro getters;
+- libsrtp `2.7.0` from its defined prefixed string getter;
+- Lua `5.4.8` from agreement between `lua_version()` and the official banner.
+- Berkeley DB `5.3.28` from `db_version()` output parameters and its returned
+  banner;
+- Protobuf `3.21.12` from the modern ABI-tagged `VerifyVersion` boundary;
+- Jemalloc `5.3.0` from its git release description plus allocator-specific
+  public APIs.
+
+The tuned 50% is not a held-out accuracy result because this catalog's failures
+informed the new rules. The untouched blind result remains 20%, which is the
+more honest estimate of generalization for 0.17.0.
+
+## NULL-argument proof
+
+The accepted pattern is:
+
+1. A defined exported function has a bounded body.
+2. Its first argument is tested against zero.
+3. The zero branch targets a block inside the function.
+4. That block performs only a supported constant pointer return.
+5. The pointer maps to a read-only, NUL-terminated semantic version.
+
+The implementation supports the tested x86-64 `test/je` and AArch64 `cbz`
+forms, and reuses the existing ARM32/Thumb pointer parser. A branch that returns
+NULL, an undefined function, a call-dependent string, or a non-version string is
+rejected.
+
+Current probes:
+
+- GnuTLS `gnutls_check_version`
+- libidn2 `idn2_check_version`
+- libtasn1 `asn1_check_version`
+- c-ares `ares_version`, whose optional integer output does not change the
+  returned release string
+- liburing `io_uring_major_version` plus `io_uring_minor_version`
+- libgpg-error `gpgrt_check_version`, following exactly one local forwarding
+  jump before applying the zero-argument proof
+
+## Database provenance
+
+Scan reports now have top-level `database_provenance` with, for each enabled
+database:
+
+- kind, display name and release;
+- immutable SHA-256 and byte size;
+- database schema;
+- source URL, license and architecture;
+- manifest properties;
+- integrity algorithm, result and status.
+
+Component evidence includes a `sha256:<database-digest>` provenance ID in
+addition to the existing release property. A hash-disabled scan is explicitly
+marked `size-manifest-match-hash-not-verified`.
+
+NSRL lookups now preserve:
+
+- target file SHA-256 and size;
+- returned match count;
+- total match count;
+- truncation state;
+- database release and digest;
+- distribution-package version semantics.
+
+Opening an NSRL database runs the same exact-query path against one immutable
+control row. A failed control aborts the scan before component analysis; the
+control result is recorded in `database_stats.self_checks` and is not counted
+as a firmware hit.
+
+The scan report distinguishes a database being disabled, a failed lookup, zero
+matches, and a successful exact match. Neither database is allowed to write a
+component `resolved_version`.
+
+## Real database controls
+
+### NSRL
+
+The product query path was exercised against one immutable row from the real
+`2026.03.1` Android-minimal database:
+
+- query SHA-256:
+  `000000d40dca9c793e8fd21f6bbdc4f35865e6624a0fbaf2761d9e503a406c98`;
+- size: `1,328`;
+- expected file: `md_listitem_multichoice.xml`;
+- result: one exact row;
+- duration: 0.214 seconds;
+- database digest:
+  `2f3203615d96e6079fda9a65d39cad4b2a9100fa8f7e6f54a3c74cc5eee1d315`.
+
+This proves the lookup mechanism and the index path. It is a control record,
+not a hit counted against either firmware.
+
+### BLintDB
+
+The real integration path was run on Allwinner `/lib/libexpat.so`:
+
+- target SHA-256:
+  `14a7135bd66bcc169c3718f086ef20a29c186073ca4d5115a72a517c5115efda`;
+- BLintDB confirmed component identity: `expat`;
+- candidate reference version: `2.9.0`;
+- target binary self-version: `2.1.0`;
+- result: identity confirmed, version comparison `mismatch`,
+  `diagnostic-only-no-version-overwrite`;
+- database digest:
+  `93bcb321c5c3bc8933cdad5c63454312838750f88053ed0223fd4c2e0da5112e`.
+
+This is an important positive control: the database can identify the component
+while its reference build version demonstrably disagrees with the target. The
+scanner keeps the target evidence and does not manufacture agreement.
+
+## Firmware impact
+
+The two target BOM snapshots do not contain components named GnuTLS, libidn2 or
+libtasn1 at top level. The new getters therefore have no claimed 0.17.0
+fixed-cohort increment on these images. Their demonstrated gain is on the
+stripped Debian regression corpus and future firmware.
+
+NSRL still has zero exact-file matches on the two target firmware images.
+BLintDB remains useful for identity confirmation and mismatch diagnostics, but
+does not directly increase verified version coverage in these samples.
+
+The final Allwinner 0.17.0 scan at commit `d442eb0` revalidated the full path:
+
+| Metric | Result |
+|---|---:|
+| Firmware SHA-256 | `87c2d561464ec8144f2c580ce5f781262f0506f57a506d534e652e96099f0cf2` |
+| Components | 593 |
+| Analysed ELF files | 444 |
+| Fixed cohort usable | 193/582, 33.16% |
+| Native usable | 56/312, 17.95% |
+| Independently verified | 5 correct, 0 errors |
+| BLintDB queried / candidates | 430 / 5 |
+| BLintDB identity confirmations | 4 |
+| BLintDB comparable version mismatches | 3 |
+| NSRL queried / matched | 430 / 0 |
+| NSRL positive control | passed |
+| CycloneDX 1.6 schema | valid |
+
+The final scan also recovers `libevent 1.4.13-stable` from the adjacent upstream
+identity banner in four Chromium containers. This record was not in the frozen
+582-item baseline, so it does not change the fixed-cohort metric; it is counted
+as a new full-BOM exact component.
+
+The final scan duration was 260.322 seconds under heavy host I/O contention and
+is not used as a performance-regression result.
+
+Modern Android 16 was also rescanned end to end at commit `acd45c3`:
+
+| Metric | Result |
+|---|---:|
+| Components | 1,577 |
+| Fixed cohort usable | 785/1,129, 69.53% |
+| Native usable | 621/774, 80.23% |
+| Exact / estimated | 225 / 560 |
+| BLintDB queried / candidates | 1,789 / 21 |
+| BLintDB identity confirmations | 9 |
+| BLintDB comparable version mismatches | 8 |
+| BLintDB non-comparable | 1 |
+| NSRL queried / matched | 1,789 / 0 |
+| NSRL positive control | passed |
+| CycloneDX 1.6 schema | valid |
+
+No fixed-cohort version changed. The run validates that the new provenance and
+self-check paths do not alter component or version decisions. Runtime was
+604.670 seconds with a 2,019,440 KiB peak RSS.
+
+## Artifacts
+
+- `reports/heldout-debian-independent3-20261120-null-getters/heldout-report.json`
+- `reports/heldout-debian-independent3-20261120-ares-getter/heldout-report.json`
+- `reports/heldout-debian-independent3-20261120-uring-getter/heldout-report.json`
+- `reports/heldout-debian-independent3-20261120-forwarded-getter/heldout-report.json`
+- `reports/heldout-debian-independent4-20261120-blind/heldout-report.json`
+- `reports/heldout-debian-independent4-20261120-tuned2/heldout-report.json`
+- `reports/heldout-debian-independent4-20261120-tuned4/heldout-report.json`
+- `reports/version-coverage-getters-20261120/database-positive-controls-20261120.json`
+- `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
+- `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/evaluation-fixed.json`
+- `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/schema-validation.json`
+- `reports/version-coverage-getters-20261120/database-evidence-modern-acd45c3/evaluation-fixed.json`
+- `reports/version-coverage-getters-20261120/database-evidence-modern-acd45c3/schema-validation.json`
+- `reports/version-coverage-getters-20261120/wheel-0.17.0/wheel-verification.json`
+- `reports/version-coverage-getters-20261120/wheel-0.18.0/wheel-verification.json`
+- `src/firmware_scanner/extraction/semantic_version.py`
+- `src/firmware_scanner/databases/manifest.py`
+- `src/firmware_scanner/databases/enricher.py`
+- `src/firmware_scanner/databases/nsrl.py`
+
+## Next gaps
+
+- Handle complete major/minor-only APIs such as Nettle without inventing patch
+  versions.
+- Run broader BLintDB identity positive controls across architectures.
+- Preserve upstream archive/signature verification results when a database is
+  acquired, in addition to the installed SQLite digest.

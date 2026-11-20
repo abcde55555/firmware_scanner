@@ -1,7 +1,6 @@
 """SBOM generation orchestrator."""
 
 from ..core.context import AnalysisContext
-from ..extraction.models import Component
 from .cyclonedx import CycloneDXGenerator
 from .spdx3 import SPDX3Generator
 
@@ -25,6 +24,39 @@ class SBOMGenerator:
             )
 
         android_info = context.metadata.get("android_build_info")
+        if android_info is None and (
+            context.metadata.get("database_stats")
+            or context.metadata.get("analysis_stats")
+            or context.metadata.get("family_provenance_stats")
+            or context.metadata.get("provenance_stats")
+            or context.metadata.get("license_stats")
+            or context.metadata.get("rules")
+        ):
+            android_info = {
+                "database_stats": context.metadata.get("database_stats", {}),
+                "database_provenance": context.metadata.get(
+                    "database_provenance", {}
+                ),
+                "analysis_stats": context.metadata.get("analysis_stats", {}),
+                "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
+                "provenance_stats": context.metadata.get("provenance_stats", {}),
+                "license_stats": context.metadata.get("license_stats", {}),
+                "rules": context.metadata.get("rules", {}),
+            }
+        elif android_info is not None:
+            overlays = {
+                key: context.metadata[key]
+                for key in (
+                    "database_provenance",
+                    "family_provenance_stats",
+                    "provenance_stats",
+                    "license_stats",
+                    "rules",
+                )
+                if context.metadata.get(key)
+            }
+            if overlays:
+                android_info = {**android_info, **overlays}
 
         bom = self._cdx.generate(
             components=context.components,

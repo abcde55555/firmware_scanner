@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "releases": [
+    {
+      "android_version": "4.4.4",
+      "build_ids": [
+        "KTU84Q"
+      ],
+      "aosp_tag": "android-4.4.4_r2",
+      "projects": [
+        {
+          "project_path": "external/jpeg",
+          "identities": [
+            "libjpeg"
+          ],
+          "filename_patterns": [
+            "libjpeg"
+          ],
+          "required_properties": {
+            "firmware:jpeg:abi-version": "62"
+          },
+          "component_name": "libjpeg",
+          "version": "6b",
+          "source_url": "https://android.googlesource.com/platform/external/jpeg/+/refs/tags/android-4.4.4_r2/jversion.h",
+          "version_authority": "JVERSION build definition"
+        },
+        {
+          "project_path": "external/libexif",
+          "identities": [
+            "libexif"
+          ],
+          "filename_patterns": [
+            "libexif"
+          ],
+          "component_name": "libexif",
+          "version": "0.6.21",
+          "source_url": "https://android.googlesource.com/platform/external/libexif/+/refs/tags/android-4.4.4_r2/configure.ac",
+          "version_authority": "AC_INIT package version"
+        },
+        {
+          "project_path": "external/mdnsresponder",
+          "identities": [
+            "mDNSResponder"
+          ],
+          "filename_patterns": [
+            "libmdnssd"
+          ],
+          "component_name": "mDNSResponder",
+          "version": "320.10.80",
+          "source_url": "https://android.googlesource.com/platform/external/mdnsresponder/+/refs/tags/android-4.4.4_r2/Makefile",
+          "version_authority": "MVERS mDNSResponder release"
+        },
+        {
+          "project_path": "external/tinyalsa",
+          "identities": [
+            "TinyALSA"
+          ],
+          "filename_patterns": [
+            "libtinyalsa"
+          ],
+          "component_name": "TinyALSA",
+          "source_revision": "252af255884d55166115e09c74280aeeeeeb5553",
+          "source_url": "https://android.googlesource.com/platform/external/tinyalsa/+/refs/tags/android-4.4.4_r2",
+          "version_authority": "AOSP android-4.4.4_r2 tree object; no upstream semantic release is declared"
+        },
+        {
+          "project_path": "external/sonivox",
+          "identities": [
+            "Sonivox"
+          ],
+          "filename_patterns": [
+            "libsonivox"
+          ],
+          "component_name": "Sonivox",
+          "source_revision": "ac263c249db97d9a1c19a1d5d5ca51e937411090",
+          "source_url": "https://android.googlesource.com/platform/external/sonivox/+/refs/tags/android-4.4.4_r2",
+          "version_authority": "AOSP android-4.4.4_r2 tree object; no upstream semantic release is declared"
+        },
+        {
+          "project_path": "external/speex",
+          "identities": [
+            "SpeexDSP"
+          ],
+          "filename_patterns": [
+            "libspeexresampler",
+            "speexdsp"
+          ],
+          "component_name": "SpeexDSP",
+          "version": "1.2beta3",
+          "source_url": "https://android.googlesource.com/platform/external/speex/+/refs/tags/android-4.4.4_r2/libspeex/arch.h",
+          "version_authority": "SPEEX_VERSION build definition"
+        },
+        {
+          "project_path": "external/stlport",
+          "identities": [
+            "STLport"
+          ],
+          "filename_patterns": [
+            "libstlport"
+          ],
+          "component_name": "STLport",
+          "version": "5.0",
+          "source_url": "https://android.googlesource.com/platform/external/stlport/+/refs/tags/android-4.4.4_r2/README",
+          "version_authority": "release README"
+        },
+        {
+          "project_path": "external/jhead",
+          "identities": [
+            "Jhead"
+          ],
+          "filename_patterns": [
+            "jhead"
+          ],
+          "component_name": "Jhead",
+          "version": "2.87",
+          "source_url": "https://android.googlesource.com/platform/external/jhead/+/refs/tags/android-4.4.4_r2/jhead.c",
+          "version_authority": "JHEAD_VERSION build definition"
+        },
+        {
+          "project_path": "external/libmtp",
+          "filename_only": true,
+          "filename_patterns": [
+            "libmtp.so"
+          ],
+          "filename_match": "exact",
+          "component_name": "libmtp",
+          "version": "1.0.1",
+          "source_url": "https://android.googlesource.com/platform/external/libmtp/+/refs/tags/android-4.4.4_r2/configure.ac",
+          "version_authority": "AC_INIT package version"
+        },
+        {
+          "project_path": "external/tremolo",
+          "filename_only": true,
+          "filename_patterns": [
+            "libvorbisidec.so"
+          ],
+          "filename_match": "exact",
+          "component_name": "Tremolo",
+          "version": "0.07",
+          "source_url": "https://android.googlesource.com/platform/external/tremolo/+/refs/tags/android-4.4.4_r2/README",
+          "version_authority": "README-derived Tremolo library version"
+        },
+        {
+          "project_path": "external/chromium_org",
+          "filename_only": true,
+          "filename_patterns": [
+            "libwebviewchromium.so"
+          ],
+          "filename_match": "exact",
+          "component_name": "Chromium WebView",
+          "version": "33.0.1750.166",
+          "source_url": "https://android.googlesource.com/platform/external/chromium_org/+/refs/tags/android-4.4.4_r2/chrome/VERSION",
+          "version_authority": "MAJOR, MINOR, BUILD and PATCH"
+        },
+        {
+          "project_path": "external/protobuf",
+          "embedded_source_version": true,
+          "component_name": "Protobuf",
+          "version": "2.3.0",
+          "source_url": "https://android.googlesource.com/platform/external/protobuf/+/refs/tags/android-4.4.4_r2/src/google/protobuf/stubs/common.h",
+          "version_authority": "GOOGLE_PROTOBUF_VERSION"
+        },
+        {
+          "project_path": "external/llvm",
+          "embedded_source_version": true,
+          "component_name": "LLVM",
+          "version": "3.4svn",
+          "source_url": "https://android.googlesource.com/platform/external/llvm/+/refs/tags/android-4.4.4_r2/CMakeLists.txt",
+          "version_authority": "LLVM_VERSION_MAJOR, LLVM_VERSION_MINOR and PACKAGE_VERSION"
+        },
+        {
+          "project_path": "external/v8",
+          "embedded_source_version": true,
+          "component_name": "V8",
+          "version": "3.9.24.30",
+          "source_url": "https://android.googlesource.com/platform/external/v8/+/refs/tags/android-4.4.4_r2/src/version.cc",
+          "version_authority": "MAJOR_VERSION, MINOR_VERSION, BUILD_NUMBER and PATCH_LEVEL"
+        },
+        {
+          "project_path": "external/opencv",
+          "embedded_source_version": true,
+          "component_name": "OpenCV",
+          "version": "1.1.0",
+          "source_url": "https://android.googlesource.com/platform/external/opencv/+/refs/tags/android-4.4.4_r2/cxcore/include/cvver.h",
+          "version_authority": "CV_MAJOR_VERSION, CV_MINOR_VERSION and CV_SUBMINOR_VERSION"
+        },
+        {
+          "project_path": "external/marisa-trie",
+          "embedded_source_version": true,
+          "component_name": "marisa-trie",
+          "version": "0.1.5",
+          "source_url": "https://android.googlesource.com/platform/external/marisa-trie/+/refs/tags/android-4.4.4_r2/v0_1_5",
+          "version_authority": "release directory v0_1_5"
+        },
+        {
+          "project_path": "external/regex-re2",
+          "embedded_source_version": true,
+          "component_name": "RE2",
+          "version": "20130115",
+          "source_url": "https://android.googlesource.com/platform/external/regex-re2/+/refs/tags/android-4.4.4_r2/README.android",
+          "version_authority": "re2-20130115 source archive"
+        },
+        {
+          "project_path": "external/chromium",
+          "embedded_source_version": true,
+          "component_name": "Chromium",
+          "version": "12.0.742.130",
+          "source_url": "https://android.googlesource.com/platform/external/chromium/+/refs/tags/android-4.4.4_r2/CHROMIUM_MERGE_REVISION",
+          "version_authority": "pinned Chromium release DEPS URL"
+        }
+      ]
+    }
+  ]
+}

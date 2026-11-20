@@ -1,5 +1,5 @@
-import struct
 import shutil
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -86,6 +86,18 @@ def test_aarch64_literal_load_resolves_pointer_through_file_backed_mapping():
     assert [(m.name, m.version) for m in matches] == [("zstd", "1.5.7+git-deadbeef")]
 
 
+def test_aarch64_adrp_add_ret_uses_the_same_public_getter_registry():
+    elf = _aarch64_elf(
+        [0xB0000000, 0x91040000, 0xD65F03C0],
+        b"1.12.3",
+        symbol_name="nng_version",
+    )
+
+    assert [(match.name, match.version) for match in StaticVersionExtractor().extract(elf)] == [
+        ("NNG", "1.12.3")
+    ]
+
+
 def test_malformed_elf_returns_no_matches():
     assert StaticVersionExtractor().extract(b"\x7fELF" + bytes(60)) == []
 
@@ -122,3 +134,271 @@ def test_x86_64_compiler_getter_fixture_returns_full_dev_git_version():
         matches = StaticVersionExtractor().extract(elf_path.read_bytes())
 
     assert [(m.name, m.version) for m in matches] == [("zstd", "1.5.7-dev-git-deadbeef")]
+
+
+def test_libfuse_package_version_uses_the_release_string_pointer():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *fuse_pkgversion(void) {
+            return "3.18.1";
+        }
+        __attribute__((visibility("default"), noinline, used))
+        int fuse_version(void) {
+            return 318;
+        }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "fuse.c"
+        elf_path = Path(temp_dir) / "libfuse3.so.3"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert [(m.name, m.version) for m in matches] == [("libfuse", "3.18.1")]
+    assert "fuse_pkgversion" in matches[0].evidence
+
+
+def test_libarchive_and_json_c_release_string_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *archive_version_string(void) {
+            return "libarchive 3.8.5";
+        }
+        __attribute__((visibility("default"), noinline, used))
+        const char *json_c_version(void) {
+            return "0.18";
+        }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(m.name, m.version) for m in matches} == {
+        ("libarchive", "3.8.5"),
+        ("json-c", "0.18"),
+    }
+
+
+def test_mpfr_mpc_portaudio_and_ffado_release_string_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *mpfr_get_version(void) { return "4.2.2"; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *mpc_get_version(void) { return "1.3.1"; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *Pa_GetVersionText(void) {
+            return "PortAudio V19.7.0-devel, revision unknown";
+        }
+        __attribute__((visibility("default"), noinline, used))
+        const char *ffado_get_version(void) { return "libffado 2.5.0"; }
+        __attribute__((visibility("default"), noinline, used))
+        int yajl_version(void) { return 20100; }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(match.name, match.version) for match in matches} == {
+        ("MPFR", "4.2.2"),
+        ("MPC", "1.3.1"),
+        ("PortAudio", "19.7.0"),
+        ("libffado", "2.5.0"),
+        ("YAJL", "2.1.0"),
+    }
+
+
+def test_libsepol_release_requires_version_definition_and_identity_symbols():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        void cil_check_neverallows_against_pdb(void) {}
+        __attribute__((visibility("default"), noinline, used))
+        void sepol_kernel_policydb_decls_to_cil(void) {}
+    '''
+    version_script = '''
+        LIBSEPOL_3.11 {
+          global:
+            cil_check_neverallows_against_pdb;
+            sepol_kernel_policydb_decls_to_cil;
+        };
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "libsepol.c"
+        version_path = Path(temp_dir) / "libsepol.map"
+        elf_path = Path(temp_dir) / "libsepol.so.2"
+        source_path.write_text(source)
+        version_path.write_text(version_script)
+        subprocess.run(
+            [
+                compiler,
+                "-shared",
+                "-fPIC",
+                "-O2",
+                "-fno-stack-protector",
+                "-Wl,--build-id=none",
+                f"-Wl,--version-script={version_path}",
+                "-o",
+                str(elf_path),
+                str(source_path),
+            ],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert [(match.name, match.version) for match in matches] == [("libsepol", "3.11")]
+
+
+def test_nss_and_nspr_version_string_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *NSS_GetVersion(void) { return "3.121"; }
+        __attribute__((visibility("default"), noinline, used))
+        int NSS_VersionCheck(const char *value) { (void)value; return 1; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *PR_GetVersion(void) { return "4.38.2"; }
+        __attribute__((visibility("default"), noinline, used))
+        int PR_VersionCheck(const char *value) { (void)value; return 1; }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "nss.c"
+        elf_path = Path(temp_dir) / "libnss-combined.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(match.name, match.version) for match in matches} == {
+        ("NSS", "3.121"),
+        ("NSPR", "4.38.2"),
+    }
+
+
+def test_additional_documented_string_version_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    getters = {
+        "jansson_version_str": "2.14",
+        "MMDB_lib_version": "1.12.2",
+        "orc_version_string": "0.4.42",
+        "sodium_version_string": "1.0.18",
+    }
+    source = "\n".join(
+        f'__attribute__((visibility("default"), noinline, used))\n'
+        f'const char *{symbol}(void) {{ return "{version}"; }}'
+        for symbol, version in getters.items()
+    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(m.name, m.version) for m in matches} == {
+        ("Jansson", "2.14"),
+        ("libmaxminddb", "1.12.2"),
+        ("liborc", "0.4.42"),
+        ("libsodium", "1.0.18"),
+    }
+
+
+def test_additional_public_string_version_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    getters = {
+        "nng_version": ("NNG", "1.12.3"),
+        "amqp_version": ("librabbitmq", "0.15.0"),
+        "QRcode_APIVersionString": ("libqrencode", "4.1.1"),
+        "sp_get_package_version_string": ("libserialport", "0.1.1"),
+        "mysql_get_client_info": ("libmariadb", "3.4.9"),
+    }
+    source = "\n".join(
+        f'__attribute__((visibility("default"), noinline, used))\n'
+        f'const char *{symbol}(void) {{ return "{version}"; }}'
+        for symbol, (_component, version) in getters.items()
+    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(match.name, match.version) for match in matches} == set(getters.values())
+
+
+def test_libsrtp_prefixed_release_getter():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *srtp_get_version_string(void) {
+            return "libsrtp2 2.7.0";
+        }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "srtp.c"
+        elf_path = Path(temp_dir) / "libsrtp2.so.1"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert [(m.name, m.version) for m in matches] == [("libsrtp", "2.7.0")]

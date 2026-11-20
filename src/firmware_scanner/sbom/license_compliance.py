@@ -114,6 +114,7 @@ _LICENSE_RISK_MAP: dict[str, LicenseRiskCategory] = {
     "ISC": LicenseRiskCategory.PERMISSIVE,
     "Zlib": LicenseRiskCategory.PERMISSIVE,
     "OpenSSL": LicenseRiskCategory.PERMISSIVE,
+    "FTL": LicenseRiskCategory.PERMISSIVE,
     "CC0-1.0": LicenseRiskCategory.PERMISSIVE,
 
     # Weak Copyleft
@@ -194,6 +195,21 @@ class LicenseAuditReport:
     risk_summary: dict[str, int] = field(default_factory=dict)
     compliance_issues: list[ComplianceIssue] = field(default_factory=list)
     is_compliant: bool = True
+    status: str = "incomplete"
+
+    def as_dict(self) -> dict:
+        return {
+            "total_components": self.total_components,
+            "licensed_components": self.licensed_components,
+            "unlicensed_components": self.unlicensed_components,
+            "coverage": (
+                self.licensed_components / self.total_components
+                if self.total_components else 0.0
+            ),
+            "status": self.status,
+            "licenses_found": dict(self.licenses_found),
+            "risk_summary": dict(self.risk_summary),
+        }
 
 
 def audit_firmware_licenses(components: list[Component]) -> LicenseAuditReport:
@@ -269,7 +285,17 @@ def audit_firmware_licenses(components: list[Component]) -> LicenseAuditReport:
             affected_components=gpl2_comps + apache2_comps,
         ))
 
-    if any(i.severity in (ComplianceSeverity.HIGH, ComplianceSeverity.CRITICAL) for i in report.compliance_issues):
+    if any(
+        issue.severity in (ComplianceSeverity.HIGH, ComplianceSeverity.CRITICAL)
+        for issue in report.compliance_issues
+    ):
+        report.status = "non-compliant"
         report.is_compliant = False
+    elif report.unlicensed_components or report.total_components == 0:
+        report.status = "incomplete"
+        report.is_compliant = False
+    else:
+        report.status = "compliant"
+        report.is_compliant = True
 
     return report

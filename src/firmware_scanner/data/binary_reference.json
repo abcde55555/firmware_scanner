@@ -2,6 +2,53 @@
   "schema_version": 1,
   "references": [
     {
+      "name": "CryptoAuthLib",
+      "source": "https://github.com/MicrochipTech/cryptoauthlib",
+      "version_policy": "identity_only",
+      "identity_symbols": [["atcab_init", "atcab_version", "atcab_release"]],
+      "filename_patterns": ["atca", "atsha"]
+    },
+    {
+      "name": "dhcpcd",
+      "source": "https://android.googlesource.com/platform/external/dhcpcd/+/refs/heads/main/dhcpcd.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])dhcpcd ([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "dhcpcd ",
+      "filename_patterns": ["dhcpcd"]
+    },
+    {
+      "name": "hostapd",
+      "source": "https://w1.fi/cgit/hostap/tree/hostapd/main.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])hostapd v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "hostapd v",
+      "filename_patterns": ["hostapd"]
+    },
+    {
+      "name": "hostapd_cli",
+      "source": "https://w1.fi/cgit/hostap/tree/hostapd/hostapd_cli.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])hostapd_cli v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "hostapd_cli v",
+      "filename_patterns": ["hostapd_cli"]
+    },
+    {
+      "name": "wpa_supplicant",
+      "source": "https://w1.fi/cgit/hostap/tree/wpa_supplicant/wpa_supplicant.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])wpa_supplicant v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "wpa_supplicant v",
+      "filename_patterns": ["wpa_supplicant"]
+    },
+    {
+      "name": "wpa_cli",
+      "source": "https://w1.fi/cgit/hostap/tree/wpa_supplicant/wpa_cli.c",
+      "version_policy": "banner",
+      "banner_regex": "(?:^|[\\x00\\n])wpa_cli v([0-9]+\\.[0-9]+(?:\\.[0-9]+)*[A-Za-z0-9._+-]*)(?=[\\x00\\s])",
+      "required_literal": "wpa_cli v",
+      "filename_patterns": ["wpa_cli"]
+    },
+    {
       "name": "SQLite",
       "source": "https://github.com/sqlite/sqlite",
       "version_policy": "banner",
@@ -108,7 +155,7 @@
       "name": "OpenSSH",
       "source": "https://github.com/openssh/openssh-portable",
       "version_policy": "banner",
-      "banner_regex": "OpenSSH_([0-9]+\\.[0-9]+(?:p[0-9]+)?[A-Za-z0-9.-]*)",
+      "banner_regex": "OpenSSH_([0-9]+\\.[0-9]+(?:p[0-9]+)?[A-Za-z0-9.-]*)(?![A-Za-z0-9.*+_-])",
       "filename_patterns": [
         "ssh"
       ]
@@ -189,7 +236,8 @@
       "name": "libevent",
       "source": "https://github.com/libevent/libevent",
       "version_policy": "banner",
-      "banner_regex": "libevent ([0-9]+\\.[0-9]+\\.[0-9]+-stable)",
+      "banner_regex": "libevent ([0-9]+\\.[0-9]+\\.[0-9]+-(?:stable|beta|alpha)(?:[-+][A-Za-z0-9._+-]+)?)(?=\\x00|\\s)",
+      "identity_banner": "libevent using: %s",
       "filename_patterns": [
         "event"
       ]
@@ -233,8 +281,8 @@
     {
       "name": "libvpx",
       "source": "https://chromium.googlesource.com/webm/libvpx",
-      "version_policy": "banner",
-      "banner_regex": "vpx_codec_version_str[^\\x00]{0,32}([0-9]+\\.[0-9]+\\.[0-9]+)",
+      "version_policy": "identity_only",
+      "identity_symbols": [["vpx_codec_version", "vpx_codec_version_str", "vpx_codec_get_caps"]],
       "filename_patterns": [
         "vpx"
       ]
@@ -796,6 +844,266 @@
       "filename_patterns": [
         "asound"
       ]
+    },
+    {
+      "name": "libexif",
+      "source": "https://github.com/libexif/libexif",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["exif_data_new_from_file", "exif_data_save_data"]
+      ],
+      "filename_patterns": ["exif"]
+    },
+    {
+      "name": "NTFS-3G",
+      "source": "https://github.com/tuxera/ntfs-3g",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["ntfs_attr_open", "ntfs_attr_pread"]
+      ],
+      "filename_patterns": ["ntfs"]
+    },
+    {
+      "name": "PDFium",
+      "source": "https://pdfium.googlesource.com/pdfium/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["FPDF_InitLibrary", "FPDF_LoadPage"]
+      ],
+      "filename_patterns": ["pdfium"]
+    },
+    {
+      "name": "libdrm",
+      "source": "https://gitlab.freedesktop.org/mesa/drm",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["drmIoctl", "drmGetVersion"]
+      ],
+      "filename_patterns": ["drm"]
+    },
+    {
+      "name": "libfuse",
+      "source": "https://github.com/libfuse/libfuse",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["fuse_new", "fuse_main_real"]
+      ],
+      "filename_patterns": ["fuse"]
+    },
+    {
+      "name": "minijail",
+      "source": "https://android.googlesource.com/platform/external/minijail/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["minijail_new", "minijail_run"]
+      ],
+      "filename_patterns": ["minijail"]
+    },
+    {
+      "name": "libcap-ng",
+      "source": "https://github.com/stevegrubb/libcap-ng",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["capng_get_caps_process", "capng_apply"]
+      ],
+      "filename_patterns": ["cap-ng"]
+    },
+    {
+      "name": "dav1d",
+      "source": "https://code.videolan.org/videolan/dav1d",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["dav1d_open", "dav1d_send_data"]
+      ],
+      "filename_patterns": ["dav1d"]
+    },
+    {
+      "name": "libyuv",
+      "source": "https://chromium.googlesource.com/libyuv/libyuv/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["I420ToNV12", "NV12ToI420"]
+      ],
+      "filename_patterns": ["yuv"]
+    },
+    {
+      "name": "OpenJPEG",
+      "source": "https://github.com/uclouvain/openjpeg",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["opj_create_decompress", "opj_create_compress"]
+      ],
+      "filename_patterns": ["openjp", "openjpeg"]
+    },
+    {
+      "name": "libheif",
+      "source": "https://github.com/strukturag/libheif",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["heif_context_alloc", "heif_context_read_from_file"]
+      ],
+      "filename_patterns": ["heif"]
+    },
+    {
+      "name": "libavif",
+      "source": "https://github.com/AOMediaCodec/libavif",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["avifDecoderCreate", "avifDecoderNextImage"]
+      ],
+      "filename_patterns": ["avif"]
+    },
+    {
+      "name": "Snappy",
+      "source": "https://github.com/google/snappy",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["snappy_compress", "snappy_uncompress"]
+      ],
+      "filename_patterns": ["snappy"]
+    },
+    {
+      "name": "libjxl",
+      "source": "https://github.com/libjxl/libjxl",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["JxlDecoderCreate", "JxlDecoderProcessInput"]
+      ],
+      "filename_patterns": ["jxl"]
+    },
+    {
+      "name": "libzip",
+      "source": "https://github.com/nih-at/libzip",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["zip_open", "zip_fopen"]
+      ],
+      "filename_patterns": ["zip"]
+    },
+    {
+      "name": "LibRaw",
+      "source": "https://github.com/LibRaw/LibRaw",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["libraw_init", "libraw_open_file"]
+      ],
+      "filename_patterns": ["raw"]
+    },
+    {
+      "name": "libtiff",
+      "source": "https://gitlab.com/libtiff/libtiff",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        ["TIFFOpen", "TIFFReadDirectory"]
+      ],
+      "filename_patterns": ["tiff"]
+    },
+    {
+      "name": "SpeexDSP",
+      "source": "https://android.googlesource.com/platform/external/speex/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "speex_resampler_init",
+          "speex_resampler_process_float",
+          "speex_resampler_reset_mem",
+          "speex_resampler_set_rate_frac"
+        ]
+      ],
+      "filename_patterns": ["speexresampler"]
+    },
+    {
+      "name": "STLport",
+      "source": "https://android.googlesource.com/platform/external/stlport/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "_ZNSt6locale7classicEv",
+          "_ZNSt8ios_base4InitC1Ev",
+          "_ZNSt9exceptionC1Ev",
+          "_ZNSt6localeD2Ev"
+        ]
+      ],
+      "filename_patterns": ["stlport"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "Jhead",
+      "source": "https://android.googlesource.com/platform/external/jhead/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "ReadJpegFile",
+          "RemoveThumbnail",
+          "WriteJpegToBuffer"
+        ]
+      ],
+      "filename_patterns": ["jhead"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "Speex",
+      "source": "https://github.com/xiph/speex",
+      "version_policy": "banner",
+      "banner_regex": "speex-([0-9]+\\.[0-9]+(?:beta[0-9]+|rc[0-9]+|[A-Za-z0-9._+\\-]*))(?=\\x00|\\s)",
+      "required_literal": "speex-",
+      "filename_patterns": ["speex"]
+    },
+    {
+      "name": "mDNSResponder",
+      "source": "https://github.com/apple-oss-distributions/mDNSResponder",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "DNSServiceProcessResult",
+          "DNSServiceRefDeallocate",
+          "DNSServiceBrowse"
+        ]
+      ],
+      "filename_patterns": ["mdnssd", "dns_sd"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "Sonivox",
+      "source": "https://android.googlesource.com/platform/external/sonivox/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "EAS_OpenJETStream",
+          "JET_Init",
+          "JET_Process"
+        ]
+      ],
+      "filename_patterns": ["sonivox"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "Tremolo",
+      "source": "https://gitlab.xiph.org/xiph/tremolo",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "vorbis_dsp_synthesis",
+          "vorbis_book_decode",
+          "ogg_sync_pageout"
+        ]
+      ],
+      "filename_patterns": ["vorbisidec"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "TinyALSA",
+      "source": "https://github.com/tinyalsa/tinyalsa",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "pcm_open",
+          "pcm_params_get",
+          "pcm_close"
+        ]
+      ],
+      "filename_patterns": ["tinyalsa"],
+      "require_filename_hint": true
     }
   ]
 }

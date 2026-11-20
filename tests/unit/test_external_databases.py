@@ -1,0 +1,1018 @@
+import hashlib
+import json
+import shutil
+import sqlite3
+import subprocess
+
+import pytest
+
+from firmware_scanner.cli.app import (
+    _external_database_enricher,
+    _validate_external_databases,
+)
+from firmware_scanner.core.config import AnalysisConfig
+from firmware_scanner.databases import blintdb as blintdb_module
+from firmware_scanner.databases import manifest as manifest_module
+from firmware_scanner.databases.blintdb import BLintDatabase
+from firmware_scanner.databases.enricher import DatabaseEnricher, DatabaseStats
+from firmware_scanner.databases.manifest import DatabaseManifest, packaged_manifests
+from firmware_scanner.databases.nsrl import NSRLDatabase
+from firmware_scanner.extraction.binary_inventory import BinaryInventory
+from firmware_scanner.extraction.models import Component
+from firmware_scanner.extraction.smart_analyzer import SmartSectionAnalyzer
+
+
+def manifest(kind: str, digest: str = "0" * 64) -> DatabaseManifest:
+    return DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": kind,
+            "name": kind,
+            "release": "test",
+            "database_sha256": digest,
+            "database_bytes": 1,
+            "database_schema_version": "3" if kind == "blintdb" else "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
+
+
+def test_database_stats_report_commercial_effectiveness_rates():
+    stats = DatabaseStats(
+        nsrl_queried_files=100,
+        nsrl_matched_files=3,
+        blint_reviewed_components=10,
+        blint_identity_confirmations=7,
+        blint_reference_version_agreements=2,
+        blint_reference_version_mismatches=3,
+    )
+
+    payload = stats.as_dict()
+
+    assert payload["blint_identity_confirmation_rate"] == 0.7
+    assert payload["blint_reference_version_agreement_rate"] == 0.4
+    assert payload["nsrl_exact_file_match_rate"] == 0.03
+
+
+def make_nsrl(path):
+    connection = sqlite3.connect(path)
+    connection.executescript(
+        """
+        CREATE TABLE FILE (
+            sha256 TEXT, sha1 TEXT, md5 TEXT, crc32 TEXT,
+            file_name TEXT, file_size INTEGER, package_id INTEGER
+        );
+        CREATE TABLE PKG (
+            package_id INTEGER, name TEXT, version TEXT,
+            operating_system_id INTEGER, manufacturer_id INTEGER,
+            language TEXT, application_type TEXT
+        );
+        CREATE INDEX file_sha256 ON FILE(sha256);
+        INSERT INTO PKG VALUES (1, 'Example Android Image', '16', 1, 1, '', '');
+        INSERT INTO FILE VALUES (
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+            'cccccccccccccccccccccccccccccccc',
+            'dddddddd',
+            'libexact.so', 1234, 1
+        );
+        """
+    )
+    connection.commit()
+    connection.close()
+
+
+def make_blint(path):
+    connection = sqlite3.connect(path)
+    connection.executescript(
+        """
+        CREATE TABLE SchemaMeta (key TEXT, value TEXT);
+        CREATE TABLE Projects (project_id INTEGER, name TEXT, purl TEXT);
+        CREATE TABLE Builds (build_id INTEGER, project_id INTEGER, target_arch TEXT);
+        CREATE TABLE Binaries (
+            binary_id INTEGER, build_id INTEGER, name TEXT,
+            machine_type TEXT, import_hash TEXT
+        );
+        CREATE TABLE Symbols (
+            binary_id INTEGER, source TEXT, name TEXT, is_imported INTEGER
+        );
+        CREATE TABLE Dependencies (
+            binary_id INTEGER, source TEXT, name TEXT, version TEXT, purl TEXT
+        );
+        CREATE INDEX symbols_name ON Symbols(name);
+        INSERT INTO SchemaMeta VALUES ('schema_version', '3');
+        INSERT INTO Projects VALUES (1, 'libdemo', 'pkg:conan/libdemo@1.2.3');
+        INSERT INTO Builds VALUES (1, 1, 'arm64');
+        INSERT INTO Binaries VALUES (1, 1, 'libdemo.so', 'X86_64', '');
+        INSERT INTO Dependencies VALUES (
+            1, 'import_dependencies',
+            '/tmp/blint/host/libdemo/1.2.3/shared-release/aarch64/lib/libdemo.so',
+            '', 'pkg:conan/libdemo@1.2.3'
+        );
+        """
+    )
+    for index in range(35):
+        connection.execute(
+            "INSERT INTO Symbols VALUES (1, 'dynamic_symbols', ?, 0)",
+            (f"demo_identity_{index}",),
+        )
+    connection.commit()
+    connection.close()
+
+
+def test_blint_symbol_census_avoids_duplicate_pyelftools_parse(tmp_path):
+    compiler = shutil.which("cc")
+    if compiler is None:
+        pytest.skip("a C compiler is required for ELF fixtures")
+    source = tmp_path / "fixture.c"
+    target = tmp_path / "libfixture.so"
+    source.write_text("int fixture_symbol(void) { return 0; }\n")
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", str(source), "-o", str(target)],
+        check=True,
+        capture_output=True,
+    )
+
+    sources = BLintDatabase._symbol_sources(target.read_bytes())
+
+    assert not hasattr(blintdb_module, "ELFFile")
+    assert "fixture_symbol" in sources["dynamic_symbols"]
+
+
+def test_packaged_database_manifests_are_complete():
+    manifests = packaged_manifests()
+    assert {item.kind for item in manifests} == {"blintdb", "nsrl"}
+    assert all(len(item.database_sha256) == 64 for item in manifests)
+
+
+def test_database_manifest_provenance_separates_verified_and_size_only_modes():
+    manifest = packaged_manifests()[0]
+
+    verified = manifest.provenance(integrity_verified=True)
+    size_only = manifest.provenance(integrity_verified=False)
+
+    assert verified["database_sha256"] == manifest.database_sha256
+    assert verified["source_url"].startswith("https://")
+    assert verified["integrity"] == {
+        "algorithm": "sha256",
+        "verified": True,
+        "status": "sha256-manifest-match",
+    }
+    assert size_only["integrity"]["verified"] is False
+    assert size_only["integrity"]["status"] == "size-manifest-match-hash-not-verified"
+
+
+def test_nsrl_exact_lookup_keeps_distribution_semantics(tmp_path):
+    path = tmp_path / "nsrl.db"
+    make_nsrl(path)
+    database = NSRLDatabase(path, manifest("nsrl"), verify_hash=False)
+    rows = database.lookup("a" * 64, 1234)
+    assert rows[0]["file_name"] == "libexact.so"
+    assert rows[0]["package_name"] == "Example Android Image"
+    assert rows[0]["version_semantics"] == "distribution-package-not-upstream-library"
+
+
+def test_nsrl_lookup_reports_total_and_truncation(tmp_path):
+    path = tmp_path / "nsrl.db"
+    make_nsrl(path)
+    connection = sqlite3.connect(path)
+    for index in range(100):
+        connection.execute(
+            "INSERT INTO FILE VALUES (?, '', '', '', ?, 1234, 1)",
+            ("a" * 64, f"libexact-{index:03}.so"),
+        )
+    connection.commit()
+    connection.close()
+    database = NSRLDatabase(
+        path,
+        manifest("nsrl"),
+        verify_hash=False,
+        integrity_verified=True,
+    )
+
+    lookup = database.lookup_with_metadata("a" * 64, 1234, limit=100)
+
+    assert lookup["returned_matches"] == 100
+    assert lookup["total_matches"] == 101
+    assert lookup["truncated"] is True
+
+
+def test_nsrl_positive_control_uses_the_production_exact_query(tmp_path):
+    path = tmp_path / "nsrl.db"
+    make_nsrl(path)
+    database = NSRLDatabase(path, manifest("nsrl"), verify_hash=False)
+
+    control = database.self_check()
+
+    assert control["passed"] is True
+    assert control["query_sha256"] == "a" * 64
+    assert control["query_file_size"] == 1234
+    assert control["total_matches"] == 1
+
+
+def test_nsrl_reuses_one_read_only_connection_for_repeated_lookups(tmp_path, monkeypatch):
+    path = tmp_path / "nsrl.db"
+    make_nsrl(path)
+    database = NSRLDatabase(path, manifest("nsrl"), verify_hash=False)
+    assert database.lookup("a" * 64, 1234)
+
+    def unexpected_reconnect(_path, **_kwargs):
+        raise AssertionError("NSRL lookup opened a new SQLite connection")
+
+    monkeypatch.setattr(sqlite3, "connect", unexpected_reconnect)
+    try:
+        assert database.lookup("a" * 64, 1234)
+    finally:
+        database.close()
+
+
+def test_blintdb_returns_reference_candidate_without_promoting_version(tmp_path, monkeypatch):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    candidates = database.candidates(b"ELF", "host.so")
+    assert candidates[0]["unique_component_versions"] == [
+        {
+            "name": "libdemo",
+            "version": "1.2.3",
+        }
+    ]
+    assert candidates[0]["version_semantics"] == "reference-build-candidate-not-target-version"
+
+
+def test_blintdb_reuses_one_read_only_connection_for_repeated_queries(tmp_path, monkeypatch):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    assert database.candidates(b"ELF", "libdemo.so")
+    original_connect = sqlite3.connect
+
+    def unexpected_reconnect(*_args, **_kwargs):
+        raise AssertionError("BLintDB query opened a new SQLite connection")
+
+    monkeypatch.setattr(sqlite3, "connect", unexpected_reconnect)
+    try:
+        assert database.candidates(b"ELF", "libdemo.so")
+    finally:
+        monkeypatch.setattr(sqlite3, "connect", original_connect)
+        database.close()
+
+
+def test_blintdb_filename_match_requires_informative_symbols(tmp_path, monkeypatch):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    monkeypatch.setattr(
+        database,
+        "_low_information",
+        lambda _connection, sources: {
+            (source, name) for source, names in sources.items() for name in names
+        },
+    )
+    assert database.candidates(b"ELF", "libdemo.so") == []
+
+
+def test_blintdb_low_information_filter_runs_only_on_matched_candidate_symbols(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    matched_names = {f"demo_identity_{index}" for index in range(35)}
+    target_names = matched_names | {
+        f"unmatched_identity_{index}" for index in range(500)
+    }
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({"dynamic_symbols": target_names}, set()),
+    )
+    filtered: set[str] = set()
+
+    def capture_low_information(_connection, sources):
+        assert set(sources) == {"dynamic_symbols"}
+        filtered.update(sources["dynamic_symbols"])
+        return set()
+
+    monkeypatch.setattr(database, "_low_information", capture_low_information)
+
+    assert database.candidates(b"ELF", "libdemo.so")
+    assert filtered == matched_names
+
+
+def test_blintdb_skips_low_information_filter_when_no_symbol_matches(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({"dynamic_symbols": {"not_in_reference_db"}}, set()),
+    )
+
+    def unexpected_low_information(_connection, _sources):
+        raise AssertionError("no candidate symbols should trigger an ambiguity query")
+
+    monkeypatch.setattr(database, "_low_information", unexpected_low_information)
+    assert database.candidates(b"ELF", "host.so") == []
+
+
+def test_blintdb_unique_import_hash_adds_identity_candidate_evidence(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    imports = {"memcpy", "strlen", "malloc", "free", "open"}
+    import_hash, _count = BLintDatabase._import_hash(imports)
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "UPDATE Binaries SET import_hash=? WHERE binary_id=1",
+            (import_hash,),
+        )
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({}, imports),
+    )
+    elf = bytearray(64)
+    elf[:4] = b"\x7fELF"
+    elf[5] = 1
+    elf[18:20] = (62).to_bytes(2, "little")
+
+    candidates = database.candidates(bytes(elf), "host.so")
+
+    assert len(candidates) == 1
+    assert candidates[0]["project_name"] == "libdemo"
+    assert candidates[0]["match_methods"] == ["import_hash"]
+    assert candidates[0]["import_hash"] == import_hash
+    assert candidates[0]["identity_symbol_count"] == 0
+    assert candidates[0]["unique_component_versions"] == [
+        {"name": "libdemo", "version": "1.2.3"}
+    ]
+
+
+def test_blintdb_ambiguous_import_hash_is_not_resolved_by_lexical_rank(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    imports = {"memcpy", "strlen", "malloc", "free", "open"}
+    import_hash, _count = BLintDatabase._import_hash(imports)
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "UPDATE Binaries SET import_hash=? WHERE binary_id=1",
+            (import_hash,),
+        )
+        connection.execute(
+            "INSERT INTO Projects VALUES (2, 'libother', 'pkg:conan/libother@9.9')"
+        )
+        connection.execute("INSERT INTO Builds VALUES (2, 2, 'X86_64')")
+        connection.execute(
+            "INSERT INTO Binaries VALUES (2, 2, 'libother.so', 'X86_64', ?)",
+            (import_hash,),
+        )
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({}, imports),
+    )
+    elf = bytearray(64)
+    elf[:4] = b"\x7fELF"
+    elf[5] = 1
+    elf[18:20] = (62).to_bytes(2, "little")
+
+    assert database.candidates(bytes(elf), "host.so") == []
+
+
+def test_blintdb_old_schema_disables_import_hash_without_query_errors(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    database.import_hash_supported = False
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({}, {"memcpy", "strlen", "malloc", "free", "open"}),
+    )
+
+    assert database.candidates(b"\x7fELF" + b"\0" * 60, "host.so") == []
+
+
+def test_blint_import_hash_normalizes_elf_versions_and_decorations():
+    first, first_count = BLintDatabase._import_hash(
+        {"memcpy@@GLIBC_2.2.5", "__memcpy", "_strlen"}
+    )
+    second, second_count = BLintDatabase._import_hash({"memcpy", "strlen"})
+
+    assert (first, first_count) == (second, second_count)
+    assert BLintDatabase._import_hash({"memcpy"}) != (
+        BLintDatabase._import_hash({"strlen"})
+    )
+
+
+def test_enricher_reports_import_hash_candidate_without_promoting_version(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    imports = {"memcpy", "strlen", "malloc", "free", "open"}
+    import_hash, _count = BLintDatabase._import_hash(imports)
+    with sqlite3.connect(blint_path) as connection:
+        connection.execute(
+            "UPDATE Binaries SET import_hash=? WHERE binary_id=1",
+            (import_hash,),
+        )
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(blint, "_symbol_evidence", lambda _data: ({}, imports))
+    elf = bytearray(b"\x7fELF\0" + b"\0" * 58)
+    elf[5] = 1
+    elf[18:20] = (62).to_bytes(2, "little")
+    component = Component(name="host.so")
+    enricher = DatabaseEnricher(blint=blint)
+
+    enricher.enrich(component, bytes(elf), "host.so", "/lib/host.so")
+
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert component.resolved_version == ""
+    assert properties["firmware:blintdb:match-methods"] == "import_hash"
+    assert enricher.stats.blint_import_hash_candidate_files == 1
+    assert enricher.stats.blint_import_hash_candidate_rows == 1
+
+
+def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, monkeypatch):
+    nsrl_path = tmp_path / "nsrl.db"
+    blint_path = tmp_path / "blint.db"
+    make_nsrl(nsrl_path)
+    make_blint(blint_path)
+    payload = b"\x7fELF" + b"\0" * 10 + b"x" * 1234
+    connection = sqlite3.connect(nsrl_path)
+    connection.execute(
+        "UPDATE FILE SET sha256=?, file_size=?",
+        (hashlib.sha256(payload).hexdigest(), len(payload)),
+    )
+    connection.commit()
+    connection.close()
+    nsrl = NSRLDatabase(nsrl_path, manifest("nsrl"), verify_hash=False)
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    component = Component(name="host.so")
+    enricher = DatabaseEnricher(blint=blint, nsrl=nsrl)
+    enricher.enrich(
+        component,
+        payload,
+        "host.so",
+        "/system/lib64/host.so",
+    )
+    assert component.resolved_version == ""
+    assert any(item["name"] == "firmware:blintdb:candidates" for item in component.properties)
+    assert enricher.stats.blint_candidate_files == 1
+    assert enricher.stats.nsrl_queried_files == 1
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert properties["firmware:blintdb:provenance-id"] == f"sha256:{'0' * 64}"
+    assert properties["firmware:nsrl:provenance-id"] == f"sha256:{'0' * 64}"
+    assert enricher.stats.blint_import_hash_supported is True
+    assert enricher.stats.database_provenance["schema_version"] == 1
+    assert {
+        database["kind"] for database in enricher.stats.database_provenance["databases"]
+    } == {"blintdb", "nsrl"}
+
+
+def test_enricher_queries_blint_identity_even_when_target_version_is_known(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    component = Component(
+        name="libdemo.so",
+        resolved_version="1.0.0",
+        properties=[
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "exact",
+            }
+        ],
+    )
+    enricher = DatabaseEnricher(blint=blint)
+
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+
+    assert component.resolved_version == "1.0.0"
+    assert any(item["name"] == "firmware:blintdb:candidates" for item in component.properties)
+
+
+def test_enricher_reconciles_blint_identity_without_overwriting_target_version(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+    component.resolved_version = "1.0.0"
+    component.properties.append(
+        {
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }
+    )
+
+    enricher.reconcile([component])
+
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert component.resolved_version == "1.0.0"
+    assert json.loads(properties["firmware:blintdb:identity-confirmed"]) == {
+        "projects": ["libdemo"],
+        "components": ["libdemo"],
+    }
+    comparison = json.loads(properties["firmware:blintdb:reference-version-comparison"])
+    assert comparison["comparison_status"] == "comparable"
+    assert comparison["target_version"] == "1.0.0"
+    assert comparison["reference_versions"] == ["1.2.3"]
+    assert comparison["decision"] == "diagnostic-only-no-version-overwrite"
+    assert enricher.stats.blint_identity_confirmations == 1
+    assert enricher.stats.blint_reference_version_mismatches == 1
+
+
+def test_blint_does_not_compare_parent_package_version_to_reference_release(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+    component.resolved_version = "360499999"
+    component.properties.extend(
+        [
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "estimated-parent-package",
+            },
+            {
+                "name": "firmware:version:kind",
+                "value": "estimated-apex-package-version",
+            },
+        ]
+    )
+
+    enricher.reconcile([component])
+
+    comparison = json.loads(
+        next(
+            item["value"]
+            for item in component.properties
+            if item["name"] == "firmware:blintdb:reference-version-comparison"
+        )
+    )
+    assert comparison["comparison_status"] == "not-comparable"
+    assert comparison["target_resolution_state"] == "estimated-parent-package"
+    assert enricher.stats.blint_reference_version_agreements == 0
+    assert enricher.stats.blint_reference_version_mismatches == 0
+    assert enricher.stats.blint_reference_version_not_comparable == 1
+
+
+def test_blint_does_not_compare_unrelated_dependency_versions(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    connection = sqlite3.connect(blint_path)
+    connection.execute(
+        "INSERT INTO Dependencies VALUES (?, ?, ?, ?, ?)",
+        (
+            1,
+            "import_dependencies",
+            "/tmp/blint/host/libother/9.9/shared-release/aarch64/lib/libdemo.so",
+            "",
+            "pkg:conan/libother@9.9",
+        ),
+    )
+    connection.commit()
+    connection.close()
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(component, b"\x7fELF" + b"\0" * 10, "libdemo.so", "/lib/libdemo.so")
+    component.resolved_version = "1.0.0"
+    component.properties.append(
+        {
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }
+    )
+
+    enricher.reconcile([component])
+
+    comparison = json.loads(
+        next(
+            item["value"]
+            for item in component.properties
+            if item["name"] == "firmware:blintdb:reference-version-comparison"
+        )
+    )
+    assert comparison["reference_versions"] == ["1.2.3"]
+
+
+def test_blint_identity_records_a_matching_component_from_an_aggregate_project(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    connection = sqlite3.connect(blint_path)
+    connection.execute("UPDATE Projects SET name='aggregate', purl='pkg:conan/aggregate@9.0'")
+    connection.commit()
+    connection.close()
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        blint,
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
+    )
+    component = Component(name="libdemo.so")
+    enricher = DatabaseEnricher(blint=blint)
+    enricher.enrich(
+        component,
+        b"\x7fELF" + b"\0" * 10,
+        "libdemo.so",
+        "/lib/libdemo.so",
+    )
+
+    enricher.reconcile([component])
+
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert json.loads(properties["firmware:blintdb:identity-confirmed"]) == {
+        "projects": [],
+        "components": ["libdemo"],
+    }
+
+
+def test_enricher_paths_accept_cli_string_values(tmp_path, monkeypatch):
+    nsrl_path = tmp_path / "nsrl.db"
+    make_nsrl(nsrl_path)
+    compatible = DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": "nsrl",
+            "name": "small",
+            "release": "test",
+            "database_sha256": "0" * 64,
+            "database_bytes": nsrl_path.stat().st_size,
+            "database_schema_version": "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
+    monkeypatch.setattr(manifest_module, "packaged_manifests", lambda: [compatible])
+    enricher = DatabaseEnricher.from_paths(
+        nsrl_path=str(nsrl_path),
+        verify_hash=False,
+    )
+    try:
+        assert enricher.nsrl is not None
+        assert enricher.stats.self_checks["nsrl-exact-file"]["passed"] is True
+    finally:
+        enricher.close()
+
+
+def test_database_self_check_failure_blocks_a_scan(tmp_path):
+    path = tmp_path / "empty-nsrl.db"
+    make_nsrl(path)
+    connection = sqlite3.connect(path)
+    connection.execute("DELETE FROM FILE")
+    connection.commit()
+    connection.close()
+    nsrl = NSRLDatabase(path, manifest("nsrl"), verify_hash=False)
+    enricher = DatabaseEnricher(nsrl=nsrl)
+
+    with pytest.raises(RuntimeError, match="NSRL exact-file self-check failed"):
+        enricher.run_self_checks()
+
+
+def test_database_hash_verification_is_cached_by_immutable_file_metadata(tmp_path, monkeypatch):
+    database = tmp_path / "database.db"
+    database.write_bytes(b"verified database")
+    digest = hashlib.sha256(database.read_bytes()).hexdigest()
+    verified = DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": "nsrl",
+            "name": "small",
+            "release": "test",
+            "database_sha256": digest,
+            "database_bytes": database.stat().st_size,
+            "database_schema_version": "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
+    monkeypatch.setattr(manifest_module, "packaged_manifests", lambda: [verified])
+    calls = []
+    original = manifest_module._sha256
+    monkeypatch.setattr(
+        manifest_module,
+        "_sha256",
+        lambda path: calls.append(path) or original(path),
+    )
+    cache = tmp_path / "verification-cache.json"
+    first = manifest_module.load_database_manifest("nsrl", database, cache_path=cache)
+    second = manifest_module.load_database_manifest("nsrl", database, cache_path=cache)
+    assert first == second == verified
+    assert len(calls) == 1
+
+
+def test_database_integrity_verification_can_be_skipped_without_reading_file(
+    tmp_path,
+    monkeypatch,
+):
+    database = tmp_path / "database.db"
+    database.write_bytes(b"database")
+    compatible = DatabaseManifest.from_dict(
+        {
+            "schema_version": 1,
+            "kind": "nsrl",
+            "name": "small",
+            "release": "test",
+            "database_sha256": "0" * 64,
+            "database_bytes": database.stat().st_size,
+            "database_schema_version": "RDSv3",
+            "source_url": "https://example.invalid/database",
+            "license": "test",
+            "architecture": "all",
+        }
+    )
+    monkeypatch.setattr(manifest_module, "packaged_manifests", lambda: [compatible])
+
+    def unexpected_hash_read(_path):
+        raise AssertionError("integrity-disabled manifest selection read the database")
+
+    monkeypatch.setattr(manifest_module, "_sha256", unexpected_hash_read)
+
+    selected = manifest_module.load_database_manifest(
+        "nsrl",
+        database,
+        verify_hash=False,
+    )
+
+    assert selected == compatible
+
+
+def test_binary_inventory_reuses_content_evidence_at_a_new_location(monkeypatch):
+    calls = []
+
+    class Enricher:
+        def __init__(self):
+            from firmware_scanner.databases.enricher import DatabaseStats
+
+            self.stats = DatabaseStats()
+
+        def enrich(self, component, data, filename, location):
+            calls.append(location)
+            component.properties.extend(
+                [
+                    {"name": "firmware:evidence:container", "value": location},
+                    {"name": "test:content-evidence", "value": "cached"},
+                ]
+            )
+
+    inventory = BinaryInventory(database_enricher=Enricher())
+    monkeypatch.setattr(inventory._deep, "extract", lambda _filename, _data: None)
+    raw = b"\x7fELF" + b"\0" * 60 + b"libcache-demo version 1.2.3\0"
+
+    first = inventory.extract(raw, "libcache-demo.so", "/first/libcache-demo.so")
+    first[0].properties.append({"name": "test:mutation", "value": "leaked"})
+    first[0].resolved_version = "mutated"
+    second = inventory.extract(raw, "libcache-demo.so", "/second/libcache-demo.so")
+
+    assert calls == ["/first/libcache-demo.so"]
+    assert inventory.analysis_stats["content_cache_hits"] == 1
+    assert second[0].resolved_version != "mutated"
+    assert "/first/" not in second[0].description
+    assert all("/first/" not in version.evidence for version in second[0].versions)
+    assert not any(item["name"] == "test:mutation" for item in second[0].properties)
+    assert {
+        item["value"]
+        for item in second[0].properties
+        if item["name"] == "firmware:evidence:location"
+    } == {"/second/libcache-demo.so"}
+    assert {
+        item["value"]
+        for item in second[0].properties
+        if item["name"] == "firmware:evidence:container"
+    } == {"/second/libcache-demo.so"}
+
+
+def test_smart_section_analyzer_passes_external_database_evidence_for_generic_firmware(
+    monkeypatch,
+):
+    calls = []
+
+    class Enricher:
+        def __init__(self):
+            from firmware_scanner.databases.enricher import DatabaseStats
+
+            self.stats = DatabaseStats()
+
+        def enrich(self, component, data, filename, location):
+            calls.append((filename, location))
+            component.properties.append(
+                {
+                    "name": "firmware:nsrl:file-matched",
+                    "value": "true",
+                }
+            )
+
+    analyzer = SmartSectionAnalyzer(database_enricher=Enricher())
+    monkeypatch.setattr(
+        analyzer._get_binary_inventory()._deep,
+        "extract",
+        lambda _filename, _data: None,
+    )
+    components = analyzer.analyze_section(
+        "/usr/lib/libgeneric.so",
+        b"\x7fELF" + b"\0" * 60 + b"generic payload\0",
+    )
+
+    assert calls == [("libgeneric.so", "/usr/lib/libgeneric.so")]
+    assert any(
+        prop["name"] == "firmware:nsrl:file-matched"
+        for component in components
+        for prop in component.properties
+    )
+    assert analyzer.analysis_stats["content_cache_entries"] == 1
+    assert analyzer.database_stats["files_queried"] == 0
+
+
+def test_external_database_validation_failure_is_not_silently_ignored(monkeypatch):
+    def rejected(**_kwargs):
+        raise ValueError("database schema mismatch")
+
+    monkeypatch.setattr(
+        "firmware_scanner.databases.DatabaseEnricher.from_paths",
+        rejected,
+    )
+    config = AnalysisConfig(nsrl_db_path="/database/nsrl.db")
+    with pytest.raises(RuntimeError, match="database schema mismatch"):
+        _validate_external_databases(config)
+
+
+def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
+    from firmware_scanner.cli.app import _output_json_report
+    from firmware_scanner.core.context import AnalysisContext
+
+    context = AnalysisContext(
+        firmware_path=tmp_path / "firmware.bin",
+        metadata={
+            "database_stats": {
+                "files_queried": 7,
+                "database_provenance": {
+                    "schema_version": 1,
+                    "databases": [{"kind": "nsrl", "release": "test"}],
+                },
+            },
+            "analysis_stats": {"content_cache_hits": 3},
+            "family_provenance_stats": {"versions_inherited": 1},
+            "provenance_stats": {"notice_license_attribution": {"components_licensed": 2}},
+            "license_stats": {"licensed_components": 2, "total_components": 3},
+            "rules": {
+                "release": "builtin-test",
+                "lock_sha256": "c" * 64,
+            },
+        },
+    )
+    output = tmp_path / "analysis.json"
+    _output_json_report(context, output)
+    report = json.loads(output.read_text())
+    assert report["database_stats"]["files_queried"] == 7
+    assert report["database_provenance"]["databases"][0]["kind"] == "nsrl"
+    assert report["analysis_stats"] == {"content_cache_hits": 3}
+    assert report["family_provenance_stats"] == {"versions_inherited": 1}
+    assert report["provenance_stats"] == {"notice_license_attribution": {"components_licensed": 2}}
+    assert report["license_stats"] == {
+        "licensed_components": 2,
+        "total_components": 3,
+    }
+    assert report["rules"]["release"] == "builtin-test"
+
+
+def test_generic_database_context_closes_connection_after_exception(monkeypatch):
+    closed = []
+
+    class Enricher:
+        def close(self):
+            closed.append(True)
+
+    monkeypatch.setattr(
+        "firmware_scanner.cli.app._create_external_database_enricher",
+        lambda _config: Enricher(),
+    )
+    with (
+        pytest.raises(ValueError, match="scan failed"),
+        _external_database_enricher(AnalysisConfig()),
+    ):
+        raise ValueError("scan failed")
+    assert closed == [True]

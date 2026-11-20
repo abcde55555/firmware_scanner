@@ -1,0 +1,438 @@
+{
+  "schema_version": 1,
+  "scope": "Crate-level release declarations within a revision-pinned Android crates.io monorepo",
+  "pins": [
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/android_log-sys",
+      "version": "0.3.2",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/android_log-sys/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "android_log-sys"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/android_logger",
+      "version": "0.15.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/android_logger/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "android_logger"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/anyhow",
+      "version": "1.0.97",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/anyhow/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "anyhow"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/atomic",
+      "version": "0.6.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/atomic/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "atomic",
+      "component_aliases": ["atomic_rust"]
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/bitflags",
+      "version": "2.9.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/bitflags/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "bitflags"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/bytemuck",
+      "version": "1.22.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/bytemuck/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "bytemuck"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/byteorder",
+      "version": "1.5.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/byteorder/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "byteorder"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/cfg-if",
+      "version": "1.0.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/cfg-if/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "cfg-if"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/clap",
+      "version": "4.5.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/clap/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "clap"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/clap_builder",
+      "version": "4.5.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/clap_builder/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "clap_builder"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/clap_lex",
+      "version": "0.7.4",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/clap_lex/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "clap_lex"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/crc32fast",
+      "version": "1.4.2",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/crc32fast/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "crc32fast"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/downcast-rs",
+      "version": "2.0.1",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/downcast-rs/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "downcast-rs"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/env_filter",
+      "version": "0.1.3",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/env_filter/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "env_filter"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/errno",
+      "version": "0.3.10",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/errno/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "errno"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/fastrand",
+      "version": "2.3.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/fastrand/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "fastrand"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/getrandom",
+      "version": "0.2.15",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/getrandom/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "getrandom"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/itoa",
+      "version": "1.0.15",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/itoa/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "itoa"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/lazy_static",
+      "version": "1.4.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/lazy_static/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "lazy_static"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/libbpf-rs",
+      "version": "0.24.8",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/libbpf-rs/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "libbpf-rs"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/libbpf-sys",
+      "version": "1.4.3+v1.4.5",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/libbpf-sys/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "libbpf-sys"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/libc",
+      "version": "0.2.161",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/libc/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "libc"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/libz-sys",
+      "version": "1.1.22",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/libz-sys/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "libz-sys"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/log",
+      "version": "0.4.26",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/log/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "log",
+      "component_aliases": ["log_rust"]
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/macaddr",
+      "version": "1.0.1",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/macaddr/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "macaddr"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/memoffset",
+      "version": "0.9.1",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/memoffset/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "memoffset"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/mio",
+      "version": "1.0.3",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/mio/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "mio"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/nix",
+      "version": "0.29.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/nix/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "nix"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/num-traits",
+      "version": "0.2.19",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/num-traits/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "num-traits"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/once_cell",
+      "version": "1.21.1",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/once_cell/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "once_cell"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/pin-project-lite",
+      "version": "0.2.16",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/pin-project-lite/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "pin-project-lite"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/ppv-lite86",
+      "version": "0.2.21",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/ppv-lite86/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "ppv-lite86"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/protobuf",
+      "version": "3.2.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/protobuf/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "protobuf"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/protobuf-support",
+      "version": "3.2.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/protobuf-support/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "protobuf-support"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/rand",
+      "version": "0.8.5",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/rand/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "rand"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/rand_chacha",
+      "version": "0.3.1",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/rand_chacha/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "rand_chacha"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/rustix",
+      "version": "0.38.31",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/rustix/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "rustix"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/socket2",
+      "version": "0.5.8",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/socket2/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "socket2"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/static_assertions",
+      "version": "1.1.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/static_assertions/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "static_assertions"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/tempfile",
+      "version": "3.12.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/tempfile/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "tempfile"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/thiserror",
+      "version": "2.0.11",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/thiserror/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "thiserror"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/vsprintf",
+      "version": "2.0.0",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/vsprintf/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "vsprintf"
+    },
+    {
+      "project_path": "external/rust/android-crates-io",
+      "revision": "c991cad10330f37e93d82926bd6dae7f4f6647f6",
+      "subpath_prefix": "crates/zerocopy",
+      "version": "0.8.23",
+      "source_url": "https://android.googlesource.com/platform/external/rust/android-crates-io/+/c991cad10330f37e93d82926bd6dae7f4f6647f6/crates/zerocopy/Cargo.toml",
+      "authority": "Cargo package name and version; Android crates.io pin",
+      "ecosystem": "cargo",
+      "package_name": "zerocopy"
+    }
+  ]
+}

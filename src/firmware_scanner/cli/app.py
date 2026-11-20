@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -58,6 +59,29 @@ def analyze(
     android_max_apks: int = typer.Option(500, "--android-max-apks", help="Max APKs to scan in Android images"),
     android_max_libs: int = typer.Option(2000, "--android-max-libs", help="Max native libs to scan in Android images"),
     android_tools_dir: Optional[Path] = typer.Option(None, "--android-tools", help="Dir with Android image tools (simg2img, lpunpack)"),
+    android_source_manifest: Optional[Path] = typer.Option(
+        None,
+        "--android-source-manifest",
+        exists=True,
+        help="JSON provenance pack with image_sha256 and source projects",
+    ),
+    blint_db: Optional[Path] = typer.Option(
+        None,
+        "--blint-db",
+        exists=True,
+        help="Pinned BLintDB SQLite database for symbol attribution evidence",
+    ),
+    nsrl_db: Optional[Path] = typer.Option(
+        None,
+        "--nsrl-db",
+        exists=True,
+        help="Pinned NIST NSRL RDSv3 SQLite database for exact-file evidence",
+    ),
+    verify_database_integrity: bool = typer.Option(
+        True,
+        "--verify-database-integrity/--skip-database-integrity",
+        help="Verify external database size and SHA-256 before scanning",
+    ),
     max_size: int = typer.Option(4096, "--max-size", help="Max firmware file size in MB (default 4096)"),
     log_dir: Optional[Path] = typer.Option("./logs", "--log-dir", help="Scan telemetry log directory"),
     no_log: bool = typer.Option(False, "--no-log", help="Disable scan telemetry logging"),
@@ -86,6 +110,10 @@ def analyze(
         android_max_apks=android_max_apks,
         android_max_libs=android_max_libs,
         android_external_tools_dir=str(android_tools_dir) if android_tools_dir else "",
+        android_source_manifest=str(android_source_manifest) if android_source_manifest else "",
+        blintdb_path=str(blint_db) if blint_db else "",
+        nsrl_db_path=str(nsrl_db) if nsrl_db else "",
+        verify_database_integrity=verify_database_integrity,
         max_file_size=max_size * 1024 * 1024,
     )
 
@@ -648,6 +676,14 @@ def _run_analysis(
         file_hash_sha256=sha256,
         file_hash_md5=md5,
     )
+    from ..core.rules_manifest import verify_builtin_rule_lock
+
+    rules = verify_builtin_rule_lock()
+    context.metadata["rules"] = {
+        "release": rules["release"],
+        "lock_sha256": rules["lock_sha256"],
+        "file_count": len(rules["files"]),
+    }
 
     # Unpack
     console.print("[*] Unpacking firmware...")
@@ -673,7 +709,6 @@ def _run_analysis(
             for s in result.sections
         )
     )
-
     # OS / RTOS detection
     if is_android_system:
         console.print("[*] Detecting OS type...")
@@ -732,6 +767,7 @@ def _run_analysis(
     # Android-specific scanning path
     # =========================================================================
     components: list = []
+    generic_database_enricher = None
 
     if is_android_system:
         import time as _time
@@ -860,21 +896,29 @@ def _run_analysis(
 
         if scan_log:
             scan_log.start_stage("smart_analyzer")
-        smart = SmartSectionAnalyzer()
-        smart_components = []
-        for uf in all_files:
-            if len(uf.data) > 16:
-                try:
-                    smart_components.extend(smart.analyze_section(uf.name, uf.data))
-                except Exception:
-                    pass
-        if smart_components:
-            console.print(f"    Smart analyzer found: {len(smart_components)} components")
-            components.extend(smart_components)
-        if scan_log:
-            scan_log.end_stage("smart_analyzer",
-                               files_analyzed=len(all_files),
-                               components_found=len(smart_components))
+        with _external_database_enricher(config) as generic_database_enricher:
+            smart = SmartSectionAnalyzer(database_enricher=generic_database_enricher)
+            smart_components = []
+            for uf in all_files:
+                if len(uf.data) > 16:
+                    try:
+                        smart_components.extend(smart.analyze_section(uf.name, uf.data))
+                    except Exception:
+                        pass
+            if smart_components:
+                console.print(f"    Smart analyzer found: {len(smart_components)} components")
+                components.extend(smart_components)
+            if scan_log:
+                scan_log.end_stage("smart_analyzer",
+                                   files_analyzed=len(all_files),
+                                   components_found=len(smart_components))
+            if generic_database_enricher is not None:
+                database_stats = smart.database_stats
+                context.metadata["database_stats"] = database_stats
+                context.metadata["database_provenance"] = database_stats.get(
+                    "database_provenance", {}
+                )
+                context.metadata["analysis_stats"] = smart.analysis_stats
 
         # Run EMBA rules on extracted binary files (catches versions in decompressed content)
         from ..extraction.emba_rules import scan_binary_with_rules
@@ -943,8 +987,24 @@ def _run_analysis(
                                plugins_loaded=[p.name for p in plugin_mgr.get_loaded_plugins()],
                                components_found=len(plugin_components))
 
+    from ..android.provenance import apply_component_taxonomy
+    from ..extraction.family_provenance import apply_family_version_provenance
+
+    if generic_database_enricher is not None:
+        generic_database_enricher.reconcile(components)
+        database_stats = generic_database_enricher.stats.as_dict()
+        context.metadata["database_stats"] = database_stats
+        context.metadata["database_provenance"] = database_stats.get(
+            "database_provenance", {}
+        )
+    context.metadata["family_provenance_stats"] = apply_family_version_provenance(components)
+    apply_component_taxonomy(components)
     total_before_dedup = len(components)
     context.components = _deduplicate_components(components)
+    from ..sbom.license_compliance import audit_firmware_licenses
+    context.metadata["license_stats"] = audit_firmware_licenses(
+        context.components
+    ).as_dict()
     console.print(f"[+] Total unique components: {len(context.components)}")
 
     if scan_log:
@@ -1375,12 +1435,20 @@ def _find_build_prop_in_raw(data: bytes) -> list:
 
 def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig, context: AnalysisContext) -> list:
     """Run Android-specific filesystem scanning when an Android system image is detected."""
+    import hashlib
     import struct
     from ..android.sparse import SparseImageParser
     from ..android.ext4_reader import Ext4Reader
     from ..android.erofs_reader import ErofsReader
     from ..android.yaffs2_reader import is_yaffs2_image, Yaffs2Reader
     from ..android.system_scanner import AndroidSystemScanner
+
+    _validate_external_databases(config)
+    source_manifest = None
+    if config.android_source_manifest:
+        import json
+        source_manifest = json.loads(Path(config.android_source_manifest).read_text())
+    image_sha256 = hashlib.sha256(data).hexdigest()
 
     raw_data = data
 
@@ -1405,10 +1473,17 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     reader,
                     max_apks=config.android_max_apks,
                     max_libs=config.android_max_libs,
+                    source_manifest=source_manifest,
+                    image_sha256=image_sha256,
+                    database_paths={
+                        "blintdb": config.blintdb_path,
+                        "nsrl": config.nsrl_db_path,
+                    },
+                    verify_database_integrity=config.verify_database_integrity,
                 )
                 result = scanner.scan()
+                _store_android_build_info(context, result)
                 if result.components:
-                    _store_android_build_info(context, result)
                     console.print(f"    ext4 scan: {result.apk_count} APKs, {result.lib_count} libs, {result.apex_count} APEX modules")
                     return result.components
                 else:
@@ -1426,10 +1501,17 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     reader,
                     max_apks=config.android_max_apks,
                     max_libs=config.android_max_libs,
+                    source_manifest=source_manifest,
+                    image_sha256=image_sha256,
+                    database_paths={
+                        "blintdb": config.blintdb_path,
+                        "nsrl": config.nsrl_db_path,
+                    },
+                    verify_database_integrity=config.verify_database_integrity,
                 )
                 result = scanner.scan()
+                _store_android_build_info(context, result)
                 if result.components:
-                    _store_android_build_info(context, result)
                     console.print(f"    EROFS scan: {result.apk_count} APKs, {result.lib_count} libs")
                     return result.components
                 else:
@@ -1447,10 +1529,17 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                     reader,
                     max_apks=config.android_max_apks,
                     max_libs=config.android_max_libs,
+                    source_manifest=source_manifest,
+                    image_sha256=image_sha256,
+                    database_paths={
+                        "blintdb": config.blintdb_path,
+                        "nsrl": config.nsrl_db_path,
+                    },
+                    verify_database_integrity=config.verify_database_integrity,
                 )
                 result = scanner.scan()
+                _store_android_build_info(context, result)
                 if result.components:
-                    _store_android_build_info(context, result)
                     console.print(f"    YAFFS2 scan: {result.apk_count} APKs, {result.lib_count} libs")
                     return result.components
                 else:
@@ -1471,10 +1560,17 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
                             reader,
                             max_apks=config.android_max_apks,
                             max_libs=config.android_max_libs,
+                            source_manifest=source_manifest,
+                            image_sha256=image_sha256,
+                            database_paths={
+                                "blintdb": config.blintdb_path,
+                                "nsrl": config.nsrl_db_path,
+                            },
+                            verify_database_integrity=config.verify_database_integrity,
                         )
                         result = scanner.scan()
+                        _store_android_build_info(context, result)
                         if result.components:
-                            _store_android_build_info(context, result)
                             console.print(f"    Found {len(result.components)} components in {section.name}")
                             components.extend(result.components)
                     except Exception:
@@ -1485,6 +1581,42 @@ def _run_android_system_scan(data: bytes, unpack_result, config: AnalysisConfig,
 
     console.print("    Filesystem-level scan unavailable; raw binary scan will identify components")
     return []
+
+
+def _create_external_database_enricher(config: AnalysisConfig):
+    """Load and validate optional databases for a generic firmware scan."""
+    if not config.blintdb_path and not config.nsrl_db_path:
+        return None
+    from ..databases import DatabaseEnricher
+
+    try:
+        return DatabaseEnricher.from_paths(
+            blint_path=config.blintdb_path or None,
+            nsrl_path=config.nsrl_db_path or None,
+            verify_hash=config.verify_database_integrity,
+        )
+    except Exception as exc:  # noqa: BLE001 - convert file-specific failure to CLI error
+        raise RuntimeError(
+            "External database validation failed: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+
+
+@contextmanager
+def _external_database_enricher(config: AnalysisConfig):
+    enricher = _create_external_database_enricher(config)
+    try:
+        yield enricher
+    finally:
+        if enricher is not None:
+            enricher.close()
+
+
+def _validate_external_databases(config: AnalysisConfig) -> None:
+    """Fail closed before a long Android scan when an optional database is invalid."""
+    enricher = _create_external_database_enricher(config)
+    if enricher is not None:
+        enricher.close()
 
 
 def _store_android_build_info(context: AnalysisContext, result) -> None:
@@ -1545,7 +1677,19 @@ def _store_android_build_info(context: AnalysisContext, result) -> None:
         "chip_model": chip_model,
         "target_product": target_product,
         "all_properties": all_props,
+        "database_stats": result.database_stats,
+        "analysis_stats": result.analysis_stats,
+        "rules": context.metadata.get("rules", {}),
     }
+    if result.database_stats:
+        context.metadata["database_stats"] = result.database_stats
+        context.metadata["database_provenance"] = result.database_stats.get(
+            "database_provenance", {}
+        )
+    if result.analysis_stats:
+        context.metadata["analysis_stats"] = result.analysis_stats
+    if result.provenance_stats:
+        context.metadata["provenance_stats"] = result.provenance_stats
 
     if context.arch_info is None:
         from ..arch.models import ArchInfo, CPUFamily, Endianness, FileType
@@ -1600,6 +1744,7 @@ def _deduplicate_components(components: list) -> list:
             existing = seen[key]
             existing.versions.extend(v for v in comp.versions if v not in existing.versions)
             existing.properties.extend(p for p in comp.properties if p not in existing.properties)
+            existing.licenses = sorted(set(existing.licenses) | set(comp.licenses))
             if comp.resolved_version and (
                 not existing.resolved_version
                 or "unknown" in existing.resolved_version
@@ -1657,6 +1802,7 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
     """Output full analysis as JSON (not SBOM format)."""
     import json
 
+    database_stats = context.metadata.get("database_stats", {})
     report = {
         "firmware": {
             "path": str(context.firmware_path),
@@ -1670,6 +1816,14 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
             "name": context.detected_rtos,
             "confidence": context.rtos_confidence,
         },
+        "database_stats": database_stats,
+        "database_provenance": context.metadata.get("database_provenance")
+        or database_stats.get("database_provenance", {}),
+        "analysis_stats": context.metadata.get("analysis_stats", {}),
+        "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
+        "provenance_stats": context.metadata.get("provenance_stats", {}),
+        "license_stats": context.metadata.get("license_stats", {}),
+        "rules": context.metadata.get("rules", {}),
         "components": [c.model_dump() for c in context.components],
         "warnings": context.warnings,
         "errors": [e.model_dump() for e in context.errors],

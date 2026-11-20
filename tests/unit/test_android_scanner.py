@@ -71,6 +71,92 @@ def test_embedded_maven_extraction():
     assert maven_comps[0].purl == "pkg:maven/com.google.guava/listenablefuture@1.0"
 
 
+def test_sdk_artifact_properties_reach_android_product_scan():
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, 'w') as archive:
+        archive.writestr('play-services-base.properties',
+                         'version=18.1.0\nclient=play-services-base\nplay-services-base_client=18.1.0\n')
+    scanner = AndroidSystemScanner(MockFilesystem({'/system/app/Test/Test.apk': data.getvalue()}))
+    result = scanner._scan_apks()
+    assert any(c.name == 'com.google.android.gms:play-services-base' and c.resolved_version == '18.1.0'
+               for c in result)
+
+
+def test_apk_package_license_is_attached_from_meta_inf_license():
+    data = io.BytesIO()
+    with zipfile.ZipFile(data, 'w') as archive:
+        archive.writestr('AndroidManifest.xml', b'\0' * 20)
+        archive.writestr(
+            'META-INF/LICENSE',
+            'Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/',
+        )
+
+    components = AndroidSystemScanner(MockFilesystem({}))._analyze_apk_data(
+        data.getvalue(),
+        '/system/app/Example/Example.apk',
+    )
+    application = next(c for c in components if c.component_type == 'application')
+
+    assert application.licenses == ['Apache-2.0']
+    assert {
+        'name': 'firmware:license:evidence',
+        'value': '/system/app/Example/Example.apk!/META-INF/LICENSE',
+    } in application.properties
+
+
+def test_android_scan_reconciles_database_candidates_before_cpe_synthesis(monkeypatch):
+    calls = []
+    native = Component(
+        name="libft2.so",
+        resolved_version="2.4.12",
+        properties=[{
+            "name": "firmware:version:resolution-state",
+            "value": "exact",
+        }],
+    )
+
+    class Stats:
+        def as_dict(self):
+            calls.append("stats")
+            return {"reviewed": 1}
+
+    class Enricher:
+        stats = Stats()
+
+        def reconcile(self, components):
+            calls.append(("reconcile", len(components)))
+            for component in components:
+                if component.name == "libft2.so":
+                    component.properties.append({
+                        "name": "firmware:blintdb:identity-confirmed",
+                        "value": '{"components": ["freetype"], "projects": ["freetype"]}',
+                    })
+
+        def close(self):
+            calls.append("close")
+
+    scanner = AndroidSystemScanner(MockFilesystem({}))
+    scanner._database_enricher = Enricher()
+    monkeypatch.setattr(scanner, "_scan_build_props", lambda: AndroidBuildInfo())
+    for method in (
+        "_scan_apex_modules",
+        "_scan_apks",
+        "_scan_executables",
+        "_scan_framework_jars",
+        "_scan_ai_models",
+    ):
+        monkeypatch.setattr(scanner, method, lambda *_args: [])
+    monkeypatch.setattr(scanner, "_scan_native_libs", lambda: [native])
+    monkeypatch.setattr(scanner, "_apply_os_version_fallback", lambda _result: None)
+    monkeypatch.setattr(scanner, "_apply_android_provenance", lambda _result: {})
+
+    result = scanner.scan()
+
+    assert result.database_stats == {"reviewed": 1}
+    assert calls == [("reconcile", 1), "stats", "close"]
+    assert native.cpe == "cpe:2.3:a:freetype:freetype:2.4.12:*:*:*:*:*:*:*"
+
+
 def test_known_bin_patterns():
     """Verify regex extraction of toybox, curl, e2fsck versions."""
     scanner = AndroidSystemScanner(MockFilesystem({}))

@@ -1,0 +1,181 @@
+# BLintDB, NSRL and Rust crate version validation
+
+Date: 2026-11-20
+Scanner: 0.15.0
+
+## Database releases
+
+| Database | Release | Raw size | SHA-256 |
+|---|---|---:|---|
+| BLintDB | v4 | 5,660,250,112 | `93bcb321c5c3bc8933cdad5c63454312838750f88053ed0223fd4c2e0da5112e` |
+| NIST NSRL Android minimal | 2026.03.1 | 39,967,412,224 | `2f3203615d96e6079fda9a65d39cad4b2a9100fa8f7e6f54a3c74cc5eee1d315` |
+
+The full scans verify database size, manifest, SHA-256 and schema. A separate
+repeat scan may use `--skip-database-integrity` only after the pinned database
+has already passed integrity verification.
+
+Reproduce an Android scan with both databases:
+
+```bash
+PYTHONPATH=src python3 experiments/version_coverage/run_scan.py \
+  /home/kali/Desktop/work/project/vulnscan/system.img \
+  reports/version-coverage-getters-20261120/modern-pins-db \
+  --blintdb reports/existing-databases-20261119/blint.db \
+  --nsrl-db reports/existing-databases-20261119/nsrl/android_minimal.db \
+  --skip-database-integrity
+```
+
+## Modern Android results
+
+| Metric | Result |
+|---|---:|
+| Unique ELF contents | 1,789 |
+| BLintDB queried | 1,789 |
+| BLintDB candidate files | 21 |
+| BLintDB candidate rows | 23 |
+| BLintDB identity-confirmed components | 9 |
+| BLintDB exact target/reference disagreements | 8 |
+| BLintDB non-comparable parent versions | 1 |
+| NSRL queried files | 1,789 |
+| NSRL exact file matches | 0 |
+| Database errors | 0 |
+
+Reference-build disagreements are retained as diagnostics. They do not
+overwrite a target version. Parent-package versions are marked
+`not-comparable` rather than being reported as BLint mismatches.
+
+The DB-enriched BOM classifies 100 fixed-cohort records as third-party OSS:
+87 exact and 13 explicitly estimated. This slice is evidence-biased and does
+not measure total third-party recall.
+
+## Android framework platform baseline
+
+Version 0.13.0 introduced attachment of the enclosing Android build to
+unresolved first-party framework archives. The 0.14.0 totals below retain that
+scope. This is a platform build identifier, not an upstream library release:
+
+| Image | Platform baseline | Framework rows | Fixed-cohort usable |
+|---|---|---:|---:|
+| Modern Android 16 | `16-BP2A.250805.005-1775195212` | 39 | **785/1,129 (69.53%)** |
+| Allwinner Android 4.4.4 | `4.4.4-KTU84Q-20180511` | 39 | **190/582 (32.65%)** |
+
+The 39 rows come from `/system/framework/` or the partition-root
+`/framework/`; `/vendor/framework/` and `/product/framework/` are excluded.
+They are marked `estimated-platform-build`,
+`platform-build-not-upstream-release`, and `platform-first-party`. They do not
+change the exact count, third-party exact count, native-library coverage, or
+the components submitted to OSV. The schema validation report verifies that
+none of these component references appears in a VEX `affects` entry.
+
+## Allwinner results
+
+| Metric | Result |
+|---|---:|
+| Unique ELF contents | 430 |
+| BLintDB candidate files | 5 |
+| BLintDB identity-confirmed components | 4 |
+| BLintDB reviewed components | 5 |
+| BLintDB exact target/reference disagreements | 3 |
+| BLintDB non-comparable target versions | 1 |
+| NSRL queried files | 430 |
+| NSRL exact file matches | 0 |
+| Database errors | 0 |
+
+BLint confirmed four third-party identities and retained three comparable
+target/reference disagreements, but did not create additional upstream version
+claims. NSRL exact hashes also produced no match. Both databases remain
+installed and enabled because this result is target-specific.
+
+The `libjpeg` target is marked non-comparable: BLint confirms the libjpeg-turbo
+identity, while its v4 reference build contains 3.1.0. The target contributes
+ABI 62 evidence and an AOSP r2 source estimate; BLint's reference version is
+not copied into the target.
+
+## Source-verified AOSP calibration
+
+Version 0.14.0 adds an explicit calibration subset for `KTU84Q`. It is a
+development calibration set, not a held-out corpus:
+
+| Component | Expected | Evidence |
+|---|---:|---|
+| libjpeg | `6b` | Target ABI 62 plus AOSP `android-4.4.4_r2` `jversion.h`; estimated because ABI 62 is also used by compatibility builds |
+| libexif | `0.6.21` | AOSP `android-4.4.4_r2` `configure.ac` |
+| libspeexresampler | `1.2beta3` | AOSP `android-4.4.4_r2` `libspeex/arch.h` |
+| libstlport | `5.0` | AOSP `android-4.4.4_r2` release README |
+| libjhead | `2.87` | AOSP `android-4.4.4_r2` `JHEAD_VERSION` |
+
+The evaluator reports **5/5 correct, 0 errors** for this subset. The other
+577 fixed-cohort observations still have no independent truth, so this does
+not establish complete-firmware accuracy.
+
+## Rust crate exact versions
+
+The image-matched source manifest pins:
+
+`external/rust/android-crates-io@c991cad10330f37e93d82926bd6dae7f4f6647f6`
+
+That repository contains many crates, so its revision alone is not a crate
+release. A separate crate-level pin file maps each crate to:
+
+- its monorepo subdirectory;
+- the revision-bound `Cargo.toml`;
+- the Cargo package name and package version;
+- the scanner component alias used in the firmware.
+
+The scanner requires the manifest project path and filename/alias to agree.
+When an embedded source path is available it is retained with its file offset.
+Dependency source paths cannot override the component's own crate; tests cover
+`nix` linked with `libc`, `rand_chacha` linked with `ppv-lite86`, and
+`libbpf-rs` linked with `vsprintf`.
+
+Results:
+
+| Metric | Before crate pins | After crate pins |
+|---|---:|---:|
+| Fixed-cohort exact versions | 177 | **225** |
+| Fixed-cohort estimated versions | 567 | **519** |
+| Fixed-cohort usable versions | 744 | **744** |
+| Native exact versions | 54 | **102** |
+| Native estimated versions | 567 | **519** |
+| Native usable versions | 621 | **621** |
+
+43 Rust crates now have `pkg:cargo/...@version` PURLs. One
+`libvsprintf_wrapper` component remains on the monorepo source-revision
+estimate because assigning it the `vsprintf` crate release would misstate what
+the wrapper binary is.
+
+Perfetto `49.0`, fsverity-utils `1.6` and Piex `0.27` are also supported by
+revision-bound source declarations.
+
+## Vulnerability validation
+
+| Image | Scannable components | Vulnerability records | Critical | High |
+|---|---:|---:|---:|---:|
+| Modern Android | 266 | 470 | 69 | 212 |
+| Allwinner | 36 | 1,500 | 159 | 515 |
+
+The Rust PURL change makes 43 additional components queryable. OSV returned
+four records for three crates:
+
+- `anyhow 1.0.97`: `RUSTSEC-2026-0190`;
+- `protobuf 3.2.0`: `CVE-2025-53605`;
+- `rand 0.8.5`: `GHSA-cq8v-f236-94qc` and `RUSTSEC-2026-0097`.
+
+These are vulnerability candidates. The product still needs patch-backport,
+reachability and vendor-status analysis before classifying exploitability.
+
+## Artifacts
+
+- `reports/version-coverage-getters-20261120/final-modern/system_analysis.json`
+- `reports/version-coverage-getters-20261120/final-modern/system_cyclonedx_1.6.json`
+- `reports/version-coverage-getters-20261120/final-modern/system_cyclonedx_1.6_vuln.json`
+- `reports/version-coverage-getters-20261120/final-modern/system_cyclonedx_1.6_cyclonedx_1.6_vex.json`
+- `reports/version-coverage-getters-20261120/final-allwinner/system_analysis.json`
+- `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6.json`
+- `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6_vuln.json`
+- `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6_cyclonedx_1.6_vex.json`
+- `reports/version-coverage-getters-20261120/schema-validation.json`
+- `experiments/version_coverage/verified/allwinner-ktu84q-aosp-4.4.4.json`
+- `reports/version-coverage-getters-20261120/wheel-0.15.0/wheel-verification.json`
+- `reports/heldout-debian-independent2-20261120/heldout-report.json`
+- `reports/heldout-debian-independent2-20261120-final-v5/heldout-report.json`

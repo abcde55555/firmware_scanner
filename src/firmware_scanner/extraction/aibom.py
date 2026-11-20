@@ -8,8 +8,10 @@ Outputs standardized CycloneDX 1.6 `machine-learning-model` components.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Any
+
+_SCAN_BYTES = 2 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -17,7 +19,7 @@ class ModelFormatDef:
     key: str
     name: str
     suffixes: tuple[str, ...]
-    magic: Optional[tuple[int, bytes]] = None
+    magic: tuple[int, bytes] | None = None
     note: str = ""
 
 
@@ -27,7 +29,9 @@ MODEL_FORMATS: tuple[ModelFormatDef, ...] = (
     ModelFormatDef("executorch", "ExecuTorch", (".pte",), (4, b"ET12")),
     ModelFormatDef("onnx", "ONNX", (".onnx",)),
     ModelFormatDef("safetensors", "safetensors", (".safetensors",)),
-    ModelFormatDef("pytorch", "PyTorch checkpoint", (".pt", ".pth", ".ckpt"), note="Pickle-based checkpoint"),
+    ModelFormatDef(
+        "pytorch", "PyTorch checkpoint", (".pt", ".pth", ".ckpt"), note="Pickle-based checkpoint"
+    ),
     ModelFormatDef("rknn", "Rockchip RKNN", (".rknn",)),
     ModelFormatDef("mnn", "Alibaba MNN", (".mnn",)),
 )
@@ -46,28 +50,47 @@ class RuntimeDef:
 
 
 RUNTIMES: tuple[RuntimeDef, ...] = (
-    RuntimeDef("tflite-micro", "TensorFlow Lite Micro", (
-        _B + r"(?:tflite::MicroInterpreter|tflite::MicroMutableOpResolver|tensorflow/lite/micro/\w+)",
-    )),
-    RuntimeDef("tflite", "TensorFlow Lite", (
-        _B + r"(?:TfLiteInterpreter\w*|tflite::Interpreter\b|tflite::FlatBufferModel)",
-    )),
-    RuntimeDef("onnxruntime", "ONNX Runtime", (
-        _B + r"(?:OrtCreateSession\w*|onnxruntime_c_api\.h|Ort::Session|OrtGetApiBase)",
-    )),
-    RuntimeDef("cmsis-nn", "CMSIS-NN", (
-        _B + r"(?:arm_convolve_s8|arm_convolve_s16|arm_fully_connected_s8|arm_nn_\w+)",
-    )),
-    RuntimeDef("llama-cpp", "llama.cpp / ggml", (
-        _B + r"(?:llama_model_load\w*|llama_init_from_\w+|ggml_init\b|gguf_init_from_file)",
-    )),
-    RuntimeDef("executorch", "ExecuTorch", (
-        _B + r"(?:executorch::\w+|executorch/runtime/\w+)",
-    )),
-    RuntimeDef("nnom", "NNoM", (
-        _B + r"(?:nnom_model_create|nnom_model_run|nnom\.h)",
-    )),
+    RuntimeDef(
+        "tflite-micro",
+        "TensorFlow Lite Micro",
+        (
+            _B
+            + r"(?:tflite::MicroInterpreter|tflite::MicroMutableOpResolver|tensorflow/lite/micro/\w+)",
+        ),
+    ),
+    RuntimeDef(
+        "tflite",
+        "TensorFlow Lite",
+        (_B + r"(?:TfLiteInterpreter\w*|tflite::Interpreter\b|tflite::FlatBufferModel)",),
+    ),
+    RuntimeDef(
+        "onnxruntime",
+        "ONNX Runtime",
+        (_B + r"(?:OrtCreateSession\w*|onnxruntime_c_api\.h|Ort::Session|OrtGetApiBase)",),
+    ),
+    RuntimeDef(
+        "cmsis-nn",
+        "CMSIS-NN",
+        (_B + r"(?:arm_convolve_s8|arm_convolve_s16|arm_fully_connected_s8|arm_nn_\w+)",),
+    ),
+    RuntimeDef(
+        "llama-cpp",
+        "llama.cpp / ggml",
+        (_B + r"(?:llama_model_load\w*|llama_init_from_\w+|ggml_init\b|gguf_init_from_file)",),
+    ),
+    RuntimeDef("executorch", "ExecuTorch", (_B + r"(?:executorch::\w+|executorch/runtime/\w+)",)),
+    RuntimeDef("nnom", "NNoM", (_B + r"(?:nnom_model_create|nnom_model_run|nnom\.h)",)),
 )
+
+RUNTIME_PREFILTERS: dict[str, bytes] = {
+    "tflite-micro": rb"(?:MicroInterpreter|MicroMutableOpResolver|tensorflow/lite/micro)",
+    "tflite": rb"(?:TfLite|tflite::|FlatBufferModel)",
+    "onnxruntime": rb"(?:OrtCreate|onnxruntime|Ort::|OrtGetApiBase)",
+    "cmsis-nn": rb"(?:arm_convolve|arm_fully_connected|arm_nn_)",
+    "llama-cpp": rb"(?:llama_|ggml_|gguf_)",
+    "executorch": rb"executorch",
+    "nnom": rb"nnom",
+}
 
 
 @dataclass
@@ -94,12 +117,30 @@ class AIBOMScanner:
     """Scans firmware filesystem trees and binaries for ML models and runtimes."""
 
     def __init__(self):
-        self._compiled_runtimes = [
-            (rt, [re.compile(p.encode("ascii", errors="ignore")) for p in rt.patterns])
-            for rt in RUNTIMES
-        ]
+        self._runtime_by_group: dict[str, RuntimeDef] = {}
+        self._compiled_runtimes: dict[str, re.Pattern[bytes]] = {}
+        prefilter_alternatives = []
+        for index, runtime in enumerate(RUNTIMES):
+            if len(runtime.patterns) != 1:
+                raise ValueError(f"AI runtime {runtime.key} must have one dispatch pattern")
+            group = f"runtime_{index}"
+            self._runtime_by_group[group] = runtime
+            self._compiled_runtimes[group] = re.compile(
+                runtime.patterns[0].encode("ascii", errors="ignore")
+            )
+            prefilter = RUNTIME_PREFILTERS.get(runtime.key)
+            if prefilter is None:
+                raise ValueError(f"AI runtime {runtime.key} lacks a prefilter")
+            prefilter_alternatives.append(b"(?P<" + group.encode("ascii") + b">" + prefilter + b")")
+        self._compiled_dispatch = re.compile(b"|".join(prefilter_alternatives))
+        self.last_prefilter_passes = 0
+        self.last_detail_passes = 0
+        self.last_scan_passes = 0
+        self.last_scan_bytes = 0
 
-    def scan_file_header(self, filename: str, head_bytes: bytes, file_size: int = 0) -> Optional[DiscoveredAIModel]:
+    def scan_file_header(
+        self, filename: str, head_bytes: bytes, file_size: int = 0
+    ) -> DiscoveredAIModel | None:
         """Check if file header or extension matches an embedded ML model."""
         fn_lower = filename.lower()
 
@@ -111,11 +152,15 @@ class AIBOMScanner:
             magic_matched = False
             if fmt.magic and len(head_bytes) >= fmt.magic[0] + len(fmt.magic[1]):
                 offset, magic = fmt.magic
-                if head_bytes[offset:offset + len(magic)] == magic:
+                if head_bytes[offset : offset + len(magic)] == magic:
                     magic_matched = True
 
             if suffix_matched or magic_matched:
-                evidence = f"Magic bytes {fmt.magic[1]!r}" if magic_matched else f"File extension {fn_lower.split('.')[-1]}"
+                evidence = (
+                    f"Magic bytes {fmt.magic[1]!r}"
+                    if magic_matched
+                    else f"File extension {fn_lower.split('.')[-1]}"
+                )
                 return DiscoveredAIModel(
                     name=filename.rsplit("/", 1)[-1],
                     format_key=fmt.key,
@@ -142,29 +187,50 @@ class AIBOMScanner:
     def scan_binary_for_runtimes(self, filename: str, data: bytes) -> list[DiscoveredAIRuntime]:
         """Scan binary contents for AI inference runtimes."""
         results: list[DiscoveredAIRuntime] = []
-        chunk = data[:4 * 1024 * 1024]
+        chunk = data[:_SCAN_BYTES]
+        self.last_scan_bytes = len(chunk)
 
-        for rt, regexes in self._compiled_runtimes:
-            for r in regexes:
-                match = r.search(chunk)
-                if match:
-                    results.append(
-                        DiscoveredAIRuntime(
-                            runtime_key=rt.key,
-                            runtime_name=rt.name,
-                            binary_path=filename,
-                            evidence=f"API signature: {match.group(0).decode('ascii', errors='replace')}",
-                        )
-                    )
+        if not chunk:
+            self.last_prefilter_passes = 0
+            self.last_detail_passes = 0
+            self.last_scan_passes = 0
+            return results
+
+        predicted: set[str] = set()
+        for match in self._compiled_dispatch.finditer(chunk):
+            group = match.lastgroup
+            if group is not None:
+                predicted.add(group)
+                if len(predicted) == len(self._runtime_by_group):
                     break
+        self.last_prefilter_passes = 1
+        self.last_detail_passes = 0
 
+        for group, runtime in self._runtime_by_group.items():
+            if group not in predicted:
+                continue
+            self.last_detail_passes += 1
+            match = self._compiled_runtimes[group].search(chunk)
+            if match is None:
+                continue
+            results.append(
+                DiscoveredAIRuntime(
+                    runtime_key=runtime.key,
+                    runtime_name=runtime.name,
+                    binary_path=filename,
+                    evidence=f"API signature: {match.group(0).decode('ascii', errors='replace')}",
+                )
+            )
+
+        self.last_scan_passes = self.last_prefilter_passes + self.last_detail_passes
         return results
 
     def to_components(
         self, models: list[DiscoveredAIModel], runtimes: list[DiscoveredAIRuntime]
     ) -> list[Any]:
         """Convert discovered AI models and runtimes to native Component objects."""
-        from .models import Component, VersionConfidence, ExtractionMethod
+        from .models import Component, ExtractionMethod, VersionConfidence
+
         comps: list[Component] = []
 
         for m in models:
@@ -188,12 +254,14 @@ class AIBOMScanner:
                     },
                 },
                 properties=props,
-                versions=[VersionConfidence(
-                    version="detected",
-                    confidence=0.95,
-                    method=ExtractionMethod.BINARY_SIGNATURE,
-                    evidence=m.evidence or f"Found at {m.file_path}",
-                )],
+                versions=[
+                    VersionConfidence(
+                        version="detected",
+                        confidence=0.95,
+                        method=ExtractionMethod.BINARY_SIGNATURE,
+                        evidence=m.evidence or f"Found at {m.file_path}",
+                    )
+                ],
             )
             comps.append(c)
 
@@ -208,12 +276,14 @@ class AIBOMScanner:
                     {"name": "ai:location", "value": rt.binary_path},
                     {"name": "ai:evidence", "value": rt.evidence},
                 ],
-                versions=[VersionConfidence(
-                    version="detected",
-                    confidence=0.90,
-                    method=ExtractionMethod.STRING_PATTERN,
-                    evidence=rt.evidence,
-                )],
+                versions=[
+                    VersionConfidence(
+                        version="detected",
+                        confidence=0.90,
+                        method=ExtractionMethod.STRING_PATTERN,
+                        evidence=rt.evidence,
+                    )
+                ],
             )
             comps.append(c_rt)
 

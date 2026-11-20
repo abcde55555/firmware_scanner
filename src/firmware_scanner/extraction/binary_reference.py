@@ -33,6 +33,26 @@ def _load_catalog() -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def openssl_compatibility_only(data: bytes, version: str) -> bool:
+    """BoringSSL's OPENSSL_VERSION_TEXT advertises compatibility, not its release."""
+    # https://boringssl.googlesource.com/boringssl/+/refs/heads/main/include/openssl/crypto.h
+    if b"BoringSSL" not in data:
+        return False
+    try:
+        encoded = version.encode("ascii")
+    except UnicodeEncodeError:
+        return False
+    pattern = rb"OpenSSL\s+" + re.escape(encoded) + rb"(?![A-Za-z0-9._+-])"
+    found = False
+    for match in re.finditer(pattern, data, re.IGNORECASE):
+        found = True
+        if not re.match(
+            rb"\s*\(compatible;\s*BoringSSL\)", data[match.end() : match.end() + 96], re.IGNORECASE
+        ):
+            return False
+    return found
+
+
 class BinaryReferenceMatcher:
     """Match curated upstream banners and defined ELF symbol combinations."""
 
@@ -44,52 +64,102 @@ class BinaryReferenceMatcher:
         if self._catalog.get("schema_version") != 1:
             raise ValueError("Unsupported binary reference schema_version")
         self._rules = self._catalog.get("references", [])
-        for rule in self._rules:
+        self._compiled_banners: dict[str, re.Pattern[bytes]] = {}
+        self._filename_hints: dict[str, tuple[str, ...]] = {}
+        self._required_literals: dict[int, bytes] = {}
+        self._identity_banners: dict[int, bytes] = {}
+        self._unfiltered_banners: set[int] = set()
+        for index, rule in enumerate(self._rules):
             if not rule.get("name") or not rule.get("source", "").startswith("https://"):
                 raise ValueError("Each binary reference requires a name and HTTPS provenance")
             if rule.get("version_policy") not in {"banner", "identity_only"}:
                 raise ValueError(f"Invalid version_policy for {rule.get('name')}")
+            self._filename_hints[rule["name"]] = tuple(
+                str(hint).casefold() for hint in rule.get("filename_patterns", [])
+            )
             if rule.get("banner_regex"):
-                re.compile(rule["banner_regex"], re.IGNORECASE)
+                try:
+                    pattern = rule["banner_regex"].encode("ascii")
+                except UnicodeEncodeError as exc:
+                    raise ValueError(f"Banner regex must be ASCII: {rule['name']}") from exc
+                self._compiled_banners[rule["name"]] = re.compile(pattern, re.IGNORECASE)
+                prefix = re.match(r"[A-Za-z0-9 /_,:-]+", rule["banner_regex"])
+                required = rule.get("required_literal") or (
+                    prefix.group(0) if prefix and len(prefix.group(0)) >= 3 else ""
+                )
+                if required:
+                    self._required_literals[index] = required.casefold().encode("ascii")
+                else:
+                    self._unfiltered_banners.add(index)
+            identity_banner = str(rule.get("identity_banner", ""))
+            if identity_banner:
+                self._identity_banners[index] = identity_banner.casefold().encode("ascii")
 
-    def match(self, data: bytes, filename: str = "") -> list[BinaryReferenceMatch]:
+    def match(
+        self,
+        data: bytes,
+        filename: str = "",
+        *,
+        defined_symbols: set[str] | None = None,
+    ) -> list[BinaryReferenceMatch]:
         if not isinstance(data, bytes) or not data:
             return []
         lowered = data.lower()
-        text = None
         basename = Path(filename).name.lower()
-        defined_symbols = self._defined_elf_symbols(data)
+        if defined_symbols is None:
+            defined_symbols = self._defined_elf_symbols(data)
         matches: list[BinaryReferenceMatch] = []
 
-        for rule in self._rules:
+        for index, rule in enumerate(self._rules):
             name = rule["name"]
-            filename_hint = any(hint.lower() in basename for hint in rule.get("filename_patterns", []))
+            filename_hint = any(hint in basename for hint in self._filename_hints[name])
             candidates: list[tuple[str, str, bool]] = []
 
-            pattern = rule.get("banner_regex")
-            prefix = re.match(r'[A-Za-z0-9 /_,:-]+', pattern or '')
-            required = rule.get('required_literal') or (prefix.group(0) if prefix and len(prefix.group(0)) >= 3 else '')
-            if pattern and (not required or required.lower().encode('ascii') in lowered):
-                if text is None:
-                    text = data.decode('latin-1')
+            pattern = self._compiled_banners.get(name)
+            required = self._required_literals.get(index)
+            if pattern is not None and (
+                index in self._unfiltered_banners or (required is not None and required in lowered)
+            ):
                 seen_versions: set[str] = set()
-                for found in re.finditer(pattern, text, re.IGNORECASE):
-                    version = next((group for group in found.groups() if group is not None), "")
+                for found in pattern.finditer(data):
+                    if name == "OpenSSL" and re.match(
+                        rb"\s*\(compatible;\s*BoringSSL\)",
+                        data[found.end() : found.end() + 96],
+                        re.IGNORECASE,
+                    ):
+                        continue
+                    version_bytes = next(
+                        (group for group in found.groups() if group is not None), b""
+                    )
+                    version = version_bytes.decode("ascii", errors="replace")
                     if version and version in seen_versions:
                         continue
                     if version:
                         seen_versions.add(version)
                     candidates.append(
-                        (version, f"upstream banner matched: {found.group(0)}", not bool(version))
+                        (
+                            version,
+                            "upstream banner matched: "
+                            + found.group(0).decode("ascii", errors="replace"),
+                            not bool(version),
+                        )
                     )
                     if len(candidates) >= 32:
                         break
 
             identity_banner = rule.get("identity_banner")
-            if not candidates and identity_banner and identity_banner.lower().encode('ascii') in lowered:
+            identity_banner_key = self._identity_banners.get(index)
+            if (
+                not candidates
+                and identity_banner
+                and identity_banner_key is not None
+                and identity_banner_key in lowered
+            ):
                 candidates.append(("", f"explicit identity banner: {identity_banner}", True))
 
-            if not candidates:
+            if not candidates and (not rule.get("require_filename_hint", False) or filename_hint):
+                if name == "OpenSSL" and re.search(rb"boringssl", data, re.IGNORECASE):
+                    continue
                 for group in rule.get("identity_symbols", []):
                     present = [symbol for symbol in group if symbol in defined_symbols]
                     if len(group) >= 2 and len(present) == len(group):
@@ -158,10 +228,10 @@ class BinaryReferenceMatcher:
                 section_type = section[1]
                 if section_type not in (2, 11):  # SHT_SYMTAB / SHT_DYNSYM
                     continue
-                offset = section[4] if elf_class == 2 else section[4]
-                size = section[5] if elf_class == 2 else section[5]
+                offset = section[4]
+                size = section[5]
                 link = section[6]
-                entsize = section[9] if elf_class == 2 else section[9]
+                entsize = section[9]
                 if link >= len(sections) or entsize < symbol_size or offset + size > len(data):
                     continue
                 strings_section = sections[link]
@@ -178,7 +248,12 @@ class BinaryReferenceMatcher:
                     else:
                         info, shndx = symbol[3], symbol[5]
                     binding, symbol_type = info >> 4, info & 0x0F
-                    if not name_offset or shndx == 0 or binding not in (1, 2) or symbol_type not in (0, 1, 2):
+                    if (
+                        not name_offset
+                        or shndx == 0
+                        or binding not in (1, 2)
+                        or symbol_type not in (0, 1, 2)
+                    ):
                         continue
                     end = strings.find(b"\0", name_offset)
                     if name_offset < len(strings) and end > name_offset:

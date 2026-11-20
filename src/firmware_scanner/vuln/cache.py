@@ -17,8 +17,17 @@ def get_cache_dir() -> Path:
     return cache_dir
 
 
-def cache_key(purl: str = "", name: str = "", version: str = "") -> str:
-    raw = purl if purl else f"{name.lower().strip()}@{version.strip()}"
+def cache_key(
+    purl: str = "",
+    name: str = "",
+    version: str = "",
+    ecosystem: str = "",
+) -> str:
+    raw = (
+        purl
+        if purl
+        else f"{ecosystem.casefold().strip()}::{name.lower().strip()}@{version.strip()}"
+    )
     return hashlib.sha256(raw.encode()).hexdigest()
 
 

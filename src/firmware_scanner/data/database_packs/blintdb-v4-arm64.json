@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "kind": "blintdb",
+  "name": "BLintDB",
+  "release": "v4",
+  "database_sha256": "93bcb321c5c3bc8933cdad5c63454312838750f88053ed0223fd4c2e0da5112e",
+  "database_bytes": 5660250112,
+  "database_schema_version": "3",
+  "source_url": "https://github.com/AppThreat/blint-db",
+  "license": "MIT",
+  "architecture": "linux-arm64",
+  "properties": {
+    "manifest_digest": "sha256:d507b5787cbe5ac254e7973989584489ad480cee341b4d5cdc8a64a5f2e0d00d",
+    "database_media_type": "application/vnd.appthreat.blintdb.layer.v1+tar",
+    "payload_format": "raw-sqlite"
+  }
+}

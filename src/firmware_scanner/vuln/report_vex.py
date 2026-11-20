@@ -1,9 +1,10 @@
 """CycloneDX 1.6 VEX report generator."""
 
 from typing import Any
-from .models import VulnScanResult, Severity
-from .threat_intel import determine_vex_status
+
 from ..extraction.models import Component
+from .models import Severity, VulnScanResult
+from .threat_intel import determine_vex_status
 
 
 def generate_cyclonedx_vex(
@@ -15,7 +16,14 @@ def generate_cyclonedx_vex(
     """Generate CycloneDX SBOM with VEX (vulnerabilities) section."""
     from ..sbom.cyclonedx import CycloneDXGenerator
 
-    cdx_vulns: list[dict[str, Any]] = []
+    cdx_vulns: dict[tuple[str, str], dict[str, Any]] = {}
+    severity_rank = {
+        Severity.UNKNOWN: 0,
+        Severity.LOW: 1,
+        Severity.MEDIUM: 2,
+        Severity.HIGH: 3,
+        Severity.CRITICAL: 4,
+    }
 
     for cr in result.results:
         bom_ref = cr.purl or f"pkg:generic/{cr.component_name}@{cr.component_version}"
@@ -73,7 +81,47 @@ def generate_cyclonedx_vex(
 
             vuln_entry["properties"] = vuln_props
 
-            cdx_vulns.append(vuln_entry)
+            key = (v.id, source_name)
+            existing = cdx_vulns.get(key)
+            if existing is None:
+                vuln_entry["_score"] = v.cvss_score or 0
+                vuln_entry["_rank"] = severity_rank.get(v.severity, 0)
+                cdx_vulns[key] = vuln_entry
+                continue
+
+            affected_refs = {
+                item["ref"] for item in existing.get("affects", []) if item.get("ref")
+            }
+            if bom_ref not in affected_refs:
+                existing.setdefault("affects", []).append({"ref": bom_ref})
+            known_refs = {
+                (item.get("id"), item.get("source", {}).get("url"))
+                for item in existing.get("references", [])
+            }
+            for reference in vuln_entry.get("references", []):
+                identity = (
+                    reference.get("id"),
+                    reference.get("source", {}).get("url"),
+                )
+                if identity not in known_refs:
+                    existing.setdefault("references", []).append(reference)
+                    known_refs.add(identity)
+
+            candidate_rank = severity_rank.get(v.severity, 0)
+            candidate_score = v.cvss_score or 0
+            if (candidate_rank, candidate_score) > (
+                existing.get("_rank", 0),
+                existing.get("_score", 0),
+            ):
+                for field in ("description", "ratings", "analysis", "_rank", "_score"):
+                    if field in vuln_entry:
+                        existing[field] = vuln_entry[field]
+
+    cdx_vuln_list = []
+    for entry in cdx_vulns.values():
+        entry.pop("_rank", None)
+        entry.pop("_score", None)
+        cdx_vuln_list.append(entry)
 
     gen = CycloneDXGenerator()
     comp_list = list(components) if components else []
@@ -95,6 +143,6 @@ def generate_cyclonedx_vex(
         firmware_hash_sha256=result.firmware_sha256 or "",
         build_info=build_info,
         spec_version=spec_version,
-        vulnerabilities=cdx_vulns,
+        vulnerabilities=cdx_vuln_list,
     )
     return gen.to_json(bom)

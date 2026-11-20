@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "name": "AndroidX Graphics Path",
+      "group": "androidx.graphics",
+      "artifact": "graphics-path",
+      "repository_base_url": "https://dl.google.com/dl/android/maven2",
+      "upstream_source": "https://developer.android.com/jetpack/androidx/releases/graphics",
+      "versions": [
+        "1.0.0-alpha01",
+        "1.0.0-alpha02",
+        "1.0.0-beta01",
+        "1.0.0-beta02",
+        "1.0.0-rc01",
+        "1.0.0",
+        "1.0.1",
+        "1.1.0-alpha01",
+        "1.1.0-beta01",
+        "1.1.0-rc01",
+        "1.1.0"
+      ],
+      "version_kinds": {
+        "1.0.0-alpha01": "artifact-prerelease",
+        "1.0.0-alpha02": "artifact-prerelease",
+        "1.0.0-beta01": "artifact-prerelease",
+        "1.0.0-beta02": "artifact-prerelease",
+        "1.0.0-rc01": "artifact-prerelease",
+        "1.1.0-alpha01": "artifact-prerelease",
+        "1.1.0-beta01": "artifact-prerelease",
+        "1.1.0-rc01": "artifact-prerelease"
+      }
+    },
+    {
+      "name": "TensorFlow Lite",
+      "group": "org.tensorflow",
+      "artifact": "tensorflow-lite",
+      "repository_base_url": "https://repo.maven.apache.org/maven2",
+      "upstream_source": "https://github.com/tensorflow/tensorflow/releases",
+      "versions": [
+        "2.10.0",
+        "2.11.0",
+        "2.12.0",
+        "2.13.0",
+        "2.14.0",
+        "2.15.0",
+        "2.16.1",
+        "2.17.0"
+      ]
+    },
+    {
+      "name": "LiteRT",
+      "group": "com.google.ai.edge.litert",
+      "artifact": "litert",
+      "repository_base_url": "https://dl.google.com/dl/android/maven2",
+      "upstream_source": "https://developer.android.com/ai/custom",
+      "versions": [
+        "1.0.1",
+        "1.1.0",
+        "1.1.1",
+        "1.1.2",
+        "1.2.0",
+        "1.3.0",
+        "1.4.0",
+        "1.4.1",
+        "1.4.2"
+      ]
+    }
+  ]
+}

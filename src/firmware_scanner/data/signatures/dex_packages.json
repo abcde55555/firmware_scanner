@@ -1,13 +1,19 @@
 {
+  "okhttp3": ["OkHttp", "Square", ""],
+  "com/squareup/okhttp": ["OkHttp", "Square", ""],
+  "com/android/okhttp": ["AOSP OkHttp", "Google", ""],
+  "retrofit2": ["Retrofit", "Square", ""],
+  "com/squareup/retrofit": ["Retrofit", "Square", ""],
+  "io/reactivex": ["RxJava", "ReactiveX", "2.x"],
   "com/squareup/okhttp3": [
     "OkHttp",
     "Square",
-    "3.x"
+    ""
   ],
   "com/squareup/retrofit2": [
     "Retrofit",
     "Square",
-    "2.x"
+    ""
   ],
   "com/google/gson": [
     "Gson",
