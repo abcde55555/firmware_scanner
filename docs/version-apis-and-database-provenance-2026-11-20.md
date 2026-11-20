@@ -170,6 +170,7 @@ is not used as a performance-regression result.
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/evaluation-fixed.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/schema-validation.json`
+- `reports/version-coverage-getters-20261120/wheel-0.17.0/wheel-verification.json`
 - `src/firmware_scanner/extraction/semantic_version.py`
 - `src/firmware_scanner/databases/manifest.py`
 - `src/firmware_scanner/databases/enricher.py`
