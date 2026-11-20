@@ -24,9 +24,13 @@ _SONAME_FULL_RELEASE = re.compile(
 )
 _SONAME_RELEASE_COMPONENTS = {
     "libcjson",
+    "libboost_filesystem",
     "libfmt",
     "libhwy",
     "libjsoncpp",
+    "libmbedcrypto",
+    "libmbedtls",
+    "libnng",
     "libpugixml",
     "libspdlog",
     "libtinyxml2",

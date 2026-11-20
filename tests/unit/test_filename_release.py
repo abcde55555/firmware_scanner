@@ -85,6 +85,10 @@ def test_inventory_keeps_filename_release_on_its_host_and_dependency_version_sep
         ("libspdlog.so.1.15.3", ("libspdlog", "1.15.3")),
         ("libtinyxml2.so.11.0.0", ("libtinyxml2", "11.0.0")),
         ("libyaml-cpp.so.0.8.0", ("libyaml-cpp", "0.8.0")),
+        ("libboost_filesystem.so.1.90.0", ("libboost_filesystem", "1.90.0")),
+        ("libmbedcrypto.so.3.6.7", ("libmbedcrypto", "3.6.7")),
+        ("libmbedtls.so.3.6.7", ("libmbedtls", "3.6.7")),
+        ("libnng.so.1.12.3", ("libnng", "1.12.3")),
     ],
 )
 def test_release_soname_allowlist_recovers_named_upstream_versions(

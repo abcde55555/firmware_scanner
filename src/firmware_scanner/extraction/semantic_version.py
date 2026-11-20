@@ -51,6 +51,9 @@ INTEGER_GETTERS = {
     'archive_version_number': ('libarchive', 'decimal1000'),
     '_ZN4Poco11Environment14libraryVersionEv': ('Poco', 'packed_bytes'),
     'mi_version': ('mimalloc', 'decimal100'),
+    'amqp_version_number': ('librabbitmq', 'amqp'),
+    'mbedtls_version_get_number': ('mbedcrypto', 'mbedtls'),
+    'PQlibVersion': ('libpq', 'postgresql'),
 }
 MAJOR_MINOR_GETTERS = {
     'liburing': (
@@ -125,6 +128,19 @@ def decode_integer(value: int, encoding: str) -> str | None:
         parts = value >> 24, value >> 12 & 4095, value & 4095
     elif encoding == 'packed_bytes':
         parts = value >> 24, value >> 16 & 255, value >> 8 & 255
+    elif encoding == 'amqp':
+        parts = 0, value >> 16 & 255, value >> 8 & 255
+    elif encoding == 'mbedtls':
+        if value & 255:
+            return None
+        parts = value >> 24, value >> 16 & 255, value >> 8 & 255
+    elif encoding == 'postgresql':
+        if value >= 100000:
+            major, release = divmod(value, 10000)
+            if 0 < major <= 99 and 0 <= release <= 9999:
+                return f'{major}.{release}'
+            return None
+        parts = value // 10000, value // 100 % 100, value % 100
     else:
         return None
     if parts[0] > 99:

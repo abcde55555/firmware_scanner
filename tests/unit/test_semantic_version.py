@@ -80,6 +80,28 @@ def test_packed_byte_and_decimal_integer_getters(tmp_path, cc):
     }
 
 
+def test_documented_packed_connector_and_database_version_getters(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "additional_packed_getters",
+        """
+        int amqp_version_number(void) { return 0x0F0001; }
+        int mbedtls_version_get_number(void) { return 0x03060700; }
+        int PQlibVersion(void) { return 180003; }
+        """,
+        flags=("-O2",),
+    )
+
+    assert {(match.name, match.version) for match in SemanticVersionExtractor().extract(data)} == {
+        ("librabbitmq", "0.15.0"),
+        ("mbedcrypto", "3.6.7"),
+        ("libpq", "18.3"),
+    }
+
+
 def test_jxl_version_integer_uses_its_decimal_generation_encoding(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

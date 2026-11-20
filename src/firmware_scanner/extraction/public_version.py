@@ -24,7 +24,7 @@ from elftools.elf.constants import P_FLAGS
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from .static_version import StaticVersionMatch
+from .static_version import StaticVersionExtractor, StaticVersionMatch
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,13 @@ class _BannerRule:
     pattern: re.Pattern[bytes]
     source: str
     confidence: float = 0.97
+
+
+@dataclass(frozen=True)
+class _OutputVersionRule:
+    component: str
+    outputs: tuple[str, ...]
+    source: str
 
 
 _BANNER_RULES = (
@@ -81,6 +88,34 @@ _BANNER_RULES = (
         confidence=0.95,
     ),
 )
+_OUTPUT_VERSION_RULES = {
+    "zmq_version": _OutputVersionRule(
+        "libzmq",
+        ("major", "minor", "patch"),
+        "https://github.com/zeromq/libzmq/blob/master/src/zmq.cpp",
+    ),
+    "zsys_version": _OutputVersionRule(
+        "CZMQ",
+        ("major", "minor", "patch"),
+        "https://github.com/zeromq/czmq/blob/master/src/zsys.c",
+    ),
+    "mosquitto_lib_version": _OutputVersionRule(
+        "Mosquitto",
+        ("major", "minor", "patch"),
+        "https://github.com/eclipse-mosquitto/mosquitto/blob/master/lib/version.c",
+    ),
+    "iio_library_get_version": _OutputVersionRule(
+        "libiio",
+        ("major", "minor"),
+        "https://github.com/analogdevicesinc/libiio/blob/main/iio.c",
+    ),
+    "QRcode_APIVersion": _OutputVersionRule(
+        "libqrencode",
+        ("major", "minor", "patch"),
+        "https://github.com/fukuchi/libqrencode/blob/master/qrencode.c",
+    ),
+}
+_RELEASE_TEXT = re.compile(r"v?(\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)\Z")
 _PREFILTER = (
     b"assuan_check_version",
     b"gpgme_check_version_internal",
@@ -99,6 +134,16 @@ _PREFILTER = (
     b"malloc_stats_print",
     b"blkid_get_library_version",
     b"Z3_get_version",
+    b"zmq_version",
+    b"zsys_version",
+    b"mosquitto_lib_version",
+    b"iio_library_get_version",
+    b"QRcode_APIVersion",
+    b"libmodbus_version_major",
+    b"libusb_get_version",
+    b"ftdi_get_library_version",
+    b"gp_library_version",
+    b"gpiod_api_version",
 )
 
 
@@ -151,6 +196,20 @@ def extract_public_versions(data: bytes, filename: str = "") -> list[StaticVersi
             _z3_version,
         ):
             hit = extractor(data, image, symbols)
+            if hit is not None:
+                matches.append(hit)
+        for function, rule in _OUTPUT_VERSION_RULES.items():
+            hit = _output_parameter_version(data, image, symbols, function, rule)
+            if hit is not None:
+                matches.append(hit)
+        for helper in (
+            _modbus_version,
+            _libusb_version,
+            _ftdi_version,
+            _gphoto_version,
+            _gpiod_api_version,
+        ):
+            hit = helper(data, image, symbols)
             if hit is not None:
                 matches.append(hit)
         blkid = _blkid_version(data, image, symbols, filename)
@@ -621,6 +680,292 @@ def _z3_version(data, image, symbols) -> StaticVersionMatch | None:
             source="https://github.com/Z3Prover/z3/blob/master/src/api/api_util.cpp",
         ),
         0.97,
+    )
+
+
+def _output_parameter_version(
+    data,
+    image,
+    symbols,
+    function: str,
+    rule: _OutputVersionRule,
+) -> StaticVersionMatch | None:
+    """Read up to three integer outputs from a bounded x86-64 API function."""
+    if image.header["e_machine"] != "EM_X86_64" or image.elfclass != 64:
+        return None
+    function_data = _function_bytes(image, data, function)
+    if function_data is None:
+        return None
+    code, file_offset = function_data
+    address = int(symbols[function]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    arguments = {"rdi": "major", "rsi": "minor", "rdx": "patch"}
+    values = {}
+    for instruction in disassembler.disasm(code, address):
+        if instruction.id != X86_INS_MOV or len(instruction.operands) != 2:
+            continue
+        destination, source = instruction.operands
+        if (
+            destination.type != X86_OP_MEM
+            or destination.mem.index
+            or destination.mem.disp
+            or source.type != X86_OP_IMM
+        ):
+            continue
+        argument = instruction.reg_name(destination.mem.base)
+        if argument not in arguments or int(destination.size) != 4:
+            continue
+        value = int(source.imm)
+        if argument in values and values[argument] != value:
+            return None
+        values[argument] = value
+    required = {argument for argument, name in arguments.items() if name in rule.outputs}
+    if not required.issubset(values):
+        return None
+    version_parts = [values[argument] for argument in ("rdi", "rsi", "rdx") if argument in required]
+    if not version_parts or any(version_parts) == 0 or not 0 <= version_parts[0] <= 99:
+        return None
+    if any(not 0 <= part <= 999 for part in version_parts[1:]):
+        return None
+    version = ".".join(map(str, version_parts))
+    return StaticVersionMatch(
+        rule.component,
+        version,
+        _evidence(
+            "defined-output-parameter-version-getter",
+            version=version,
+            function=function,
+            function_file_offset=file_offset,
+            output_values={
+                arguments[argument]: value
+                for argument, value in values.items()
+                if arguments[argument] in rule.outputs
+            },
+            source=rule.source,
+        ),
+        0.96,
+    )
+
+
+def _modbus_version(data, image, symbols) -> StaticVersionMatch | None:
+    names = (
+        "libmodbus_version_major",
+        "libmodbus_version_minor",
+        "libmodbus_version_micro",
+    )
+    if "modbus_new_tcp" not in symbols or not all(name in symbols for name in names):
+        return None
+    parts = [_read_integer_object(image, data, name, 4) for name in names]
+    if any(part is None for part in parts):
+        return None
+    major, minor, patch = (int(part) for part in parts)
+    if not 0 < major <= 99 or not 0 <= minor <= 99 or not 0 <= patch <= 99:
+        return None
+    version = f"{major}.{minor}.{patch}"
+    return StaticVersionMatch(
+        "libmodbus",
+        version,
+        _evidence(
+            "defined-version-object-triplet",
+            version=version,
+            objects={name: part for name, part in zip(names, parts, strict=True)},
+            supporting_api="modbus_new_tcp",
+            source="https://github.com/stephane/libmodbus/blob/master/src/modbus.c",
+        ),
+        0.97,
+    )
+
+
+def _libusb_version(data, image, symbols) -> StaticVersionMatch | None:
+    if (
+        not {"libusb_get_version", "libusb_init"}.issubset(symbols)
+        or image.header["e_machine"] != "EM_X86_64"
+        or image.elfclass != 64
+    ):
+        return None
+    function = _function_bytes(image, data, "libusb_get_version")
+    if function is None:
+        return None
+    code, function_offset = function
+    address = int(symbols["libusb_get_version"]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    returned = StaticVersionExtractor._returned_pointer(
+        disassembler,
+        "x86_64",
+        code,
+        address,
+    )
+    if returned is None or returned[1]:
+        return None
+    struct_offset = _object_offset(image, returned[0], 8)
+    if struct_offset is None:
+        return None
+    byteorder = "little" if image.little_endian else "big"
+    parts = struct.unpack_from(("<" if byteorder == "little" else ">") + "HHHH", data, struct_offset)
+    major, minor, patch, nano = parts
+    if not 0 < major <= 99 or minor > 99 or patch > 999:
+        return None
+    version = f"{major}.{minor}.{patch}"
+    return StaticVersionMatch(
+        "libusb",
+        version,
+        _evidence(
+            "defined-returned-version-struct",
+            version=version,
+            function="libusb_get_version",
+            function_file_offset=function_offset,
+            struct_vaddr=hex(returned[0]),
+            struct_file_offset=struct_offset,
+            output_values={"major": major, "minor": minor, "patch": patch, "nano": nano},
+            source="https://github.com/libusb/libusb/blob/master/libusb/version.c",
+        ),
+        0.97,
+    )
+
+
+def _ftdi_version(data, image, symbols) -> StaticVersionMatch | None:
+    required = {
+        "ftdi_get_library_version",
+        "ftdi_init",
+        "FTDI_VERSION_STRING",
+    }
+    if not required.issubset(symbols):
+        return None
+    symbol = symbols["FTDI_VERSION_STRING"]
+    if symbol["type"] != "STT_OBJECT" or not 1 <= symbol["size"] <= 64:
+        return None
+    text = _read_c_string(image, data, symbol["value"])
+    match = _RELEASE_TEXT.fullmatch(text or "")
+    if match is None:
+        return None
+    version = match.group(1)
+    return StaticVersionMatch(
+        "libftdi",
+        version,
+        _evidence(
+            "defined-version-string-object",
+            version=version,
+            object="FTDI_VERSION_STRING",
+            object_vaddr=hex(symbol["value"]),
+            supporting_apis=["ftdi_get_library_version", "ftdi_init"],
+            source="https://www.intra2net.com/en/developer/libftdi/",
+        ),
+        0.97,
+    )
+
+
+def _gphoto_version(data, image, symbols) -> StaticVersionMatch | None:
+    if (
+        not {"gp_library_version", "gp_camera_new"}.issubset(symbols)
+        or image.header["e_machine"] != "EM_X86_64"
+        or image.elfclass != 64
+    ):
+        return None
+    function = _function_bytes(image, data, "gp_library_version")
+    if function is None:
+        return None
+    code, function_offset = function
+    address = int(symbols["gp_library_version"]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    tables = set()
+    for instruction in disassembler.disasm(code, address):
+        if instruction.id != X86_INS_LEA or len(instruction.operands) != 2:
+            continue
+        destination, source = instruction.operands
+        if (
+            destination.type != X86_OP_REG
+            or instruction.reg_name(destination.reg) not in {"rax", "rdx"}
+            or source.type != X86_OP_MEM
+            or source.mem.base != X86_REG_RIP
+            or source.mem.index
+        ):
+            continue
+        tables.add(instruction.address + instruction.size + int(source.mem.disp))
+    found = {}
+    pointer_size = image.elfclass // 8
+    for table in sorted(tables):
+        for index in range(8):
+            slot = table + index * pointer_size
+            slot_offset = _object_offset(image, slot, pointer_size)
+            if slot_offset is None:
+                break
+            byteorder = "little" if image.little_endian else "big"
+            pointer = int.from_bytes(data[slot_offset : slot_offset + pointer_size], byteorder)
+            if pointer == 0:
+                break
+            text = _read_c_string(image, data, pointer)
+            match = _RELEASE_TEXT.fullmatch(text or "")
+            if match is not None:
+                found.setdefault(match.group(1), []).append(
+                    {"table_vaddr": hex(table), "entry": index}
+                )
+    if len(found) != 1:
+        return None
+    version, locations = next(iter(found.items()))
+    return StaticVersionMatch(
+        "libgphoto2",
+        version,
+        _evidence(
+            "defined-returned-version-pointer-table",
+            version=version,
+            function="gp_library_version",
+            function_file_offset=function_offset,
+            locations=locations,
+            supporting_api="gp_camera_new",
+            source="https://github.com/gphoto/libgphoto2",
+        ),
+        0.96,
+    )
+
+
+def _gpiod_api_version(data, image, symbols) -> StaticVersionMatch | None:
+    """Keep gpiod's explicitly named API version separate from its release."""
+    if (
+        not {"gpiod_api_version", "gpiod_line_request_release"}.issubset(symbols)
+        or image.header["e_machine"] != "EM_X86_64"
+        or image.elfclass != 64
+    ):
+        return None
+    function = _function_bytes(image, data, "gpiod_api_version")
+    if function is None:
+        return None
+    code, function_offset = function
+    address = int(symbols["gpiod_api_version"]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    returned = StaticVersionExtractor._returned_pointer(
+        disassembler,
+        "x86_64",
+        code,
+        address,
+    )
+    if returned is None or returned[1]:
+        return None
+    text = _read_c_string(image, data, returned[0])
+    match = _RELEASE_TEXT.fullmatch(text or "")
+    if match is None:
+        return None
+    version = match.group(1)
+    return StaticVersionMatch(
+        "libgpiod",
+        version,
+        _evidence(
+            "defined-api-version-string-getter",
+            version=version,
+            version_kind="interface",
+            function="gpiod_api_version",
+            function_file_offset=function_offset,
+            returned_string=text,
+            supporting_api="gpiod_line_request_release",
+            source=(
+                "https://kernel.googlesource.com/pub/scm/libs/libgpiod/"
+                "libgpiod/+/refs/heads/master/include/gpiod.h"
+            ),
+        ),
+        0.88,
     )
 
 

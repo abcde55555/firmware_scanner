@@ -166,6 +166,17 @@ distinct features. It does **not** implement weighted BSim similarity/significan
 prove exact versions, or update the product's version claims. The real query
 matches eight vectors in four distinct releases; ties remain candidates.
 
+Version 0.21.0 added a sixth disjoint 20-library Debian suite. Its untouched
+blind run was 0/20; after adding documented runtime release APIs it reached 18/20
+usable (15 exact and 3 estimated), with zero wrong claims and two deliberate
+abstentions. The tuned result is not a held-out score.
+
+The same probes added zero fixed-cohort claims to the current Allwinner and
+Modern Android images because those libraries were absent in recognizable API
+form. The product results remain Allwinner 194/582 (native 57/312) and Modern
+786/1,129 (native 622/774). See
+`docs/version-0.21-heldout-and-roadmap-results-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

@@ -46,6 +46,8 @@ def identity_key(name: str) -> str:
         'nss3': 'nss',
         'nspr4': 'nspr',
         'pocofoundation': 'poco',
+        'ftdi1': 'ftdi',
+        'usb1.0': 'usb',
     }.get(name, name)
 
 

@@ -80,7 +80,7 @@ def test_heldout_run_provenance_binds_rules_and_source_hashes():
     provenance = _run_provenance()
 
     assert len(provenance["git_head"]) == 40
-    assert provenance["rules_release"] == "builtin-2026.11.20.5"
+    assert provenance["rules_release"] == "builtin-2026.11.20.6"
     assert len(provenance["rules_lock_sha256"]) == 64
     assert {
         "src/firmware_scanner/extraction/static_version.py",
@@ -89,6 +89,30 @@ def test_heldout_run_provenance_binds_rules_and_source_hashes():
         "src/firmware_scanner/extraction/filename_release.py",
         "src/firmware_scanner/data/rules.lock.json",
     }.issubset(provenance["source_sha256"])
+
+
+def test_sixth_independent_catalog_is_disjoint_and_has_twenty_libraries():
+    from experiments.version_coverage.debian_heldout import (
+        CATALOG,
+        INDEPENDENT_2_CATALOG,
+        INDEPENDENT_5_CATALOG,
+        INDEPENDENT_6_CATALOG,
+        INDEPENDENT_CATALOG,
+    )
+
+    sixth = {item.library for item in INDEPENDENT_6_CATALOG}
+    existing = {
+        item.library
+        for item in (
+            *CATALOG,
+            *INDEPENDENT_CATALOG,
+            *INDEPENDENT_2_CATALOG,
+            *INDEPENDENT_5_CATALOG,
+        )
+    }
+    assert len(INDEPENDENT_6_CATALOG) == 20
+    assert len(sixth) == 20
+    assert sixth.isdisjoint(existing)
 
 
 def test_heldout_adjacent_versions_are_separate_from_wrong_estimates():

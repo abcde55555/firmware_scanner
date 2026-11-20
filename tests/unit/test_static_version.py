@@ -86,6 +86,18 @@ def test_aarch64_literal_load_resolves_pointer_through_file_backed_mapping():
     assert [(m.name, m.version) for m in matches] == [("zstd", "1.5.7+git-deadbeef")]
 
 
+def test_aarch64_adrp_add_ret_uses_the_same_public_getter_registry():
+    elf = _aarch64_elf(
+        [0xB0000000, 0x91040000, 0xD65F03C0],
+        b"1.12.3",
+        symbol_name="nng_version",
+    )
+
+    assert [(match.name, match.version) for match in StaticVersionExtractor().extract(elf)] == [
+        ("NNG", "1.12.3")
+    ]
+
+
 def test_malformed_elf_returns_no_matches():
     assert StaticVersionExtractor().extract(b"\x7fELF" + bytes(60)) == []
 
@@ -251,6 +263,37 @@ def test_additional_documented_string_version_getters():
         ("liborc", "0.4.42"),
         ("libsodium", "1.0.18"),
     }
+
+
+def test_additional_public_string_version_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    getters = {
+        "nng_version": ("NNG", "1.12.3"),
+        "amqp_version": ("librabbitmq", "0.15.0"),
+        "QRcode_APIVersionString": ("libqrencode", "4.1.1"),
+        "sp_get_package_version_string": ("libserialport", "0.1.1"),
+        "mysql_get_client_info": ("libmariadb", "3.4.9"),
+    }
+    source = "\n".join(
+        f'__attribute__((visibility("default"), noinline, used))\n'
+        f'const char *{symbol}(void) {{ return "{version}"; }}'
+        for symbol, (_component, version) in getters.items()
+    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(match.name, match.version) for match in matches} == set(getters.values())
 
 
 def test_libsrtp_prefixed_release_getter():

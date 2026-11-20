@@ -257,6 +257,80 @@ def test_z3_output_parameters_recover_the_release_triplet(tmp_path):
     ]
 
 
+def test_documented_output_parameter_version_getters(tmp_path):
+    data = _compile(
+        tmp_path,
+        "void zmq_version(int *a, int *b, int *c) { *a = 4; *b = 3; *c = 5; }\n"
+        "void zsys_version(int *a, int *b, int *c) { *a = 4; *b = 2; *c = 1; }\n"
+        "void mosquitto_lib_version(int *a, int *b, int *c) { *a = 2; *b = 0; *c = 22; }\n"
+        "void iio_library_get_version(unsigned *a, unsigned *b, char *git) {\n"
+        "  *a = 0; *b = 26; git[0] = 0;\n"
+        "}\n"
+        "void QRcode_APIVersion(int *a, int *b, int *c) { *a = 4; *b = 1; *c = 1; }\n"
+        "const char *gpiod_api_version(void) { return \"2.2.5\"; }\n"
+        "void gpiod_line_request_release(void) {}\n",
+    )
+
+    assert {(hit.name, hit.version) for hit in extract_public_versions(data)} == {
+        ("libzmq", "4.3.5"),
+        ("CZMQ", "4.2.1"),
+        ("Mosquitto", "2.0.22"),
+        ("libiio", "0.26"),
+        ("libqrencode", "4.1.1"),
+        ("libgpiod", "2.2.5"),
+    }
+
+
+def test_documented_version_objects_and_structures(tmp_path):
+    data = _compile(
+        tmp_path,
+        "const int libmodbus_version_major = 3;\n"
+        "const int libmodbus_version_minor = 2;\n"
+        "const int libmodbus_version_micro = 0;\n"
+        "void modbus_new_tcp(void) {}\n"
+        "struct V { unsigned short major, minor, micro, nano; };\n"
+        "static const struct V usb = {1, 0, 29, 11953};\n"
+        "const struct V *libusb_get_version(void) { return &usb; }\n"
+        "void libusb_init(void) {}\n"
+        "const char FTDI_VERSION_STRING[] = \"1.6rc1\";\n"
+        "void ftdi_get_library_version(void) {}\n"
+        "void ftdi_init(void) {}\n"
+        "static const char *gphoto[] = {\"2.5.33\", 0};\n"
+        "const char **gp_library_version(int verbose) {\n"
+        "  (void)verbose; return gphoto;\n"
+        "}\n"
+        "void gp_camera_new(void) {}\n",
+    )
+
+    assert {(hit.name, hit.version) for hit in extract_public_versions(data)} == {
+        ("libmodbus", "3.2.0"),
+        ("libusb", "1.0.29"),
+        ("libftdi", "1.6rc1"),
+        ("libgphoto2", "2.5.33"),
+    }
+
+
+def test_libusb_version_evidence_is_attached_to_the_host_component(tmp_path):
+    data = _compile(
+        tmp_path,
+        "struct V { unsigned short major, minor, micro, nano; };\n"
+        "static const struct V usb = {1, 0, 29, 11953};\n"
+        "const struct V *libusb_get_version(void) { return &usb; }\n"
+        "void libusb_init(void) {}\n",
+        "libusb-1.0.so.0.5.0",
+    )
+
+    components = BinaryInventory().extract(
+        data,
+        "libusb-1.0.so.0.5.0",
+        "/lib/libusb-1.0.so.0.5.0",
+    )
+
+    assert [(component.name, component.resolved_version) for component in components] == [
+        ("libusb-1.0.so.0.5.0", "1.0.29")
+    ]
+
+
 def test_jemalloc_git_release_description_requires_its_allocator_apis(tmp_path):
     data = _compile(
         tmp_path,

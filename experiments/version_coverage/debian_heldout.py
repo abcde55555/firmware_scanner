@@ -207,11 +207,108 @@ INDEPENDENT_5_CATALOG = (
     ),
 )
 
+INDEPENDENT_6_CATALOG = (
+    CatalogItem(
+        "libusb-1.0-0",
+        "libusb-1.0.so.0.5.0",
+        ("libusb", "libusb-1.0", "libusb-1.0.so.0.5.0"),
+    ),
+    CatalogItem(
+        "libftdi1-2",
+        "libftdi1.so.2.6.0",
+        ("libftdi1", "libftdi", "libftdi1.so.2.6.0"),
+    ),
+    CatalogItem(
+        "libmodbus5",
+        "libmodbus.so.5.1.0",
+        ("libmodbus", "libmodbus.so.5.1.0"),
+    ),
+    CatalogItem(
+        "libserialport0",
+        "libserialport.so.0.1.1",
+        ("libserialport", "libserialport.so.0.1.1"),
+    ),
+    CatalogItem("libiio0", "libiio.so.0.26", ("libiio", "libiio.so.0.26")),
+    CatalogItem(
+        "libgpiod3",
+        "libgpiod.so.3.1.4",
+        ("libgpiod", "libgpiod.so.3.1.4"),
+    ),
+    CatalogItem(
+        "libmosquitto1",
+        "libmosquitto.so.2.0.22",
+        ("libmosquitto", "libmosquitto.so.2.0.22"),
+    ),
+    CatalogItem(
+        "libhiredis1.1.0",
+        "libhiredis.so.1.1.0",
+        ("libhiredis", "libhiredis.so.1.1.0"),
+    ),
+    CatalogItem(
+        "librabbitmq4",
+        "librabbitmq.so.0.15.0",
+        ("librabbitmq", "librabbitmq.so.0.15.0"),
+    ),
+    CatalogItem("libpq5", "libpq.so.5.18", ("libpq", "libpq.so.5.18")),
+    CatalogItem(
+        "libmariadb3",
+        "libmariadb.so.3",
+        ("libmariadb", "libmariadb.so.3"),
+    ),
+    CatalogItem(
+        "libmbedtls21",
+        "libmbedtls.so.3.6.7",
+        ("mbedtls", "libmbedtls", "libmbedtls.so.3.6.7"),
+    ),
+    CatalogItem(
+        "libmbedcrypto16",
+        "libmbedcrypto.so.3.6.7",
+        ("mbedcrypto", "libmbedcrypto", "libmbedcrypto.so.3.6.7"),
+    ),
+    CatalogItem(
+        "libqrencode4",
+        "libqrencode.so.4.1.1",
+        ("libqrencode", "libqrencode.so.4.1.1"),
+    ),
+    CatalogItem(
+        "libgphoto2-6t64",
+        "libgphoto2.so.6.4.0",
+        ("libgphoto2", "gphoto2", "libgphoto2.so.6.4.0"),
+    ),
+    CatalogItem(
+        "libzmq5",
+        "libzmq.so.5.2.5",
+        ("libzmq", "zeromq", "libzmq.so.5.2.5"),
+    ),
+    CatalogItem(
+        "libczmq4",
+        "libczmq.so.4.2.1",
+        ("libczmq", "czmq", "libczmq.so.4.2.1"),
+    ),
+    CatalogItem("libnorm1t64", "libnorm.so.1", ("libnorm", "norm", "libnorm.so.1")),
+    CatalogItem(
+        "libboost-filesystem1.90.0",
+        "libboost_filesystem.so.1.90.0",
+        ("boost-filesystem", "libboost-filesystem", "libboost_filesystem"),
+    ),
+    CatalogItem(
+        "libnng1",
+        "libnng.so.1.12.3",
+        ("nng", "libnng", "libnng.so.1.12.3"),
+    ),
+)
+
 _OVERRIDES = {
     "libevent-2.1-7t64": "2.1.12-stable",
     "libjpeg62-turbo": "3.1.3",
     "libgmp10": "6.3.0",
     "zlib1g": "1.3.1",
+    # Debian source package versions are not always the linked library's own
+    # release. These overrides are independently proven by documented public
+    # version APIs or version objects in the selected binaries.
+    "libftdi1-2": "1.6rc1",
+    "libmariadb3": "3.4.9",
+    "libserialport0": "0.1.1",
 }
 
 
@@ -556,8 +653,11 @@ def run(output: Path, catalog=CATALOG) -> dict:
         "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "run_provenance": provenance,
         "method": (
-            "Debian package metadata is truth; one explicitly mapped upstream library per "
-            "package; copied and strip --strip-all; static scan only; no target execution. "
+            "Debian package metadata is the default truth, with explicit per-library "
+            "overrides only when a documented API or version object distinguishes the linked "
+            "component release from its source-package release; one explicitly mapped "
+            "upstream library per package; copied and strip --strip-all; static scan only; "
+            "no target execution. "
             "Catalog identity matching is based on explicit filename/component aliases and "
             "is not an independent identity-precision claim."
         ),
@@ -583,7 +683,13 @@ def main() -> int:
     )
     parser.add_argument(
         "--suite",
-        choices=("development", "independent", "independent2", "independent5"),
+        choices=(
+            "development",
+            "independent",
+            "independent2",
+            "independent5",
+            "independent6",
+        ),
         default="development",
     )
     args = parser.parse_args()
@@ -592,6 +698,7 @@ def main() -> int:
         "independent": INDEPENDENT_CATALOG,
         "independent2": INDEPENDENT_2_CATALOG,
         "independent5": INDEPENDENT_5_CATALOG,
+        "independent6": INDEPENDENT_6_CATALOG,
     }
     catalog = catalogs[args.suite]
     report = run(args.output, catalog)

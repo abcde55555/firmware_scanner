@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-11-20
+
+### Added
+- Recognize documented runtime release APIs for libusb, libmodbus,
+  libserialport, libiio, Mosquitto, rabbitmq-c, libpq, mbedTLS/libmbedcrypto,
+  libqrencode, libgphoto2, libzmq, CZMQ and NNG
+- Read output-parameter triplets, returned version structures and pointer
+  tables only when the documented API and supporting identity symbols are both
+  defined in the target ELF
+- Distinguish libgpiod's explicitly named API version from its release and
+  retain it only as interface-version evidence
+- Add a sixth disjoint 20-library Debian black-box catalog
+
+### Changed
+- Separate source-package versions from linked-library releases for libftdi,
+  MariaDB Connector/C and libserialport in the held-out truth model
+- Advance the packaged rule lock to `builtin-2026.11.20.6`
+
 ## [0.20.0] - 2026-11-20
 
 ### Added

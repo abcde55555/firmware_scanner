@@ -108,6 +108,11 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "sodium_version_string": ("libsodium", "direct"),
     "NSS_GetVersion": ("NSS", "direct"),
     "PR_GetVersion": ("NSPR", "direct"),
+    "nng_version": ("NNG", "direct"),
+    "amqp_version": ("librabbitmq", "direct"),
+    "QRcode_APIVersionString": ("libqrencode", "direct"),
+    "sp_get_package_version_string": ("libserialport", "direct"),
+    "mysql_get_client_info": ("libmariadb", "direct"),
 }
 _SUPPORT_SYMBOLS = {
     "NSS_GetVersion": {"NSS_VersionCheck"},
