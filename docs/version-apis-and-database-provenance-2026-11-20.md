@@ -6,8 +6,10 @@ Rule release: `builtin-2026.11.20.4`
 
 ## Result
 
-Version 0.17.0 adds a bounded proof for public `check_version(NULL)` APIs and
-promotes external database metadata into auditable scan-level evidence.
+Version 0.17.0 added a bounded proof for public `check_version(NULL)` APIs and
+promoted external database metadata into auditable scan-level evidence. Version
+0.18.0 extends the same evidence model to object triplets, output parameters and
+architectural version boundaries.
 
 The third independent Debian catalog was not used to invent ABI-only versions.
 The frozen stripped files from the previous run were replayed with the new
@@ -42,7 +44,7 @@ independent-3 catalogs.
 | Unknown | 16 | 10 |
 | Usable coverage | 20% | **50%** |
 
-The five usable additions/upgrades are:
+The eight usable additions/upgrades are:
 
 - GLib `2.88.3` from three exported integer version objects;
 - FriBidi `1.0.16` from its version-info pointer plus Unicode-data version;
