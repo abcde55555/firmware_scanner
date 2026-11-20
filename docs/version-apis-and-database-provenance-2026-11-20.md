@@ -160,6 +160,26 @@ as a new full-BOM exact component.
 The final scan duration was 260.322 seconds under heavy host I/O contention and
 is not used as a performance-regression result.
 
+Modern Android 16 was also rescanned end to end at commit `acd45c3`:
+
+| Metric | Result |
+|---|---:|
+| Components | 1,577 |
+| Fixed cohort usable | 785/1,129, 69.53% |
+| Native usable | 621/774, 80.23% |
+| Exact / estimated | 225 / 560 |
+| BLintDB queried / candidates | 1,789 / 21 |
+| BLintDB identity confirmations | 9 |
+| BLintDB comparable version mismatches | 8 |
+| BLintDB non-comparable | 1 |
+| NSRL queried / matched | 1,789 / 0 |
+| NSRL positive control | passed |
+| CycloneDX 1.6 schema | valid |
+
+No fixed-cohort version changed. The run validates that the new provenance and
+self-check paths do not alter component or version decisions. Runtime was
+604.670 seconds with a 2,019,440 KiB peak RSS.
+
 ## Artifacts
 
 - `reports/heldout-debian-independent3-20261120-null-getters/heldout-report.json`
@@ -170,6 +190,8 @@ is not used as a performance-regression result.
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/evaluation-fixed.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/schema-validation.json`
+- `reports/version-coverage-getters-20261120/database-evidence-modern-acd45c3/evaluation-fixed.json`
+- `reports/version-coverage-getters-20261120/database-evidence-modern-acd45c3/schema-validation.json`
 - `reports/version-coverage-getters-20261120/wheel-0.17.0/wheel-verification.json`
 - `src/firmware_scanner/extraction/semantic_version.py`
 - `src/firmware_scanner/databases/manifest.py`
