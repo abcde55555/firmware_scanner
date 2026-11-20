@@ -384,6 +384,51 @@ class BLintDatabase:
             connection.close()
             self._connection = None
 
+    def self_check(self) -> dict:
+        """Prove the production symbol-to-project join against one stored row."""
+        rows = self._connection.execute(
+            "SELECT s.name AS symbol_name,s.source,b.binary_id,b.name AS binary_name,"
+            "bu.target_arch,p.name AS project_name "
+            "FROM Symbols s JOIN Binaries b ON b.binary_id=s.binary_id "
+            "JOIN Builds bu ON bu.build_id=b.build_id "
+            "JOIN Projects p ON p.project_id=bu.project_id "
+            "WHERE s.name IS NOT NULL AND s.name<>'' "
+            "ORDER BY b.binary_id,s.name LIMIT 256"
+        ).fetchall()
+        row = next(
+            (
+                item
+                for item in rows
+                if not _MECHANICAL_SYMBOL_RE.match(str(item["symbol_name"]))
+            ),
+            None,
+        )
+        if row is None:
+            return {
+                "passed": False,
+                "reason": "database has no symbol-to-project rows",
+                "database_release": self.manifest.release,
+                "database_sha256": self.manifest.database_sha256,
+            }
+        verification = self._connection.execute(
+            "SELECT 1 FROM Symbols s "
+            "WHERE s.binary_id=? AND s.name=? AND s.source=? LIMIT 1",
+            (int(row["binary_id"]), str(row["symbol_name"]), str(row["source"])),
+        ).fetchone()
+        return {
+            "passed": verification is not None,
+            "query_method": "symbol-binary-build-project-join",
+            "query_binary_id": int(row["binary_id"]),
+            "query_symbol": str(row["symbol_name"]),
+            "query_symbol_source": str(row["source"]),
+            "query_binary_name": str(row["binary_name"]),
+            "query_project_name": str(row["project_name"]),
+            "query_target_arch": str(row["target_arch"] or ""),
+            "import_hash_supported": self.import_hash_supported,
+            "database_release": self.manifest.release,
+            "database_sha256": self.manifest.database_sha256,
+        }
+
     @staticmethod
     def _low_information(
         connection: sqlite3.Connection,

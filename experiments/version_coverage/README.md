@@ -274,6 +274,20 @@ wrong and 14 explicit unknowns**. This lower second-suite result is retained to
 prevent the 50% Independent-7 result from being presented as universal coverage.
 See `docs/version-0.31-independent8-generalization-2026-11-20.md`.
 
+Version 0.32.0 adds a standalone database audit:
+
+```sh
+firmware-scanner database-audit \
+  --blint-db reports/existing-databases-20261119/blint.db \
+  --nsrl-db reports/existing-databases-20261119/nsrl/android_minimal.db \
+  --output reports/database-audit.json
+```
+
+The audit verifies manifests, SHA-256 digests, schemas, BLintDB's
+symbol-to-project join and NSRL's exact-file positive control, returning
+machine-readable provenance and a non-zero exit status on failure. See
+`docs/version-0.32-database-audit-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

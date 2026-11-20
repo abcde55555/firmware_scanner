@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -152,8 +153,14 @@ class DatabaseEnricher:
         return enricher
 
     def run_self_checks(self) -> None:
-        """Fail before scanning if the NSRL exact-query path is not operational."""
+        """Fail before scanning if either production query path is not operational."""
         if self.blint is not None:
+            started = time.perf_counter()
+            check = self.blint.self_check()
+            check["duration_seconds"] = round(time.perf_counter() - started, 6)
+            self.stats.self_checks["blint-symbol-project-join"] = check
+            if not check.get("passed"):
+                raise RuntimeError("BLintDB symbol/project self-check failed")
             self.stats.self_checks["blint-import-hash-schema"] = {
                 "passed": True,
                 "supported": self.blint.import_hash_supported,
@@ -165,8 +172,11 @@ class DatabaseEnricher:
             }
         if self.nsrl is None:
             return
-        self.stats.self_checks["nsrl-exact-file"] = self.nsrl.self_check()
-        if not self.stats.self_checks["nsrl-exact-file"].get("passed"):
+        started = time.perf_counter()
+        check = self.nsrl.self_check()
+        check["duration_seconds"] = round(time.perf_counter() - started, 6)
+        self.stats.self_checks["nsrl-exact-file"] = check
+        if not check.get("passed"):
             raise RuntimeError("NSRL exact-file self-check failed")
 
     def enrich(

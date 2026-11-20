@@ -5,10 +5,12 @@ import sqlite3
 import subprocess
 
 import pytest
+from typer.testing import CliRunner
 
 from firmware_scanner.cli.app import (
     _external_database_enricher,
     _validate_external_databases,
+    app,
 )
 from firmware_scanner.core.config import AnalysisConfig
 from firmware_scanner.databases import blintdb as blintdb_module
@@ -20,6 +22,8 @@ from firmware_scanner.databases.nsrl import NSRLDatabase
 from firmware_scanner.extraction.binary_inventory import BinaryInventory
 from firmware_scanner.extraction.models import Component
 from firmware_scanner.extraction.smart_analyzer import SmartSectionAnalyzer
+
+runner = CliRunner()
 
 
 def manifest(kind: str, digest: str = "0" * 64) -> DatabaseManifest:
@@ -445,6 +449,33 @@ def test_blint_import_hash_normalizes_elf_versions_and_decorations():
     assert BLintDatabase._import_hash({"memcpy"}) != (
         BLintDatabase._import_hash({"strlen"})
     )
+
+
+def test_blintdb_positive_control_uses_the_production_symbol_project_join(tmp_path):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+
+    control = database.self_check()
+
+    assert control["passed"] is True
+    assert control["query_method"] == "symbol-binary-build-project-join"
+    assert control["query_binary_id"] == 1
+    assert control["query_project_name"] == "libdemo"
+    assert control["import_hash_supported"] is True
+
+
+def test_enricher_runs_blint_positive_control(tmp_path):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    enricher = DatabaseEnricher(blint=database)
+
+    enricher.run_self_checks()
+
+    check = enricher.stats.self_checks["blint-symbol-project-join"]
+    assert check["passed"] is True
+    assert check["duration_seconds"] >= 0
 
 
 def test_enricher_reports_import_hash_candidate_without_promoting_version(
@@ -958,6 +989,77 @@ def test_external_database_validation_failure_is_not_silently_ignored(monkeypatc
     config = AnalysisConfig(nsrl_db_path="/database/nsrl.db")
     with pytest.raises(RuntimeError, match="database schema mismatch"):
         _validate_external_databases(config)
+
+
+def test_database_audit_command_writes_machine_readable_report(tmp_path, monkeypatch):
+    blint_path = tmp_path / "blint.db"
+    nsrl_path = tmp_path / "nsrl.db"
+    output = tmp_path / "audit.json"
+    blint_path.write_bytes(b"blint")
+    nsrl_path.write_bytes(b"nsrl")
+
+    class AuditedDatabase:
+        def __init__(self):
+            self.closed = False
+            self.stats = DatabaseStats(
+                database_provenance={
+                    "schema_version": 1,
+                    "databases": [{"kind": "blintdb"}, {"kind": "nsrl"}],
+                },
+                self_checks={"blint-symbol-project-join": {"passed": True}},
+            )
+
+        def close(self):
+            self.closed = True
+
+    audited = AuditedDatabase()
+    monkeypatch.setattr(
+        DatabaseEnricher,
+        "from_paths",
+        classmethod(lambda cls, **_kwargs: audited),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "database-audit",
+            "--blint-db",
+            str(blint_path),
+            "--nsrl-db",
+            str(nsrl_path),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0
+    report = json.loads(output.read_text())
+    assert report["status"] == "passed"
+    assert report["scanner_version"]
+    assert len(report["database_provenance"]["databases"]) == 2
+    assert audited.closed is True
+
+
+def test_database_audit_command_serializes_failures(tmp_path, monkeypatch):
+    blint_path = tmp_path / "blint.db"
+    output = tmp_path / "audit.json"
+    blint_path.write_bytes(b"blint")
+
+    monkeypatch.setattr(
+        DatabaseEnricher,
+        "from_paths",
+        classmethod(lambda cls, **_kwargs: (_ for _ in ()).throw(ValueError("bad schema"))),
+    )
+
+    result = runner.invoke(
+        app,
+        ["database-audit", "--blint-db", str(blint_path), "--output", str(output)],
+    )
+
+    assert result.exit_code == 1
+    report = json.loads(output.read_text())
+    assert report["status"] == "failed"
+    assert report["errors"] == ["ValueError: bad schema"]
 
 
 def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
