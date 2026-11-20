@@ -69,20 +69,26 @@ class NSRLDatabase:
             raise ValueError("NSRL lookup limit must be between 1 and 1000")
         where = "f.sha256 IN (?, ?) AND f.file_size=?"
         parameters = (digest, digest.upper(), size)
-        total = int(
-            self._connection.execute(
-                f"SELECT COUNT(*) FROM FILE AS f WHERE {where}",
-                parameters,
-            ).fetchone()[0]
-        )
         rows = self._connection.execute(
             "SELECT f.file_name, f.file_size, f.package_id, "
             "p.name AS package_name, p.version AS package_version "
             "FROM FILE AS f LEFT JOIN PKG AS p ON f.package_id=p.package_id "
             f"WHERE {where} ORDER BY f.file_name, p.name, p.version LIMIT ?",
-            (*parameters, limit),
+            (*parameters, limit + 1),
         )
-        result = [dict(row) for row in rows.fetchmany(limit)]
+        fetched = [dict(row) for row in rows.fetchmany(limit + 1)]
+        truncated = len(fetched) > limit
+        result = fetched[:limit]
+        total = (
+            int(
+                self._connection.execute(
+                    f"SELECT COUNT(*) FROM FILE AS f WHERE {where}",
+                    parameters,
+                ).fetchone()[0]
+            )
+            if truncated
+            else len(result)
+        )
         for row in result:
             row["version_semantics"] = "distribution-package-not-upstream-library"
         return {
