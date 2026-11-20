@@ -1,7 +1,7 @@
 # Version 0.20.0: database evidence, held-out expansion and firmware results
 
-Date: 2026-11-20  
-Scanner: 0.20.0  
+Date: 2026-11-20
+Scanner: 0.20.0
 Rule release: `builtin-2026.11.20.5`
 
 ## Result

@@ -1,7 +1,7 @@
 # AOSP source-path project versioning and 0.19.0 firmware results
 
-Date: 2026-11-20  
-Scanner: 0.19.0  
+Date: 2026-11-20
+Scanner: 0.19.0
 Rule release: `builtin-2026.11.20.5`
 
 ## Result

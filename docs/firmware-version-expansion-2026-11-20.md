@@ -1,7 +1,7 @@
 # 固件版本识别扩展与路线图复核
 
-Date: 2026-11-20  
-Scanner: 0.16.0  
+Date: 2026-11-20
+Scanner: 0.16.0
 Rule release: `builtin-2026.11.20.4`
 
 ## 结论

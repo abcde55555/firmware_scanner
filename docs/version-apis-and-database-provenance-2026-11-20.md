@@ -1,7 +1,7 @@
 # NULL-argument version APIs and database provenance
 
-Date: 2026-11-20  
-Scanner: 0.18.0  
+Date: 2026-11-20
+Scanner: 0.18.0
 Rule release: `builtin-2026.11.20.4`
 
 ## Result
