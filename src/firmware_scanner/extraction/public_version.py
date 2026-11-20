@@ -85,6 +85,7 @@ _PREFILTER = (
     b"gdbm_version",
     b"magic_version",
     b"cmsGetEncodedCMMversion",
+    b"libevent using: %s",
 )
 
 
@@ -102,6 +103,9 @@ def extract_public_versions(data: bytes) -> list[StaticVersionMatch]:
             and symbol["shndx"] not in (0, "SHN_UNDEF", "SHN_ABS")
         }
         matches = []
+        libevent = _libevent_adjacent_version(data)
+        if libevent is not None:
+            matches.append(libevent)
         for rule in _BANNER_RULES:
             if not rule.required_symbols.issubset(defined):
                 continue
@@ -146,6 +150,43 @@ def extract_public_versions(data: bytes) -> list[StaticVersionMatch]:
         OverflowError,
     ):
         return []
+
+
+def _libevent_adjacent_version(data: bytes) -> StaticVersionMatch | None:
+    """Read libevent 1.x's adjacent release only with an upstream identity API."""
+    if b"event_base_new\0" not in data:
+        return None
+    marker = b"libevent using: %s"
+    versions = {}
+    for found in re.finditer(re.escape(marker), data):
+        window_start = found.end()
+        window = data[window_start : window_start + 160]
+        for raw in window.split(b"\0"):
+            value = raw.strip().decode("ascii", errors="ignore")
+            match = re.fullmatch(
+                r"(\d+\.\d+\.\d+-(?:stable|beta|alpha)[A-Za-z0-9.+_-]*)",
+                value,
+            )
+            if match:
+                versions.setdefault(match.group(1), []).append(
+                    window_start + raw.find(match.group(1).encode("ascii"))
+                )
+    if len(versions) != 1:
+        return None
+    version, offsets = next(iter(versions.items()))
+    return StaticVersionMatch(
+        "libevent",
+        version,
+        _evidence(
+            "documented-identity-banner-and-adjacent-release-v1",
+            version=version,
+            identity_banner=marker.decode("ascii"),
+            identity_api="event_base_new",
+            version_file_offsets=offsets,
+            source="https://github.com/libevent/libevent/blob/release-1.4.13-stable/event.c",
+        ),
+        0.93,
+    )
 
 
 def _libidn_version(data, image, symbols) -> StaticVersionMatch | None:

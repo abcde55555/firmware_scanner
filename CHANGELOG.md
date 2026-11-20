@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   x86-64, AArch64 and ARM paths
 - Combine liburing major/minor integer getters without inventing a patch value
 - Follow one local forwarding jump for libgpg-error's public version wrapper
+- Recognize libevent 1.x release strings only when the documented identity
+  banner and its exported base API are observed in the same ELF
 - Persist scan-level database provenance with release, SHA-256, schema, source,
   license, architecture and integrity status
 - Report NSRL total matches and truncation, with an exact-file self-check and

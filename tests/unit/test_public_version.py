@@ -6,7 +6,10 @@ import subprocess
 import pytest
 
 from firmware_scanner.extraction.binary_inventory import BinaryInventory
-from firmware_scanner.extraction.public_version import extract_public_versions
+from firmware_scanner.extraction.public_version import (
+    _libevent_adjacent_version,
+    extract_public_versions,
+)
 
 
 def _compile(
@@ -105,6 +108,23 @@ def test_required_apis_without_release_banner_are_not_a_match(tmp_path):
         "void assuan_check_version(void) {}\nvoid assuan_pipe_connect(void) {}\n",
     )
     assert extract_public_versions(data) == []
+
+
+def test_libevent_adjacent_banner_requires_identity_api_and_unique_release():
+    data = (
+        b"libevent using: %s\n\0"
+        b"1.4.13-stable\0"
+        b"event_base_new\0"
+    )
+
+    match = _libevent_adjacent_version(data)
+
+    assert match is not None
+    assert (match.name, match.version) == ("libevent", "1.4.13-stable")
+    assert "event_base_new" in match.evidence
+    assert _libevent_adjacent_version(
+        b"libevent using: %s\n\0" b"1.4.13-stable\0"
+    ) is None
 
 
 def test_conflicting_release_banners_are_not_a_match(tmp_path):
