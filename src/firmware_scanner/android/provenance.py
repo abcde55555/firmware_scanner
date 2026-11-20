@@ -987,6 +987,51 @@ def _android_release_project_versions(
     return rows
 
 
+def _apply_identified_version_abstentions(components: list[Component]) -> list[dict]:
+    """Explain why an identified component has no target version evidence."""
+    rows = []
+    for component in components:
+        if component.resolved_version:
+            continue
+        identities = sorted(_component_identities(component))
+        if not identities:
+            continue
+        resolution_state = next(
+            (
+                str(prop.get("value", ""))
+                for prop in component.properties
+                if prop.get("name") == "firmware:version:resolution-state"
+            ),
+            "",
+        )
+        if resolution_state not in {"", "unknown"}:
+            continue
+        _set_property(component, "firmware:version:resolution-state", "unknown")
+        _append_unique(
+            component.properties,
+            "firmware:version:abstention-reason",
+            "identified-component-has-no-target-release-evidence",
+        )
+        _append_unique(
+            component.properties,
+            "firmware:version:required-evidence",
+            (
+                "embedded-release-object-or-banner, documented-version-getter, "
+                "or image-matched source revision"
+            ),
+        )
+        _append_unique(component.properties, "firmware:version:evidence-tier", "identity-only")
+        rows.append(
+            {
+                "name": component.name,
+                "identities": identities,
+                "locations": _locations(component),
+                "reason": "identified-component-has-no-target-release-evidence",
+            }
+        )
+    return rows
+
+
 def apply_android_provenance(
     components: list[Component],
     *,
@@ -1136,6 +1181,7 @@ def apply_android_provenance(
         android_version=android_version,
         android_build_id=android_build_id,
     )
+    abstention_rows = _apply_identified_version_abstentions(components)
     apply_component_taxonomy(components)
     return {
         "source_revisions_applied": len(source_rows),
@@ -1152,11 +1198,13 @@ def apply_android_provenance(
             row.get("resolution_state") == "estimated-aosp-source-revision"
             for row in release_rows
         ),
+        "identified_version_abstentions": len(abstention_rows),
         "byte_identical_provenance_propagated": len(propagated_rows),
         "source_rows": source_rows,
         "parent_package_rows": parent_rows,
         "platform_build_rows": platform_rows,
         "aosp_release_rows": release_rows,
+        "version_abstention_rows": abstention_rows,
         "propagated_rows": propagated_rows,
         "scope": (
             "AOSP build revisions, platform builds and parent package versions are "

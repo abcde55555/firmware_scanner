@@ -615,6 +615,44 @@ def test_aosp_projects_without_release_versions_use_typed_source_revision(
     } in component.properties
 
 
+def test_identified_component_without_release_evidence_records_structured_abstention():
+    identified = native("opencore-amr", "/lib/librtp_jni.so")
+    identified.properties.append({"name": "firmware:identity", "value": "opencore-amr"})
+    unidentified = native("libunknown.so", "/lib/libunknown.so")
+    resolved = native("known.so", "/lib/known.so")
+    resolved.properties.append({"name": "firmware:identity", "value": "known"})
+    resolved.resolved_version = "1.2.3"
+
+    stats = apply_android_provenance(
+        [identified, unidentified, resolved],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["identified_version_abstentions"] == 1
+    assert stats["version_abstention_rows"] == [
+        {
+            "name": "opencore-amr",
+            "identities": ["opencore-amr"],
+            "locations": ["/lib/librtp_jni.so"],
+            "reason": "identified-component-has-no-target-release-evidence",
+        }
+    ]
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "unknown",
+    } in identified.properties
+    assert {
+        "name": "firmware:version:evidence-tier",
+        "value": "identity-only",
+    } in identified.properties
+    assert not any(
+        prop.get("name") == "firmware:version:abstention-reason"
+        for prop in unidentified.properties
+    )
+    assert resolved.resolved_version == "1.2.3"
+
+
 @pytest.mark.parametrize(
     ("filename", "expected_version", "project_path"),
     [
