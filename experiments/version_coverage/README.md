@@ -288,6 +288,13 @@ symbol-to-project join and NSRL's exact-file positive control, returning
 machine-readable provenance and a non-zero exit status on failure. See
 `docs/version-0.32-database-audit-2026-11-20.md`.
 
+Version 0.33.0 emits structured abstentions for identified components with no
+safe target release evidence. Allwinner OpenCORE-AMR and PVMP3 remain unresolved
+because the binaries expose codec/algorithm versions or wrapper source paths,
+not component releases. The BOM now records the reason, identity-only evidence
+tier and the evidence required to promote the version, without changing headline
+coverage. See `docs/version-0.33-version-abstention-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 
