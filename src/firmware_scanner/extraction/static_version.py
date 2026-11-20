@@ -26,6 +26,8 @@ from capstone.arm import (
     ARM_INS_ADD,
     ARM_INS_BX,
     ARM_INS_LDR,
+    ARM_INS_MOV,
+    ARM_OP_IMM,
     ARM_OP_MEM,
     ARM_OP_REG,
 )
@@ -34,6 +36,8 @@ from capstone.arm64 import (
     ARM64_INS_ADR,
     ARM64_INS_ADRP,
     ARM64_INS_LDR,
+    ARM64_INS_MOV,
+    ARM64_INS_MOVZ,
     ARM64_INS_RET,
     ARM64_OP_IMM,
     ARM64_OP_REG,
@@ -41,8 +45,10 @@ from capstone.arm64 import (
 from capstone.x86 import (
     X86_INS_ENDBR64,
     X86_INS_LEA,
+    X86_INS_MOV,
     X86_INS_NOP,
     X86_INS_RET,
+    X86_OP_IMM,
     X86_OP_MEM,
     X86_OP_REG,
 )
@@ -113,6 +119,17 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "QRcode_APIVersionString": ("libqrencode", "direct"),
     "sp_get_package_version_string": ("libserialport", "direct"),
     "mysql_get_client_info": ("libmariadb", "direct"),
+    "mpfr_get_version": ("MPFR", "direct"),
+    "mpc_get_version": ("MPC", "direct"),
+    "Pa_GetVersionText": ("PortAudio", "portaudio"),
+    "ffado_get_version": ("libffado", "prefixed"),
+}
+_INTEGER_GETTERS: dict[str, tuple[str, tuple[int, int, int], str]] = {
+    "yajl_version": (
+        "YAJL",
+        (10000, 100, 1),
+        "https://github.com/lloyd/yajl/blob/master/src/api/yajl_version.c",
+    ),
 }
 _SUPPORT_SYMBOLS = {
     "NSS_GetVersion": {"NSS_VersionCheck"},
@@ -142,6 +159,9 @@ def _vaddr_to_offset(
 
 def _version_from_text(name: str, style: str, text: str) -> str | None:
     value = text.strip()
+    if style == "portaudio":
+        match = re.match(r"PortAudio\s+V(\d+\.\d+(?:\.\d+)*)(?:-devel)?(?:,|$)", value)
+        return match.group(1) if match else None
     if style in {"vpx", "leading_v"}:
         # VERSION_STRING_NOSP starts with 'v'; the integer API encodes the
         # same release without it. Preserve all development/vendor suffixes.
@@ -167,6 +187,7 @@ def _version_from_text(name: str, style: str, text: str) -> str | None:
             "libsoxr": r"libsoxr-",
             "libarchive": r"libarchive\s+",
             "libsrtp": r"libsrtp2\s+",
+            "libffado": r"libffado\s+",
         }
         prefix = prefixes[name]
         match = re.match(prefix + r"(v?\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)", value, re.IGNORECASE)
@@ -186,7 +207,8 @@ class StaticVersionExtractor:
             or data[:4] != b"\x7fELF"
         ):
             return []
-        if not any(name.encode("ascii") in data for name in _GETTERS):
+        getter_names = {*_GETTERS, *_INTEGER_GETTERS}
+        if not any(name.encode("ascii") in data for name in getter_names):
             return []
         try:
             elf = ELFFile(BytesIO(data))
@@ -226,7 +248,7 @@ class StaticVersionExtractor:
                     if not symbol["st_shndx"] or symbol["st_shndx"] == "SHN_UNDEF":
                         continue
                     defined_functions.add(symbol.name)
-                    if symbol.name not in _GETTERS:
+                    if symbol.name not in _GETTERS and symbol.name not in _INTEGER_GETTERS:
                         continue
                     address = int(symbol["st_value"])
                     size = int(symbol["st_size"])
@@ -238,7 +260,6 @@ class StaticVersionExtractor:
             for getter, (address, size, thumb) in functions.items():
                 if not _SUPPORT_SYMBOLS.get(getter, set()).issubset(defined_functions):
                     continue
-                component, style = _GETTERS[getter]
                 if architecture == "arm":
                     mode = CS_MODE_THUMB if thumb else CS_MODE_ARM
                     function_disassembler = Cs(
@@ -275,6 +296,29 @@ class StaticVersionExtractor:
                     if terminal is None:
                         continue
                     code = window[: terminal.address + terminal.size - code_address]
+                if getter in _INTEGER_GETTERS:
+                    component, weights, source = _INTEGER_GETTERS[getter]
+                    encoded = self._returned_integer(
+                        function_disassembler,
+                        architecture,
+                        code,
+                        code_address,
+                    )
+                    if encoded is None or encoded < weights[0]:
+                        continue
+                    major, remainder = divmod(encoded, weights[0])
+                    minor, patch = divmod(remainder, weights[1])
+                    version = f"{major}.{minor}.{patch}"
+                    evidence = (
+                        f"defined function {getter} at VA 0x{address:x} returns "
+                        f"encoded release integer {encoded}; straight-line "
+                        f"{architecture} return path; source {source}"
+                    )
+                    matches.append(
+                        StaticVersionMatch(component, version, evidence, 0.95)
+                    )
+                    continue
+                component, style = _GETTERS[getter]
                 result_pointer = self._returned_pointer(
                     function_disassembler,
                     architecture,
@@ -331,6 +375,80 @@ class StaticVersionExtractor:
             OverflowError,
         ):
             return []
+
+    @staticmethod
+    def _returned_integer(
+        disassembler: Cs,
+        architecture: str,
+        code: bytes,
+        address: int,
+    ) -> int | None:
+        instructions = list(disassembler.disasm(code, address))
+        if not instructions or sum(insn.size for insn in instructions) != len(code):
+            return None
+        value: int | None = None
+        for index, insn in enumerate(instructions):
+            operands = insn.operands
+            if insn.id in (X86_INS_ENDBR64, X86_INS_NOP):
+                continue
+            if architecture == "x86_64":
+                if (
+                    insn.id == X86_INS_MOV
+                    and value is None
+                    and len(operands) == 2
+                    and operands[0].type == X86_OP_REG
+                    and insn.reg_name(operands[0].reg) == "eax"
+                    and operands[1].type == X86_OP_IMM
+                ):
+                    value = int(operands[1].imm)
+                    continue
+                if (
+                    insn.id == X86_INS_RET
+                    and index == len(instructions) - 1
+                    and value is not None
+                ):
+                    return value
+                return None
+            if architecture == "aarch64":
+                if (
+                    insn.id in (ARM64_INS_MOV, ARM64_INS_MOVZ)
+                    and value is None
+                    and len(operands) == 2
+                    and operands[0].type == ARM64_OP_REG
+                    and insn.reg_name(operands[0].reg) in {"w0", "x0"}
+                    and operands[1].type == ARM64_OP_IMM
+                ):
+                    value = int(operands[1].imm)
+                    continue
+                if (
+                    insn.id == ARM64_INS_RET
+                    and index == len(instructions) - 1
+                    and value is not None
+                ):
+                    return value
+                return None
+            if architecture == "arm":
+                if (
+                    insn.id == ARM_INS_MOV
+                    and value is None
+                    and len(operands) == 2
+                    and operands[0].type == ARM_OP_REG
+                    and insn.reg_name(operands[0].reg) == "r0"
+                    and operands[1].type == ARM_OP_IMM
+                ):
+                    value = int(operands[1].imm)
+                    continue
+                if (
+                    insn.id == ARM_INS_BX
+                    and index == len(instructions) - 1
+                    and value is not None
+                    and len(operands) == 1
+                    and operands[0].type == ARM_OP_REG
+                    and insn.reg_name(operands[0].reg) == "lr"
+                ):
+                    return value
+                return None
+        return None
 
     @staticmethod
     def _read_c_string(

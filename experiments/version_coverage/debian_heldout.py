@@ -298,6 +298,37 @@ INDEPENDENT_6_CATALOG = (
     ),
 )
 
+INDEPENDENT_7_CATALOG = (
+    CatalogItem("libglib2.0-0t64", "libglib-2.0.so.0", ("glib", "libglib")),
+    CatalogItem("libxxhash0", "libxxhash.so.0", ("xxhash", "libxxhash")),
+    CatalogItem("libunwind8", "libunwind.so.8", ("unwind", "libunwind")),
+    CatalogItem("libnuma1", "libnuma.so.1", ("numa", "libnuma")),
+    CatalogItem("libjansson4", "libjansson.so.4", ("jansson", "libjansson")),
+    CatalogItem("libyajl2", "libyajl.so.2", ("yajl", "libyajl")),
+    CatalogItem("libinih1", "libinih.so.1", ("inih", "libinih")),
+    CatalogItem("libevdev2", "libevdev.so.2", ("evdev", "libevdev")),
+    CatalogItem(
+        "libwayland-client0",
+        "libwayland-client.so.0",
+        ("wayland-client", "libwayland-client"),
+    ),
+    CatalogItem(
+        "libwayland-server0",
+        "libwayland-server.so.0",
+        ("wayland-server", "libwayland-server"),
+    ),
+    CatalogItem("libxkbcommon0", "libxkbcommon.so.0", ("xkbcommon", "libxkbcommon")),
+    CatalogItem("libdrm2", "libdrm.so.2", ("drm", "libdrm")),
+    CatalogItem("libportaudio2", "libportaudio.so.2", ("portaudio", "libportaudio")),
+    CatalogItem("liburing2", "liburing.so.2", ("uring", "liburing")),
+    CatalogItem("libaio1t64", "libaio.so.1t64", ("aio", "libaio")),
+    CatalogItem("libmpfr6", "libmpfr.so.6", ("mpfr", "libmpfr")),
+    CatalogItem("libmpc3", "libmpc.so.3", ("mpc", "libmpc")),
+    CatalogItem("libffado2", "libffado.so.2", ("ffado", "libffado")),
+    CatalogItem("libpam0g", "libpam.so.0", ("pam", "libpam")),
+    CatalogItem("libsepol2", "libsepol.so.2", ("sepol", "libsepol")),
+)
+
 _OVERRIDES = {
     "libevent-2.1-7t64": "2.1.12-stable",
     "libjpeg62-turbo": "3.1.3",
@@ -690,6 +721,7 @@ def main() -> int:
             "independent2",
             "independent5",
             "independent6",
+            "independent7",
         ),
         default="development",
     )
@@ -700,6 +732,7 @@ def main() -> int:
         "independent2": INDEPENDENT_2_CATALOG,
         "independent5": INDEPENDENT_5_CATALOG,
         "independent6": INDEPENDENT_6_CATALOG,
+        "independent7": INDEPENDENT_7_CATALOG,
     }
     catalog = catalogs[args.suite]
     report = run(args.output, catalog)

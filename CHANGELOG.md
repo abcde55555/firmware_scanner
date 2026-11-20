@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-11-20
+
+### Added
+- Extract documented runtime release APIs for MPFR, MPC, PortAudio, FFADO and
+  YAJL using straight-line ELF return-path analysis
+- Add an untouched 20-library Debian held-out suite for future regression and
+  tuning separation
+
+### Fixed
+- Normalize PortAudio's documented `19.7.0-devel` runtime banner to its
+  release base `19.7.0` while retaining the original banner in evidence
+
 ## [0.28.0] - 2026-11-20
 
 ### Added

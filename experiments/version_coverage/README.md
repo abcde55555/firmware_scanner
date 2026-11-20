@@ -253,6 +253,14 @@ usable and from 57/312 to **60/312** native usable fields, with exact/estimated
 rows at 120/77. See
 `docs/version-0.28-android-source-revisions-2026-11-20.md`.
 
+Version 0.29.0 adds documented static getters for MPFR, MPC, PortAudio, FFADO
+and YAJL. It also adds the 20-library Independent-7 catalog. Its untouched blind
+run was 4/20 exact with zero wrong claims; after the five getter additions and
+PortAudio banner normalization, the tuned regression run reached **9/20 exact,
+zero wrong and 11 explicit unknowns**. The supplied firmware results remain
+unchanged because none of these components are currently recognized in them.
+See `docs/version-0.29-runtime-getters-and-heldout7-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

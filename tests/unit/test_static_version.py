@@ -198,6 +198,45 @@ def test_libarchive_and_json_c_release_string_getters():
     }
 
 
+def test_mpfr_mpc_portaudio_and_ffado_release_string_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *mpfr_get_version(void) { return "4.2.2"; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *mpc_get_version(void) { return "1.3.1"; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *Pa_GetVersionText(void) {
+            return "PortAudio V19.7.0-devel, revision unknown";
+        }
+        __attribute__((visibility("default"), noinline, used))
+        const char *ffado_get_version(void) { return "libffado 2.5.0"; }
+        __attribute__((visibility("default"), noinline, used))
+        int yajl_version(void) { return 20100; }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(match.name, match.version) for match in matches} == {
+        ("MPFR", "4.2.2"),
+        ("MPC", "1.3.1"),
+        ("PortAudio", "19.7.0"),
+        ("libffado", "2.5.0"),
+        ("YAJL", "2.1.0"),
+    }
+
+
 def test_nss_and_nspr_version_string_getters():
     compiler = shutil.which("cc") or shutil.which("gcc")
     if compiler is None:
