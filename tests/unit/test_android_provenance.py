@@ -524,6 +524,7 @@ def test_perfetto_heapprofd_requires_matching_source_path_and_uses_release_pin()
         ("SpeexDSP", "SpeexDSP", "1.2beta3", "external/speex"),
         ("libstlport.so", "STLport", "5.0", "external/stlport"),
         ("libjhead.so", "Jhead", "2.87", "external/jhead"),
+        ("libmdnssd.so", "mDNSResponder", "320.10.80", "external/mdnsresponder"),
     ],
 )
 def test_aosp_release_project_estimates_require_exact_build_and_identity(
@@ -558,6 +559,59 @@ def test_aosp_release_project_estimates_require_exact_build_and_identity(
     assert {
         "name": "firmware:taxonomy",
         "value": "third-party-oss",
+    } in component.properties
+
+
+@pytest.mark.parametrize(
+    ("filename", "identity", "revision", "project_path"),
+    [
+        (
+            "libtinyalsa.so",
+            "TinyALSA",
+            "252af255884d55166115e09c74280aeeeeeb5553",
+            "external/tinyalsa",
+        ),
+        (
+            "libsonivox.so",
+            "Sonivox",
+            "ac263c249db97d9a1c19a1d5d5ca51e937411090",
+            "external/sonivox",
+        ),
+    ],
+)
+def test_aosp_projects_without_release_versions_use_typed_source_revision(
+    filename: str,
+    identity: str,
+    revision: str,
+    project_path: str,
+):
+    component = native(filename, f"/lib/{filename}")
+    component.properties.append({"name": "firmware:identity", "value": identity})
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 0
+    assert stats["aosp_source_revisions_applied"] == 1
+    assert component.resolved_version == f"git:{revision}"
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-aosp-source-revision",
+    } in component.properties
+    assert {
+        "name": "firmware:version:kind",
+        "value": "estimated-android-source-revision",
+    } in component.properties
+    assert {
+        "name": "firmware:source:revision",
+        "value": revision,
+    } in component.properties
+    assert {
+        "name": "firmware:source:project",
+        "value": project_path,
     } in component.properties
 
 

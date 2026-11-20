@@ -38,6 +38,45 @@
           "version_authority": "AC_INIT package version"
         },
         {
+          "project_path": "external/mdnsresponder",
+          "identities": [
+            "mDNSResponder"
+          ],
+          "filename_patterns": [
+            "libmdnssd"
+          ],
+          "component_name": "mDNSResponder",
+          "version": "320.10.80",
+          "source_url": "https://android.googlesource.com/platform/external/mdnsresponder/+/refs/tags/android-4.4.4_r2/Makefile",
+          "version_authority": "MVERS mDNSResponder release"
+        },
+        {
+          "project_path": "external/tinyalsa",
+          "identities": [
+            "TinyALSA"
+          ],
+          "filename_patterns": [
+            "libtinyalsa"
+          ],
+          "component_name": "TinyALSA",
+          "source_revision": "252af255884d55166115e09c74280aeeeeeb5553",
+          "source_url": "https://android.googlesource.com/platform/external/tinyalsa/+/refs/tags/android-4.4.4_r2",
+          "version_authority": "AOSP android-4.4.4_r2 tree object; no upstream semantic release is declared"
+        },
+        {
+          "project_path": "external/sonivox",
+          "identities": [
+            "Sonivox"
+          ],
+          "filename_patterns": [
+            "libsonivox"
+          ],
+          "component_name": "Sonivox",
+          "source_revision": "ac263c249db97d9a1c19a1d5d5ca51e937411090",
+          "source_url": "https://android.googlesource.com/platform/external/sonivox/+/refs/tags/android-4.4.4_r2",
+          "version_authority": "AOSP android-4.4.4_r2 tree object; no upstream semantic release is declared"
+        },
+        {
           "project_path": "external/speex",
           "identities": [
             "SpeexDSP"

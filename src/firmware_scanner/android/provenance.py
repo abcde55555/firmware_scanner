@@ -854,6 +854,7 @@ def _android_release_project_versions(
                             "source_url": rule.get("source_url", ""),
                             "source_path": project_evidence["source_path"],
                             "container": component.name,
+                            "resolution_state": "estimated-aosp-release",
                         }
                     )
                 continue
@@ -877,39 +878,65 @@ def _android_release_project_versions(
                     for filename in filenames
                 ):
                     continue
-            version = str(rule.get("version", ""))
-            if not version:
+            declared_version = str(rule.get("version", "")).strip()
+            source_revision = str(rule.get("source_revision", "")).strip()
+            if not declared_version and not re.fullmatch(r"[0-9a-f]{40}", source_revision):
                 continue
+            source_revision_only = not declared_version
+            version = f"git:{source_revision}" if source_revision_only else declared_version
+            resolution_state = (
+                "estimated-aosp-source-revision"
+                if source_revision_only
+                else "estimated-aosp-release"
+            )
+            version_kind = (
+                "estimated-android-source-revision"
+                if source_revision_only
+                else "estimated-android-source-release"
+            )
+            version_scope = (
+                "aosp-source-revision-derived-not-release"
+                if source_revision_only
+                else "aosp-release-derived-not-binary-self-version"
+            )
             component.resolved_version = version
             component.purl = f"pkg:generic/{quote(rule['component_name'], safe='._-')}@{quote(version, safe='._-+')}"
             component.versions = [item for item in component.versions if item.version]
             component.versions.append(
                 VersionConfidence(
                     version=version,
-                    confidence=0.78,
+                    confidence=0.72 if source_revision_only else 0.78,
                     method=ExtractionMethod.VERSION_ESTIMATE,
                     evidence=(
                         f"The binary has the confirmed {rule['component_name']} identity for "
                         f"Android {android_version} build {android_build_id}; the pinned AOSP "
-                        f"tag {rule['aosp_tag']} declares {version}. This estimate is not a "
-                        "binary-embedded version and may not reflect vendor patches."
+                        + (
+                            f"tag {rule['aosp_tag']} tree object is {source_revision}. "
+                            "The project declares no upstream semantic release. This is a "
+                            "source-revision estimate and may not reflect vendor patches."
+                            if source_revision_only
+                            else (
+                                f"tag {rule['aosp_tag']} declares {version}. This estimate is "
+                                "not a binary-embedded version and may not reflect vendor patches."
+                            )
+                        )
                     ),
                 )
             )
             _append_unique(
                 component.properties,
                 "firmware:version:kind",
-                "estimated-android-source-release",
+                version_kind,
             )
             _set_property(
                 component,
                 "firmware:version:resolution-state",
-                "estimated-aosp-release",
+                resolution_state,
             )
             _set_property(
                 component,
                 "firmware:version:scope",
-                "aosp-release-derived-not-binary-self-version",
+                version_scope,
             )
             _append_unique(
                 component.properties,
@@ -921,6 +948,12 @@ def _android_release_project_versions(
                 "firmware:source:aosp-tag",
                 str(rule["aosp_tag"]),
             )
+            if source_revision_only:
+                _append_unique(
+                    component.properties,
+                    "firmware:source:revision",
+                    source_revision,
+                )
             _append_unique(
                 component.properties,
                 "firmware:source:version-authority",
@@ -946,6 +979,7 @@ def _android_release_project_versions(
                     "project_path": rule["project_path"],
                     "aosp_tag": rule["aosp_tag"],
                     "source_url": rule.get("source_url", ""),
+                    "resolution_state": resolution_state,
                 }
             )
             break
@@ -1110,7 +1144,14 @@ def apply_android_provenance(
         ),
         "parent_package_versions_applied": len(parent_rows),
         "platform_build_versions_applied": len(platform_rows),
-        "aosp_release_versions_applied": len(release_rows),
+        "aosp_release_versions_applied": sum(
+            row.get("resolution_state") == "estimated-aosp-release"
+            for row in release_rows
+        ),
+        "aosp_source_revisions_applied": sum(
+            row.get("resolution_state") == "estimated-aosp-source-revision"
+            for row in release_rows
+        ),
         "byte_identical_provenance_propagated": len(propagated_rows),
         "source_rows": source_rows,
         "parent_package_rows": parent_rows,

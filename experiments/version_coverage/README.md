@@ -242,6 +242,17 @@ The same scan adds Perfetto `49.0` for `heapprofd_client.so` and
 Exact/estimated rows are 230/561. See
 `docs/version-0.27-database-scale-and-perfetto-2026-11-20.md`.
 
+Version 0.28.0 adds typed Android 4.4.4 source provenance to Allwinner:
+mDNSResponder `320.10.80` from the official `MVERS` declaration, plus TinyALSA
+and Sonivox as `estimated-aosp-source-revision` Git tree objects because those
+projects do not declare an upstream semantic release in the pinned AOSP tree.
+The database-enabled Allwinner scan queries both retained databases over 430
+unique ELF content records with no errors, confirms 4/5 BLintDB identities and
+finds zero NSRL exact files. The frozen cohort rises from 194/582 to **197/582**
+usable and from 57/312 to **60/312** native usable fields, with exact/estimated
+rows at 120/77. See
+`docs/version-0.28-android-source-revisions-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

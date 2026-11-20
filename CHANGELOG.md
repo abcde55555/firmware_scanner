@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0] - 2026-11-20
+
+### Added
+- Resolve Android 4.4.4 `mDNSResponder` `320.10.80` from the pinned AOSP
+  release project
+- Represent TinyALSA and Sonivox AOSP baseline pins as
+  `estimated-aosp-source-revision` when the project declares no upstream
+  semantic release
+
+### Changed
+- Advance the packaged rule lock to `builtin-2026.11.20.13`
+
 ## [0.27.0] - 2026-11-20
 
 ### Changed
