@@ -78,7 +78,7 @@ Allwinner 固件仍使用同一镜像 SHA-256 和固定基线。新增 0.16.0 �
 | estimated | 71 | 75 | +4 |
 | independent verified | 5 correct / 0 error | 5 correct / 0 error | 不变 |
 
-0.16.0 全量扫描耗时 65.649 秒，峰值 RSS 872,592 KiB；输入分区 SHA-256
+0.16.0 在提交 `2831fe4` 上的全量扫描耗时 63.048 秒，峰值 RSS 872,592 KiB；输入分区 SHA-256
 保持 `87c2d561464ec8144f2c580ce5f781262f0506f57a506d534e652e96099f0cf2`。
 
 四个新增条目均为 explicit estimate：
@@ -119,13 +119,13 @@ Allwinner 固件仍使用同一镜像 SHA-256 和固定基线。新增 0.16.0 �
 
 ## 复现证据
 
-- `reports/version-coverage-getters-20261120/provenance-expansion-allwinner-v016/system_analysis.json`
-- `reports/version-coverage-getters-20261120/provenance-expansion-allwinner-v016/evaluation-fixed.json`
+- `reports/version-coverage-getters-20261120/provenance-expansion-allwinner-2831fe4/system_analysis.json`
+- `reports/version-coverage-getters-20261120/provenance-expansion-allwinner-2831fe4/evaluation-fixed.json`
 - `src/firmware_scanner/data/provenance/android-release-project-estimates.json`
 - `src/firmware_scanner/data/rules.lock.json`
 - `tests/unit/test_static_version.py`
 - `tests/unit/test_android_provenance.py`
 - `reports/heldout-debian-independent3-20261120-blind/heldout-report.json`
 - `reports/heldout-debian-independent3-20261120-tuned/heldout-report.json`
-- `reports/version-coverage-getters-20261120/provenance-expansion-allwinner-v016/schema-validation.json`
+- `reports/version-coverage-getters-20261120/provenance-expansion-allwinner-2831fe4/schema-validation.json`
 - `reports/version-coverage-getters-20261120/wheel-0.16.0/wheel-verification.json`
