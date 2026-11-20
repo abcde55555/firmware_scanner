@@ -86,6 +86,7 @@ _PREFILTER = (
     b"magic_version",
     b"cmsGetEncodedCMMversion",
     b"libevent using: %s",
+    b"$LuaVersion:",
 )
 
 
@@ -133,6 +134,7 @@ def extract_public_versions(data: bytes) -> list[StaticVersionMatch]:
             _gdbm_version,
             _magic_version,
             _lcms2_version,
+            _lua_version,
         ):
             hit = extractor(data, image, symbols)
             if hit is not None:
@@ -330,6 +332,68 @@ def _lcms2_version(data, image, symbols) -> StaticVersionMatch | None:
             source="https://github.com/mm2/Little-CMS/blob/master/src/cmsio0.c",
         ),
         0.97,
+    )
+
+
+def _lua_version(data, image, symbols) -> StaticVersionMatch | None:
+    if not {"lua_version", "luaL_checkversion_"}.issubset(symbols):
+        return None
+    function = _function_bytes(image, data, "lua_version")
+    if function is None or image.header["e_machine"] != "EM_X86_64":
+        return None
+    code, file_offset = function
+    address = int(symbols["lua_version"]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    instructions = list(disassembler.disasm(code, address))
+    instructions = [
+        instruction
+        for instruction in instructions
+        if instruction.mnemonic not in ("endbr64", "nop")
+    ]
+    if len(instructions) != 2:
+        return None
+    load, ret = instructions
+    if (
+        load.mnemonic != "movsd"
+        or len(load.operands) != 2
+        or load.operands[0].type != X86_OP_REG
+        or load.reg_name(load.operands[0].reg) != "xmm0"
+        or load.operands[1].type != X86_OP_MEM
+        or load.reg_name(load.operands[1].mem.base) != "rip"
+        or load.operands[1].mem.index
+        or ret.mnemonic != "ret"
+    ):
+        return None
+    constant_address = load.address + load.size + int(load.operands[1].mem.disp)
+    constant_offset = _object_offset(image, constant_address, 8)
+    if constant_offset is None:
+        return None
+    numeric_version = struct.unpack_from("<d", data, constant_offset)[0]
+    banner_versions = {
+        match.group(1)
+        for match in re.finditer(rb"\$LuaVersion:\s+Lua\s+(\d+\.\d+\.\d+)", data)
+    }
+    if len(banner_versions) != 1:
+        return None
+    version = banner_versions.pop().decode("ascii")
+    major, minor, _patch = map(int, version.split("."))
+    if numeric_version != float(major * 100 + minor):
+        return None
+    return StaticVersionMatch(
+        "Lua",
+        version,
+        _evidence(
+            "api-number-and-official-banner-agree",
+            version=version,
+            function="lua_version",
+            numeric_value=numeric_version,
+            function_file_offset=file_offset,
+            constant_file_offset=constant_offset,
+            supporting_api="luaL_checkversion_",
+            source="https://www.lua.org/source/5.4/lua.h.html",
+        ),
+        0.96,
     )
 
 

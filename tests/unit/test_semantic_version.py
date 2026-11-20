@@ -192,6 +192,26 @@ def test_liburing_major_and_minor_getters_form_the_release(tmp_path, cc):
     ]
 
 
+def test_atk_version_triplet_getters_form_the_release(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "atk_getters",
+        """
+        int atk_get_major_version(void) { return 2; }
+        int atk_get_minor_version(void) { return 59; }
+        int atk_get_micro_version(void) { return 1; }
+        """,
+        flags=("-O2",),
+    )
+
+    assert [(match.name, match.version) for match in SemanticVersionExtractor().extract(data)] == [
+        ("ATK", "2.59.1")
+    ]
+
+
 def test_forwarded_null_argument_version_getter_is_bounded_to_one_jump(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

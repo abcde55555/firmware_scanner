@@ -234,6 +234,36 @@ def test_imports_unrelated_symbols_pointers_and_nonterminated_arrays_are_refused
     assert extract_object_versions(_elf(tmp_path, source)) == []
 
 
+def test_glib_exported_integer_version_triplet(tmp_path):
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        "const unsigned int glib_major_version = 2;\n"
+        "const unsigned int glib_minor_version = 88;\n"
+        "const unsigned int glib_micro_version = 3;\n",
+    )
+
+    assert [(hit.name, hit.version) for hit in extract_object_versions(data)] == [
+        ("GLib", "2.88.3")
+    ]
+
+
+def test_fribidi_version_info_pointer_and_unicode_object_agree(tmp_path):
+    from firmware_scanner.extraction.object_version import extract_object_versions
+
+    data = _elf(
+        tmp_path,
+        'const char *fribidi_version_info = "(GNU FriBidi) 1.0.16\\n'
+        'interface version 4,\\nUnicode Character Database version 16.0.0\\n";\n'
+        'const char *fribidi_unicode_version = "16.0.0";\n',
+    )
+
+    assert [(hit.name, hit.version) for hit in extract_object_versions(data)] == [
+        ("FriBidi", "1.0.16")
+    ]
+
+
 def test_cryptoauth_version_does_not_version_its_containing_vendor_library(tmp_path):
     from firmware_scanner.extraction.binary_inventory import BinaryInventory
 

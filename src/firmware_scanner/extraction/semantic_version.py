@@ -57,6 +57,14 @@ MAJOR_MINOR_GETTERS = {
         'https://github.com/axboe/liburing/blob/master/src/include/liburing.h',
     ),
 }
+VERSION_TRIPLET_GETTERS = {
+    'ATK': (
+        'atk_get_major_version',
+        'atk_get_minor_version',
+        'atk_get_micro_version',
+        'https://gitlab.gnome.org/GNOME/at-spi2-core/-/blob/master/atk/atkversion.c',
+    ),
+}
 STRING_GETTERS = {
     'hb_version_string': ('HarfBuzz', ''),
     'LZ4_versionString': ('LZ4', ''),
@@ -126,6 +134,8 @@ class SemanticVersionExtractor:
             name.encode() in data for name in [VERIFY, *INTEGER_GETTERS, *STRING_GETTERS,
                                                 *(symbol for pair in MAJOR_MINOR_GETTERS.values()
                                                   for symbol in pair[:2]),
+                                                *(symbol for triplet in VERSION_TRIPLET_GETTERS.values()
+                                                  for symbol in triplet[:3]),
                                                 *NULL_ARGUMENT_VERSION_GETTERS,
                                                 *X86_32_STRING_GETTERS]
         ):
@@ -174,6 +184,40 @@ class SemanticVersionExtractor:
                         minor_symbol: hex(image.functions[minor_symbol][0]),
                     },
                     'values': {major_symbol: major, minor_symbol: minor},
+                    'version': version,
+                    'source': source,
+                }
+                result.append(
+                    StaticVersionMatch(component, version, json.dumps(evidence, sort_keys=True), .94)
+                )
+            for component, (
+                major_symbol,
+                minor_symbol,
+                micro_symbol,
+                source,
+            ) in VERSION_TRIPLET_GETTERS.items():
+                parts = [
+                    self._immediate_integer(image, symbol)
+                    for symbol in (major_symbol, minor_symbol, micro_symbol)
+                ]
+                if (
+                    any(part is None for part in parts)
+                    or not 0 < int(parts[0]) <= 99
+                    or any(not 0 <= int(part) <= 99 for part in parts[1:])
+                ):
+                    continue
+                version = '.'.join(str(part) for part in parts)
+                evidence = {
+                    'prototype': 'version-triplet-getters-v1',
+                    'functions': {
+                        symbol: hex(image.functions[symbol][0])
+                        for symbol in (major_symbol, minor_symbol, micro_symbol)
+                    },
+                    'values': {
+                        major_symbol: int(parts[0]),
+                        minor_symbol: int(parts[1]),
+                        micro_symbol: int(parts[2]),
+                    },
                     'version': version,
                     'source': source,
                 }

@@ -1,7 +1,7 @@
 # NULL-argument version APIs and database provenance
 
 Date: 2026-11-20  
-Scanner: 0.17.0  
+Scanner: 0.18.0  
 Rule release: `builtin-2026.11.20.4`
 
 ## Result
@@ -26,6 +26,33 @@ The five additions are c-ares `1.34.6`, libgpg-error `1.59`, libidn2
 `2.3.8`, libtasn1 `4.21.0` and liburing `2.14`. GnuTLS `3.8.13` was already
 recovered by existing banner evidence, and the new path provides a second
 independent proof.
+
+## Fourth black-box catalog
+
+A fourth 20-library Debian catalog was selected before evaluating the current
+scanner. It is disjoint from the development, independent, independent-2 and
+independent-3 catalogs.
+
+| Metric | 0.17.0 blind | 0.18.0 after documented API expansion |
+|---|---:|---:|
+| Catalog identity matched | 18/20 | 20/20 |
+| Exact versions | 2 | **7** |
+| Estimated | 2 | 0 |
+| Wrong exact / estimate | 0 / 0 | 0 / 0 |
+| Unknown | 16 | 13 |
+| Usable coverage | 20% | **35%** |
+
+The five usable additions/upgrades are:
+
+- GLib `2.88.3` from three exported integer version objects;
+- FriBidi `1.0.16` from its version-info pointer plus Unicode-data version;
+- ATK `2.59.1` from major/minor/micro getters;
+- libsrtp `2.7.0` from its defined prefixed string getter;
+- Lua `5.4.8` from agreement between `lua_version()` and the official banner.
+
+The tuned 35% is not a held-out accuracy result because this catalog's failures
+informed the new rules. The untouched blind result remains 20%, which is the
+more honest estimate of generalization for 0.17.0.
 
 ## NULL-argument proof
 
@@ -186,6 +213,8 @@ self-check paths do not alter component or version decisions. Runtime was
 - `reports/heldout-debian-independent3-20261120-ares-getter/heldout-report.json`
 - `reports/heldout-debian-independent3-20261120-uring-getter/heldout-report.json`
 - `reports/heldout-debian-independent3-20261120-forwarded-getter/heldout-report.json`
+- `reports/heldout-debian-independent4-20261120-blind/heldout-report.json`
+- `reports/heldout-debian-independent4-20261120-tuned2/heldout-report.json`
 - `reports/version-coverage-getters-20261120/database-positive-controls-20261120.json`
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/evaluation-fixed.json`

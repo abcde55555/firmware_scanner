@@ -219,3 +219,28 @@ def test_additional_documented_string_version_getters():
         ("liborc", "0.4.42"),
         ("libsodium", "1.0.18"),
     }
+
+
+def test_libsrtp_prefixed_release_getter():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *srtp_get_version_string(void) {
+            return "libsrtp2 2.7.0";
+        }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "srtp.c"
+        elf_path = Path(temp_dir) / "libsrtp2.so.1"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert [(m.name, m.version) for m in matches] == [("libsrtp", "2.7.0")]

@@ -100,6 +100,8 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "fuse_pkgversion": ("libfuse", "direct"),
     "archive_version_string": ("libarchive", "prefixed"),
     "json_c_version": ("json-c", "direct"),
+    "srtp_get_version_string": ("libsrtp", "prefixed"),
+    "atk_get_version": ("ATK", "direct"),
     "jansson_version_str": ("Jansson", "direct"),
     "MMDB_lib_version": ("libmaxminddb", "direct"),
     "orc_version_string": ("liborc", "direct"),
@@ -153,6 +155,7 @@ def _version_from_text(name: str, style: str, text: str) -> str | None:
             "libsamplerate": r"libsamplerate-",
             "libsoxr": r"libsoxr-",
             "libarchive": r"libarchive\s+",
+            "libsrtp": r"libsrtp2\s+",
         }
         prefix = prefixes[name]
         match = re.match(prefix + r"(v?\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)", value, re.IGNORECASE)

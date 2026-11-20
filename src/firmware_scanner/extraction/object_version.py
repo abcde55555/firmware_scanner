@@ -17,6 +17,7 @@ from io import BytesIO
 from elftools.common.exceptions import ELFError
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.elffile import ELFFile
+from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
 from .static_version import StaticVersionMatch
@@ -31,6 +32,8 @@ _SQLITE_SOURCE = "https://www.sqlite.org/c3ref/libversion.html"
 _GMP_SOURCE = "https://gmplib.org/repo/gmp/file/tip/version.c"
 _UNISTRING_SOURCE = "https://git.savannah.gnu.org/git/libunistring.git"
 _GDK_PIXBUF_SOURCE = "https://gitlab.gnome.org/GNOME/gdk-pixbuf"
+_GLIB_SOURCE = "https://gitlab.gnome.org/GNOME/glib"
+_FRIBIDI_SOURCE = "https://github.com/fribidi/fribidi"
 _FLAC_SOURCE = "https://github.com/xiph/flac/blob/1.2.1/src/libFLAC/format.c"
 _OPENSSL_MD5_SOURCE = "https://github.com/openssl/openssl/blob/OpenSSL_0_9_8k/crypto/md5/md5_dgst.c"
 
@@ -44,6 +47,8 @@ def extract_object_versions(data: bytes) -> list[StaticVersionMatch]:
         + _gmp_versions(data)
         + _unistring_versions(data)
         + _gdk_pixbuf_versions(data)
+        + _glib_versions(data)
+        + _fribidi_versions(data)
         + _flac_versions(data)
         + _openssl_md5_versions(data)
     )
@@ -203,6 +208,178 @@ def _gdk_pixbuf_versions(data: bytes) -> list[StaticVersionMatch]:
             sort_keys=True,
         )
         return [StaticVersionMatch("GdkPixbuf", version, evidence, 0.96)]
+    except (
+        ELFError,
+        ValueError,
+        TypeError,
+        KeyError,
+        IndexError,
+        OSError,
+        struct.error,
+        OverflowError,
+    ):
+        return []
+
+
+def _glib_versions(data: bytes) -> list[StaticVersionMatch]:
+    names = (
+        "glib_major_version",
+        "glib_minor_version",
+        "glib_micro_version",
+    )
+    if not all(name.encode("ascii") + b"\0" in data for name in names):
+        return []
+    try:
+        image = ELFFile(BytesIO(data))
+        objects: dict[str, set[int]] = {name: set() for name in names}
+        for section in image.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
+            for symbol in section.iter_symbols():
+                if (
+                    symbol.name in objects
+                    and symbol["st_info"]["type"] == "STT_OBJECT"
+                    and symbol["st_info"]["bind"] in ("STB_GLOBAL", "STB_WEAK")
+                    and symbol["st_shndx"] not in (0, "SHN_UNDEF", "SHN_ABS")
+                    and int(symbol["st_size"]) == 4
+                ):
+                    objects[symbol.name].add(int(symbol["st_value"]))
+        if any(len(addresses) != 1 for addresses in objects.values()):
+            return []
+        values = []
+        symbols = {}
+        for name in names:
+            address = next(iter(objects[name]))
+            offset = _object_offset(data, image, address, 4)
+            if offset is None:
+                return []
+            value = int.from_bytes(
+                data[offset : offset + 4],
+                "little" if image.little_endian else "big",
+            )
+            if not 0 <= value <= 99:
+                return []
+            values.append(value)
+            symbols[name] = {"vaddr": hex(address), "file_offset": offset, "value": value}
+        if values[0] <= 0:
+            return []
+        version = ".".join(map(str, values))
+        evidence = json.dumps(
+            {
+                "probe": "defined-exported-integer-triplet-v1",
+                "symbols": symbols,
+                "value": version,
+                "source": _GLIB_SOURCE,
+            },
+            sort_keys=True,
+        )
+        return [StaticVersionMatch("GLib", version, evidence, 0.96)]
+    except (
+        ELFError,
+        ValueError,
+        TypeError,
+        KeyError,
+        IndexError,
+        OSError,
+        struct.error,
+        OverflowError,
+    ):
+        return []
+
+
+def _fribidi_versions(data: bytes) -> list[StaticVersionMatch]:
+    names = {"fribidi_version_info", "fribidi_unicode_version"}
+    if not all(name.encode("ascii") + b"\0" in data for name in names):
+        return []
+    try:
+        image = ELFFile(BytesIO(data))
+        if not image.little_endian or image.elfclass not in (32, 64):
+            return []
+        pointer_size = image.elfclass // 8
+        objects: dict[str, set[int]] = {name: set() for name in names}
+        for section in image.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
+            for symbol in section.iter_symbols():
+                if (
+                    symbol.name in objects
+                    and symbol["st_info"]["type"] == "STT_OBJECT"
+                    and symbol["st_info"]["bind"] in ("STB_GLOBAL", "STB_WEAK")
+                    and symbol["st_shndx"] not in (0, "SHN_UNDEF", "SHN_ABS")
+                    and int(symbol["st_size"]) == pointer_size
+                ):
+                    objects[symbol.name].add(int(symbol["st_value"]))
+        if any(len(addresses) != 1 for addresses in objects.values()):
+            return []
+        relative_relocations = {}
+        for section in image.iter_sections():
+            if not isinstance(section, RelocationSection):
+                continue
+            for relocation in section.iter_relocations():
+                if relocation.is_RELA():
+                    relative_relocations[int(relocation["r_offset"])] = int(
+                        relocation["r_addend"]
+                    )
+
+        def pointer_string(symbol: str) -> tuple[str, int, int] | None:
+            object_address = next(iter(objects[symbol]))
+            object_offset = _object_offset(
+                data,
+                image,
+                object_address,
+                pointer_size,
+            )
+            if object_offset is None:
+                return None
+            string_address = int.from_bytes(
+                data[object_offset : object_offset + pointer_size],
+                "little",
+            )
+            if not string_address:
+                string_address = relative_relocations.get(object_address, 0)
+            if not string_address:
+                return None
+            string_offset = _object_offset(data, image, string_address, 1)
+            if string_offset is None:
+                return None
+            end = data.find(b"\0", string_offset, min(len(data), string_offset + 1025))
+            if end < 0:
+                return None
+            try:
+                return (
+                    data[string_offset:end].decode("ascii"),
+                    object_offset,
+                    string_offset,
+                )
+            except UnicodeDecodeError:
+                return None
+
+        version_info = pointer_string("fribidi_version_info")
+        unicode_info = pointer_string("fribidi_unicode_version")
+        if version_info is None or unicode_info is None:
+            return []
+        text, object_offset, string_offset = version_info
+        unicode_version, unicode_object_offset, unicode_string_offset = unicode_info
+        match = re.search(r"(?:GNU FriBidi\) )(\d+\.\d+\.\d+)", text)
+        if match is None or re.fullmatch(r"\d+\.\d+\.\d+", unicode_version) is None:
+            return []
+        version = match.group(1)
+        evidence = json.dumps(
+            {
+                "probe": "defined-version-info-pointer-v1",
+                "symbol": "fribidi_version_info",
+                "object_file_offset": object_offset,
+                "string_file_offset": string_offset,
+                "value": version,
+                "unicode_symbol": "fribidi_unicode_version",
+                "unicode_object_file_offset": unicode_object_offset,
+                "unicode_string_file_offset": unicode_string_offset,
+                "unicode_version": unicode_version,
+                "source": _FRIBIDI_SOURCE,
+            },
+            sort_keys=True,
+        )
+        return [StaticVersionMatch("FriBidi", version, evidence, 0.96)]
     except (
         ELFError,
         ValueError,

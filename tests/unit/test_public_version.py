@@ -127,6 +127,28 @@ def test_libevent_adjacent_banner_requires_identity_api_and_unique_release():
     ) is None
 
 
+def test_lua_numeric_api_and_official_banner_must_agree(tmp_path):
+    data = _compile(
+        tmp_path,
+        'const char lua_banner[] = "$LuaVersion: Lua 5.4.8  Copyright";\n'
+        "double lua_version(void *state) { (void)state; return 504.0; }\n"
+        "void luaL_checkversion_(void) {}\n",
+    )
+
+    assert [(hit.name, hit.version) for hit in extract_public_versions(data)] == [
+        ("Lua", "5.4.8")
+    ]
+
+    incompatible = _compile(
+        tmp_path,
+        'const char lua_banner[] = "$LuaVersion: Lua 5.4.8  Copyright";\n'
+        "double lua_version(void *state) { (void)state; return 503.0; }\n"
+        "void luaL_checkversion_(void) {}\n",
+        "lua-incompatible.so",
+    )
+    assert extract_public_versions(incompatible) == []
+
+
 def test_conflicting_release_banners_are_not_a_match(tmp_path):
     data = _compile(
         tmp_path,
