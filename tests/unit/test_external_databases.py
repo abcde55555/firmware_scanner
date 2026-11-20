@@ -298,6 +298,55 @@ def test_blintdb_filename_match_requires_informative_symbols(tmp_path, monkeypat
     assert database.candidates(b"ELF", "libdemo.so") == []
 
 
+def test_blintdb_low_information_filter_runs_only_on_matched_candidate_symbols(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    matched_names = {f"demo_identity_{index}" for index in range(35)}
+    target_names = matched_names | {
+        f"unmatched_identity_{index}" for index in range(500)
+    }
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({"dynamic_symbols": target_names}, set()),
+    )
+    filtered: set[str] = set()
+
+    def capture_low_information(_connection, sources):
+        assert set(sources) == {"dynamic_symbols"}
+        filtered.update(sources["dynamic_symbols"])
+        return set()
+
+    monkeypatch.setattr(database, "_low_information", capture_low_information)
+
+    assert database.candidates(b"ELF", "libdemo.so")
+    assert filtered == matched_names
+
+
+def test_blintdb_skips_low_information_filter_when_no_symbol_matches(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({"dynamic_symbols": {"not_in_reference_db"}}, set()),
+    )
+
+    def unexpected_low_information(_connection, _sources):
+        raise AssertionError("no candidate symbols should trigger an ambiguity query")
+
+    monkeypatch.setattr(database, "_low_information", unexpected_low_information)
+    assert database.candidates(b"ELF", "host.so") == []
+
+
 def test_blintdb_unique_import_hash_adds_identity_candidate_evidence(
     tmp_path,
     monkeypatch,

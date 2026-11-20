@@ -227,6 +227,21 @@ BoringSSL release or OpenSSL version. The 111/111 fixed third-party result is
 selected-taxonomy field coverage, not whole-image recall or accuracy. See
 `docs/version-0.26-boringssl-source-revision-2026-11-20.md`.
 
+Version 0.27.0 defers BLintDB's cross-project low-information filter until after
+target symbols match reference binaries. A complete Modern scan with BLintDB and
+NSRL queried 1,789 unique ELF content records, verified both database manifests,
+completed NSRL and import-hash self-checks, and reported no database errors in
+507.2 seconds. BLintDB produced 21 candidate files and confirmed 9/9 reviewed
+component identities, but only 0/8 comparable reference versions agreed. NSRL
+produced zero exact-file matches. Reference versions still never overwrite
+target versions.
+
+The same scan adds Perfetto `49.0` for `heapprofd_client.so` and
+`heapprofd_client_api.so`, moving Modern's frozen cohort from 789/1,129 to
+**791/1,129** usable and from 625/774 to **627/774** native usable fields.
+Exact/estimated rows are 230/561. See
+`docs/version-0.27-database-scale-and-perfetto-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

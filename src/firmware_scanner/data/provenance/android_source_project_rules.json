@@ -135,6 +135,14 @@
       "evidence": "Perfetto Android native library naming"
     },
     {
+      "name": "Perfetto heap profiling clients",
+      "pattern": "^heapprofd_client(?:_api)?\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/perfetto",
+      "confidence": 0.94,
+      "require_source_path": true,
+      "evidence": "The heapprofd client filename and embedded external/perfetto source path agree"
+    },
+    {
       "name": "libyuv SONAME",
       "pattern": "^libyuv\\.so(?:\\.[0-9]+)*$",
       "project_path": "external/libyuv",

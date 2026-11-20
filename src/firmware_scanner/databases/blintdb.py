@@ -230,8 +230,8 @@ class BLintDatabase:
         all_names = sorted({name for names in sources.values() for name in names})
         target_name = normalize_binary_name(filename)
         connection = self._connection
-        low_information = self._low_information(connection, sources)
         matched: dict[int, dict] = {}
+        matched_symbol_pairs: set[tuple[str, str]] = set()
         for source, names in sources.items():
             for start in range(0, len(names), 350):
                 batch = sorted(names)[start : start + 350]
@@ -260,9 +260,12 @@ class BLintDatabase:
                         },
                     )
                     item["symbols"].add(str(row["name"]))
-                    if (source, str(row["name"])) not in low_information:
-                        item["identity"].add(str(row["name"]))
-                        item["match_methods"].add("symbols")
+                    item.setdefault("symbol_sources", defaultdict(set))[source].add(
+                        str(row["name"])
+                    )
+                    matched_symbol_pairs.add((source, str(row["name"])))
+                    item["identity"].add(str(row["name"]))
+                    item["match_methods"].add("symbols")
         import_hash, imported_symbol_count = self._import_hash(imports)
         if self.import_hash_supported and import_hash and imported_symbol_count >= 5:
             self._merge_import_hash_candidates(
@@ -272,6 +275,21 @@ class BLintDatabase:
                 imported_symbol_count=imported_symbol_count,
                 target_machine=self._elf_machine(data),
             )
+        if matched_symbol_pairs:
+            matched_sources: dict[str, set[str]] = defaultdict(set)
+            for source, name in matched_symbol_pairs:
+                matched_sources[source].add(name)
+            low_information = self._low_information(connection, matched_sources)
+            for item in matched.values():
+                low_names = {
+                    name
+                    for source, names in item.get("symbol_sources", {}).items()
+                    for name in names
+                    if (source, name) in low_information
+                }
+                item["identity"].difference_update(low_names)
+                if not item["identity"]:
+                    item["match_methods"].discard("symbols")
         qualified = []
         total_symbols = max(1, len(all_names))
         for binary_id, item in matched.items():

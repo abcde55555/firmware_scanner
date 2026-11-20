@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-11-20
+
+### Changed
+- Defer BLintDB's cross-project low-information symbol filter until after a
+  target symbol has matched a reference binary, avoiding a large ambiguity
+  query for unrelated Android libraries while preserving candidate semantics
+
+### Added
+- Resolve Perfetto `heapprofd_client.so` and `heapprofd_client_api.so` to
+  source-pinned release `49.0` only when matching embedded
+  `external/perfetto` source-path evidence is present
+
 ## [0.26.0] - 2026-11-20
 
 ### Added

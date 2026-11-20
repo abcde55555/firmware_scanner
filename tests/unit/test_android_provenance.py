@@ -452,6 +452,71 @@ def test_boringssl_revision_requires_an_embedded_source_path():
     assert incomplete_path.resolved_version == ""
 
 
+def test_perfetto_heapprofd_requires_matching_source_path_and_uses_release_pin():
+    revision = "94a71474cc396db2b0fcff6755b8f2d3f7e304d0"
+    component = native("heapprofd_client_api.so", "/system/lib64/heapprofd_client_api.so")
+    component.properties.extend(
+        [
+            {"name": "firmware:source:path-project", "value": "external/perfetto"},
+            {
+                "name": "firmware:source:path-evidence",
+                "value": json.dumps(
+                    {
+                        "project": "external/perfetto",
+                        "source_path": (
+                            "external/perfetto/src/profiling/memory/"
+                            "malloc_interceptor_bionic_hooks.c"
+                        ),
+                        "file_offset": 5670,
+                    }
+                ),
+            },
+        ]
+    )
+    rules = [
+        {
+            "pattern": r"^heapprofd_client(?:_api)?\.so(?:\.[0-9]+)*$",
+            "project_path": "external/perfetto",
+            "confidence": 0.94,
+            "require_source_path": True,
+            "evidence": "test Perfetto heap profiling client source identity",
+        }
+    ]
+    manifest = {
+        "projects": [
+            {
+                "path": "external/perfetto",
+                "name": "platform/external/perfetto",
+                "revision": revision,
+            }
+        ]
+    }
+
+    stats = apply_android_provenance(
+        [component],
+        source_manifest=manifest,
+        source_project_rules=rules,
+    )
+
+    assert component.resolved_version == "49.0"
+    assert stats["source_versions_applied"] == 1
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "exact",
+    } in component.properties
+
+    without_path = native(
+        "heapprofd_client_api.so",
+        "/system/lib64/heapprofd_client_api.so",
+    )
+    apply_android_provenance(
+        [without_path],
+        source_manifest=manifest,
+        source_project_rules=rules,
+    )
+    assert without_path.resolved_version == ""
+
+
 @pytest.mark.parametrize(
     ("filename", "identity", "expected_version", "project_path"),
     [
