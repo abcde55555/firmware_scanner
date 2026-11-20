@@ -50,6 +50,13 @@ INTEGER_GETTERS = {
     'JxlDecoderVersion': ('libjxl', 'decimal1000'),
     'archive_version_number': ('libarchive', 'decimal1000'),
 }
+MAJOR_MINOR_GETTERS = {
+    'liburing': (
+        'io_uring_major_version',
+        'io_uring_minor_version',
+        'https://github.com/axboe/liburing/blob/master/src/include/liburing.h',
+    ),
+}
 STRING_GETTERS = {
     'hb_version_string': ('HarfBuzz', ''),
     'LZ4_versionString': ('LZ4', ''),
@@ -113,6 +120,8 @@ class SemanticVersionExtractor:
     def extract(self, data: bytes) -> list[StaticVersionMatch]:
         if not data.startswith(b'\x7fELF') or not any(
             name.encode() in data for name in [VERIFY, *INTEGER_GETTERS, *STRING_GETTERS,
+                                                *(symbol for pair in MAJOR_MINOR_GETTERS.values()
+                                                  for symbol in pair[:2]),
                                                 *NULL_ARGUMENT_VERSION_GETTERS,
                                                 *X86_32_STRING_GETTERS]
         ):
@@ -144,6 +153,29 @@ class SemanticVersionExtractor:
                         'instructions': image.format_instructions(instructions),
                     }
                     result.append(StaticVersionMatch(component, version, json.dumps(evidence), .94))
+            for component, (
+                major_symbol,
+                minor_symbol,
+                source,
+            ) in MAJOR_MINOR_GETTERS.items():
+                major = self._immediate_integer(image, major_symbol)
+                minor = self._immediate_integer(image, minor_symbol)
+                if major is None or minor is None or not (0 < major <= 99 and 0 <= minor <= 99):
+                    continue
+                version = f'{major}.{minor}'
+                evidence = {
+                    'prototype': 'major-minor-getter-v1',
+                    'functions': {
+                        major_symbol: hex(image.functions[major_symbol][0]),
+                        minor_symbol: hex(image.functions[minor_symbol][0]),
+                    },
+                    'values': {major_symbol: major, minor_symbol: minor},
+                    'version': version,
+                    'source': source,
+                }
+                result.append(
+                    StaticVersionMatch(component, version, json.dumps(evidence, sort_keys=True), .94)
+                )
             for name, (component, source) in NULL_ARGUMENT_VERSION_GETTERS.items():
                 hit = self._null_argument_version(image, name, component, source)
                 if hit is not None:
@@ -193,6 +225,24 @@ class SemanticVersionExtractor:
             return result
         except (ValueError, TypeError, KeyError, IndexError, OSError, ELFError, CsError, struct.error):
             return []
+
+    @staticmethod
+    def _immediate_integer(image: ELFView, name: str) -> int | None:
+        function = image.functions.get(name)
+        if function is None or not 0 < function[1] <= 128:
+            return None
+        instructions = image.instructions(*function)
+        if image.machine == 'EM_ARM':
+            return SemanticVersionExtractor._arm_return(
+                image,
+                instructions,
+                bool(function[0] & 1),
+            )
+        if image.machine == 'EM_AARCH64':
+            return SemanticVersionExtractor._aarch64_constant(instructions)
+        if image.machine == 'EM_386':
+            return SemanticVersionExtractor._x86_32_return(image, instructions)
+        return SemanticVersionExtractor._constant_return(instructions)
 
     @staticmethod
     def _null_argument_version(

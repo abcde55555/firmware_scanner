@@ -16,15 +16,15 @@ extractor:
 | Metric | 0.16.0 | 0.17.0 |
 |---|---:|---:|
 | Identity matched | 20/20 | 20/20 |
-| Exact versions | 7 | **10** |
+| Exact versions | 7 | **11** |
 | Estimated | 0 | 0 |
 | Wrong exact / estimated | 0 / 0 | 0 / 0 |
-| Unknown | 13 | 10 |
-| Usable coverage | 35% | **50%** |
+| Unknown | 13 | 9 |
+| Usable coverage | 35% | **55%** |
 
-The three additions are c-ares `1.34.6`, libidn2 `2.3.8` and libtasn1
-`4.21.0`. GnuTLS `3.8.13` was already recovered by existing banner evidence,
-and the new path provides a second independent proof.
+The four additions are c-ares `1.34.6`, libidn2 `2.3.8`, libtasn1 `4.21.0`
+and liburing `2.14`. GnuTLS `3.8.13` was already recovered by existing banner
+evidence, and the new path provides a second independent proof.
 
 ## NULL-argument proof
 
@@ -48,6 +48,7 @@ Current probes:
 - libtasn1 `asn1_check_version`
 - c-ares `ares_version`, whose optional integer output does not change the
   returned release string
+- liburing `io_uring_major_version` plus `io_uring_minor_version`
 
 ## Database provenance
 
@@ -155,6 +156,7 @@ used as a performance-regression result.
 
 - `reports/heldout-debian-independent3-20261120-null-getters/heldout-report.json`
 - `reports/heldout-debian-independent3-20261120-ares-getter/heldout-report.json`
+- `reports/heldout-debian-independent3-20261120-uring-getter/heldout-report.json`
 - `reports/version-coverage-getters-20261120/database-positive-controls-20261120.json`
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-a2a7e63/evaluation-fixed.json`

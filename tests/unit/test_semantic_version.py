@@ -173,6 +173,25 @@ def test_optional_integer_output_getter_preserves_cares_release(tmp_path, cc):
     ]
 
 
+def test_liburing_major_and_minor_getters_form_the_release(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "liburing_getters",
+        """
+        int io_uring_major_version(void) { return 2; }
+        int io_uring_minor_version(void) { return 14; }
+        """,
+        flags=("-O2",),
+    )
+
+    assert [(match.name, match.version) for match in SemanticVersionExtractor().extract(data)] == [
+        ("liburing", "2.14")
+    ]
+
+
 def test_import_only_undefined_getter_is_not_treated_as_a_definition(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 
