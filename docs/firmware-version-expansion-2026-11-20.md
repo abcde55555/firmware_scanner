@@ -65,6 +65,22 @@ ABI 整数不会被当作补丁版本。
 libsodium `1.0.18`。由于该目录的盲跑结果参与了后续规则开发，补强后的
 35% 不再属于完整 held-out；它证明缺口类型和规则价值，不证明跨发行版准确率。
 
+## Modern Android 16 实扫
+
+0.16.0 完整扫描结果与 0.15.0 完全一致：
+
+| 切片 | 结果 |
+|---|---:|
+| 全部组件 usable | 785/1,129, 69.53% |
+| 原生库 usable | 621/774, 80.23% |
+| exact | 225 |
+| estimated | 560 |
+| 独立核验 | 0 |
+
+新增 getter 和 Android 4.4.4 source-tag 规则没有为 Modern 固定队列增加
+usable 条目。完整扫描耗时 581.464 秒，峰值 RSS 2,429,176 KiB。该结果没有
+新增独立真值，因此仍不能把 69.53% 解释为准确率。
+
 ## Allwinner 固件实测
 
 Allwinner 固件仍使用同一镜像 SHA-256 和固定基线。新增 0.16.0 结果与
@@ -128,4 +144,6 @@ Allwinner 固件仍使用同一镜像 SHA-256 和固定基线。新增 0.16.0 �
 - `reports/heldout-debian-independent3-20261120-blind/heldout-report.json`
 - `reports/heldout-debian-independent3-20261120-tuned/heldout-report.json`
 - `reports/version-coverage-getters-20261120/provenance-expansion-allwinner-2831fe4/schema-validation.json`
+- `reports/version-coverage-getters-20261120/provenance-expansion-modern-2831fe4/evaluation-fixed.json`
+- `reports/version-coverage-getters-20261120/provenance-expansion-modern-2831fe4/schema-validation.json`
 - `reports/version-coverage-getters-20261120/wheel-0.16.0/wheel-verification.json`
