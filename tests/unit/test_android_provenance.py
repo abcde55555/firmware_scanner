@@ -268,6 +268,51 @@ def test_platform_build_requires_exclusively_aosp_first_party_source_evidence(
     )
 
 
+def test_aosp_platform_component_rule_uses_system_partition_build_baseline():
+    component = native("liblog.so", "/lib/liblog.so")
+
+    stats = apply_android_provenance(
+        [component],
+        source_project_rules=[
+            {
+                "pattern": "^liblog\\.so$",
+                "project_path": "system/logging",
+                "confidence": 0.9,
+                "evidence": "AOSP standard logging library SONAME",
+            }
+        ],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+    )
+
+    assert component.resolved_version == "4.4.4-KTU84Q-20180511"
+    assert stats["platform_build_versions_applied"] == 1
+    assert stats["platform_rule_build_versions_applied"] == 1
+    assert {
+        "name": "firmware:version:evidence-tier",
+        "value": "platform-build-with-aosp-component-rule",
+    } in component.properties
+
+
+def test_aosp_platform_component_rule_rejects_vendor_location():
+    component = native("liblog.so", "/vendor/lib/liblog.so")
+
+    stats = apply_android_provenance(
+        [component],
+        source_project_rules=[
+            {
+                "pattern": "^liblog\\.so$",
+                "project_path": "system/logging",
+                "confidence": 0.9,
+                "evidence": "AOSP standard logging library SONAME",
+            }
+        ],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+    )
+
+    assert component.resolved_version == ""
+    assert stats["platform_rule_build_versions_applied"] == 0
+
+
 def test_embedded_component_does_not_receive_container_platform_build_version():
     location = "/lib/librtp_jni.so"
     host = native("librtp_jni.so", location)
@@ -348,6 +393,161 @@ def test_image_matched_source_revision_precedes_platform_build_fallback():
     assert component.resolved_version == f"git:{revision}"
     assert stats["source_revisions_applied"] == 1
     assert stats["platform_build_versions_applied"] == 0
+
+
+def _add_source_prefix(component, project_path: str, source_path: str, offset: int) -> None:
+    component.properties.append(
+        {
+            "name": "firmware:source:path-prefix-evidence",
+            "value": json.dumps(
+                {
+                    "project_path": project_path,
+                    "source_path": source_path,
+                    "file_offset": offset,
+                }
+            ),
+        }
+    )
+
+
+def test_aosp_build_id_source_fallback_resolves_unique_external_project():
+    component = native("libskia.so", "/lib/libskia.so")
+    _add_source_prefix(
+        component,
+        "external/skia",
+        "external/skia/include/gpu/GrConfig.h",
+        1766901,
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        source_project_rules=[
+            {
+                "pattern": "^libskia\\.so$",
+                "project_path": "external/skia",
+                "confidence": 0.9,
+                "require_source_path": True,
+                "evidence": "Skia source path identifies the host library",
+            }
+        ],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert component.resolved_version == (
+        "git:65b06b7302197ce8ad4234d9cbac9f90c2121308"
+    )
+    assert stats["aosp_build_source_revisions_applied"] == 1
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-aosp-source-revision",
+    } in component.properties
+    assert {
+        "name": "firmware:version:kind",
+        "value": "estimated-aosp-source-revision",
+    } in component.properties
+    assert {
+        "name": "firmware:source:aosp-tag",
+        "value": "android-4.4.4_r2",
+    } in component.properties
+    assert {
+        "name": "firmware:source:revision",
+        "value": "65b06b7302197ce8ad4234d9cbac9f90c2121308",
+    } in component.properties
+
+
+def test_aosp_build_id_source_fallback_rejects_unknown_build():
+    component = native("libskia.so", "/lib/libskia.so")
+    _add_source_prefix(
+        component,
+        "external/skia",
+        "external/skia/include/gpu/GrConfig.h",
+        1766901,
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="VENDOR-UNKNOWN",
+    )
+
+    assert component.resolved_version == ""
+    assert stats["aosp_build_source_revisions_applied"] == 0
+
+
+def test_aosp_build_id_source_fallback_uses_rule_for_multiple_embedded_projects():
+    component = native(
+        "libwebrtc_audio_preprocessing.so",
+        "/lib/libwebrtc_audio_preprocessing.so",
+    )
+    _add_source_prefix(
+        component,
+        "external/protobuf",
+        "external/protobuf/src/google/protobuf/stubs/common.c",
+        346699,
+    )
+    _add_source_prefix(
+        component,
+        "external/webrtc",
+        "external/webrtc/src/modules/audio_processing/test/unittest.pb.c",
+        345683,
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        source_project_rules=[
+            {
+                "pattern": "^libwebrtc_audio_preprocessing\\.so$",
+                "project_path": "external/webrtc",
+                "confidence": 0.9,
+                "require_source_path": True,
+                "evidence": "WebRTC source path identifies the host library",
+            }
+        ],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert component.resolved_version == (
+        "git:d4d54e6466f6c3d4ea41db3887eb5b285f2f92c6"
+    )
+    assert stats["aosp_build_source_revisions_applied"] == 1
+
+
+def test_aosp_build_id_source_fallback_abstains_on_ambiguous_projects_without_rule():
+    component = native("libambiguous.so", "/lib/libambiguous.so")
+    _add_source_prefix(component, "external/protobuf", "external/protobuf/a.c", 1)
+    _add_source_prefix(component, "external/webrtc", "external/webrtc/b.c", 2)
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert component.resolved_version == ""
+    assert stats["aosp_build_source_revisions_applied"] == 0
+
+
+def test_platform_build_precedes_aosp_build_id_source_fallback():
+    component = native("libstagefright.so", "/lib/libstagefright.so")
+    _add_source_prefix(
+        component,
+        "frameworks/av",
+        "frameworks/av/media/libstagefright/ACodec.c",
+        784378,
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert component.resolved_version == "4.4.4-KTU84Q-20180511"
+    assert stats["platform_source_build_versions_applied"] == 1
+    assert stats["aosp_build_source_revisions_applied"] == 0
 
 
 @pytest.mark.parametrize(
@@ -1722,18 +1922,22 @@ def test_exact_source_declared_release_can_generate_upstream_cpe():
     assert AndroidSystemScanner._should_synthesize_upstream_cpe(component)
 
 
-def test_estimated_source_revision_does_not_generate_upstream_cpe():
+@pytest.mark.parametrize(
+    "resolution_state",
+    ["estimated-source-revision", "estimated-aosp-source-revision"],
+)
+def test_estimated_source_revision_does_not_generate_upstream_cpe(resolution_state):
     component = native("libcodec2.so", "/system/lib/libcodec2.so")
     component.resolved_version = "git:" + "a" * 40
     component.properties.extend(
         [
             {
                 "name": "firmware:version:resolution-state",
-                "value": "estimated-source-revision",
+                "value": resolution_state,
             },
             {
                 "name": "firmware:version:kind",
-                "value": "estimated-source-revision",
+                "value": resolution_state,
             },
         ]
     )
@@ -1746,6 +1950,7 @@ def test_estimated_source_revision_does_not_generate_upstream_cpe():
         ("external/freetype", "third-party-oss"),
         ("frameworks/av", "platform-first-party"),
         ("hardware/interfaces", "platform-first-party"),
+        ("libnativehelper", "platform-first-party"),
         ("vendor/qcom/opensource/power", "vendor-open-source"),
         ("vendor/qcom/proprietary/display", "vendor-proprietary"),
     ],

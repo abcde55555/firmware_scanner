@@ -80,6 +80,7 @@ def test_builtin_rule_lock_covers_version_management_inputs():
     assert {
         "binary_reference.json",
         "emba_rules.json",
+        "provenance/aosp-build-source-manifests.json",
         "provenance/android_source_project_rules.json",
         "provenance/source-version-pins.json",
         "database_packs/blintdb-v4-arm64.json",

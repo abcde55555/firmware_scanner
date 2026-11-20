@@ -21,6 +21,10 @@ _FRAMEWORK_PATH_RE = re.compile(
     r"(?<![A-Za-z0-9_.-])(?:/system)?/framework(?:/|$)",
     re.IGNORECASE,
 )
+_SYSTEM_LIBRARY_PATH_RE = re.compile(
+    r"^/(?:system/)?(?:lib(?:64)?|lib/(?:egl|hw|soundfx))/",
+    re.IGNORECASE,
+)
 _NATIVE_MARKER = "native library"
 _EXECUTABLE_MARKER = "elf executable"
 
@@ -147,7 +151,7 @@ def classify_source_project(project_path: str) -> str:
         return "vendor-proprietary"
     if path.startswith("external/"):
         return "third-party-oss"
-    if path.startswith(
+    if path == "libnativehelper" or path.startswith(
         (
             "frameworks/",
             "system/",
@@ -625,7 +629,37 @@ def _exclusive_aosp_platform_source_evidence(component: Component) -> list[dict]
     )
 
 
-def _platform_build_version(component: Component, baseline: str) -> dict | None:
+def _aosp_platform_component_rule(
+    component: Component,
+    source_project_rules: list[dict],
+) -> tuple[str, dict] | None:
+    """Return one AOSP platform rule only for system-partition library paths."""
+    locations = _locations(component)
+    if not locations or not all(_SYSTEM_LIBRARY_PATH_RE.search(path) for path in locations):
+        return None
+    matches: dict[str, dict] = {}
+    for rule in source_project_rules:
+        project_path = str(rule.get("project_path", "")).strip("/")
+        if classify_source_project(project_path) != "platform-first-party":
+            continue
+        if rule.get("require_source_path"):
+            continue
+        try:
+            matched = re.search(str(rule.get("pattern", "")), component.name)
+        except re.error:
+            continue
+        if matched:
+            matches.setdefault(project_path, rule)
+    if len(matches) != 1:
+        return None
+    return next(iter(matches.items()))
+
+
+def _platform_build_version(
+    component: Component,
+    baseline: str,
+    source_project_rules: list[dict],
+) -> dict | None:
     locations = _locations(component)
     framework_paths = [*locations, component.description]
     framework_component = (
@@ -634,7 +668,8 @@ def _platform_build_version(component: Component, baseline: str) -> dict | None:
         and any(_FRAMEWORK_PATH_RE.search(path) for path in framework_paths)
     )
     source_evidence = _exclusive_aosp_platform_source_evidence(component)
-    if not framework_component and not source_evidence:
+    component_rule = _aosp_platform_component_rule(component, source_project_rules)
+    if not framework_component and not source_evidence and component_rule is None:
         return None
     component.resolved_version = baseline
     component.purl = (
@@ -642,24 +677,35 @@ def _platform_build_version(component: Component, baseline: str) -> dict | None:
         if component.purl
         else component.purl
     )
+    if framework_component:
+        evidence_text = (
+            f"Android framework component {component.name} shares the "
+            f"enclosing platform build baseline"
+        )
+        baseline_type = "android-framework-build"
+    elif source_evidence:
+        evidence_text = (
+            f"ELF {component.name} contains exclusively AOSP platform "
+            f"source-path evidence ({', '.join(item['source_path'] for item in source_evidence)}); "
+            f"the enclosing Android image declares build baseline {baseline}"
+        )
+        baseline_type = "android-aosp-source-build"
+    else:
+        assert component_rule is not None
+        project_path, rule = component_rule
+        evidence_text = (
+            f"ELF {component.name} matches the AOSP platform component rule for "
+            f"{project_path} ({rule.get('evidence', 'platform component identity')}); "
+            f"the system-partition file shares Android build baseline {baseline}"
+        )
+        baseline_type = "android-aosp-component-rule-build"
     component.versions = [item for item in component.versions if item.version]
     component.versions.append(
         VersionConfidence(
             version=baseline,
-            confidence=0.74,
+            confidence=0.74 if baseline_type != "android-aosp-component-rule-build" else 0.7,
             method=ExtractionMethod.VERSION_ESTIMATE,
-            evidence=(
-                (
-                    f"Android framework component {component.name} shares the "
-                    f"enclosing platform build baseline"
-                )
-                if framework_component
-                else (
-                    f"ELF {component.name} contains exclusively AOSP platform "
-                    f"source-path evidence ({', '.join(item['source_path'] for item in source_evidence)}); "
-                    f"the enclosing Android image declares build baseline {baseline}"
-                )
-            ),
+            evidence=evidence_text,
         )
     )
     _append_unique(
@@ -674,11 +720,12 @@ def _platform_build_version(component: Component, baseline: str) -> dict | None:
         "platform-build-not-upstream-release",
     )
     _append_unique(component.properties, "firmware:taxonomy", "platform-first-party")
-    _append_unique(
-        component.properties,
-        "firmware:taxonomy:evidence",
-        "android-framework-archive",
-    )
+    if framework_component:
+        _append_unique(
+            component.properties,
+            "firmware:taxonomy:evidence",
+            "android-framework-archive",
+        )
     if source_evidence:
         _append_unique(
             component.properties,
@@ -690,14 +737,26 @@ def _platform_build_version(component: Component, baseline: str) -> dict | None:
             "firmware:taxonomy:evidence",
             "aosp-source-path",
         )
+    if component_rule is not None:
+        _append_unique(
+            component.properties,
+            "firmware:version:evidence-tier",
+            "platform-build-with-aosp-component-rule",
+        )
+        _append_unique(
+            component.properties,
+            "firmware:taxonomy:evidence",
+            "aosp-platform-component-rule",
+        )
     _set_property(component, "firmware:version:resolution-state", "estimated-platform-build")
     return {
         "name": component.name,
         "version": baseline,
-        "baseline_type": "android-platform-build",
+        "baseline_type": baseline_type,
         "source_projects": sorted(
             {str(item["project_path"]) for item in source_evidence}
         ),
+        "platform_rule_project": component_rule[0] if component_rule is not None else "",
     }
 
 
@@ -739,6 +798,193 @@ def _embedded_source_prefixes(component: Component) -> dict[str, dict]:
             continue
         evidence.setdefault(item["project_path"], item)
     return evidence
+
+
+@lru_cache(maxsize=1)
+def _aosp_build_source_catalogs() -> tuple[dict, ...]:
+    path = files("firmware_scanner.data").joinpath(
+        "provenance",
+        "aosp-build-source-manifests.json",
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported AOSP build source manifest schema")
+    catalogs = payload.get("catalogs")
+    if not isinstance(catalogs, list):
+        raise TypeError("AOSP build source manifests require catalogs")
+    return tuple(catalogs)
+
+
+def _aosp_build_source_catalog(
+    android_version: str,
+    android_build_id: str,
+) -> dict | None:
+    if not android_version or not android_build_id:
+        return None
+    for catalog in _aosp_build_source_catalogs():
+        if str(catalog.get("android_version", "")) != android_version:
+            continue
+        build_ids = {str(value) for value in catalog.get("build_ids", [])}
+        if android_build_id in build_ids:
+            return catalog
+    return None
+
+
+def _apply_aosp_build_source_revision(
+    component: Component,
+    catalog: dict | None,
+    source_project_rules: list[dict],
+) -> dict | None:
+    """Apply an AOSP build-tag project revision only with unique source evidence."""
+    if catalog is None or any(
+        prop.get("name") == "firmware:relationship"
+        and prop.get("value") == "contains-evidence-for"
+        for prop in component.properties
+    ):
+        return None
+    evidence = [dict(item) for item in _source_path_evidence(component).values()]
+    evidence.extend(
+        dict(item) for item in _embedded_source_prefixes(component).values()
+    )
+    source_paths = {
+        str(item.get("source_path", "")).replace("\\", "/")
+        for item in evidence
+        if item.get("source_path")
+    }
+    if not source_paths:
+        return None
+    projects = {
+        str(project.get("path", "")).strip("/"): project
+        for project in catalog.get("projects", [])
+        if project.get("path") and project.get("revision")
+    }
+    candidates = {
+        project_path
+        for project_path in projects
+        if any(
+            source_path == project_path
+            or source_path.startswith(f"{project_path}/")
+            for source_path in source_paths
+        )
+    }
+    if not candidates:
+        return None
+
+    rule_candidates = []
+    for rule in source_project_rules:
+        project_path = str(rule.get("project_path", "")).strip("/")
+        if project_path not in candidates:
+            continue
+        try:
+            matched = re.search(str(rule.get("pattern", "")), component.name)
+        except re.error:
+            continue
+        if matched:
+            rule_candidates.append((project_path, rule))
+
+    if len(rule_candidates) != 1:
+        return None
+    project_path, rule = rule_candidates[0]
+
+    project = projects[project_path]
+    revision = str(project["revision"]).strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        return None
+    source_path = next(
+        (
+            path
+            for path in sorted(source_paths)
+            if path == project_path or path.startswith(f"{project_path}/")
+        ),
+        project_path,
+    )
+    aosp_tag = str(catalog.get("aosp_tag", "")).strip()
+    manifest_url = str(catalog.get("manifest_url", "")).strip()
+    if not aosp_tag or not manifest_url.startswith("https://"):
+        return None
+    version = f"git:{revision}"
+    component.resolved_version = version
+    component.versions = [item for item in component.versions if item.version]
+    component.versions.append(
+        VersionConfidence(
+            version=version,
+            confidence=min(0.84, max(0.72, float(rule.get("confidence", 0.72)))),
+            method=ExtractionMethod.VERSION_ESTIMATE,
+            evidence=(
+                f"{component.name} embeds {source_path!r} at a path assigned to "
+                f"AOSP project {project_path}; the official {aosp_tag} manifest "
+                f"pins that project at {revision}. This is a source-revision "
+                "estimate and may not include vendor patches."
+            ),
+        )
+    )
+    _append_unique(
+        component.properties,
+        "firmware:version:kind",
+        "estimated-aosp-source-revision",
+    )
+    _set_property(
+        component,
+        "firmware:version:resolution-state",
+        "estimated-aosp-source-revision",
+    )
+    _set_property(
+        component,
+        "firmware:version:scope",
+        "aosp-build-source-revision-not-upstream-release",
+    )
+    _append_unique(
+        component.properties,
+        "firmware:version:evidence-tier",
+        "official-aosp-manifest-project-revision",
+    )
+    _append_unique(
+        component.properties,
+        "firmware:source:project",
+        project_path,
+    )
+    _append_unique(
+        component.properties,
+        "firmware:source:aosp-tag",
+        aosp_tag,
+    )
+    _append_unique(
+        component.properties,
+        "firmware:source:revision",
+        revision,
+    )
+    _append_unique(
+        component.properties,
+        "firmware:source:embedded-path",
+        source_path,
+    )
+    _append_unique(
+        component.properties,
+        "firmware:source:version-authority",
+        "AOSP default manifest project revision",
+    )
+    _append_unique(
+        component.properties,
+        "firmware:source:version-evidence",
+        manifest_url,
+    )
+    taxonomy = classify_source_project(project_path)
+    if taxonomy != "unknown":
+        _append_unique(component.properties, "firmware:taxonomy", taxonomy)
+        _append_unique(
+            component.properties,
+            "firmware:taxonomy:evidence",
+            "aosp-manifest-source-path",
+        )
+    return {
+        "name": component.name,
+        "version": version,
+        "project_path": project_path,
+        "aosp_tag": aosp_tag,
+        "revision": revision,
+        "source_path": source_path,
+        "resolution_state": "estimated-aosp-source-revision",
+    }
 
 
 def _contained_release_component(
@@ -1109,6 +1355,10 @@ def apply_android_provenance(
     notice_attributions = notice_attributions or {}
     source_project_rules = source_project_rules or []
     manifest = _manifest_by_path(source_manifest)
+    build_source_catalog = _aosp_build_source_catalog(
+        android_version,
+        android_build_id,
+    )
     package_versions = {}
     for component in components:
         if not component.resolved_version:
@@ -1148,6 +1398,7 @@ def apply_android_provenance(
     source_rows = []
     parent_rows = []
     platform_rows = []
+    build_source_rows = []
     for component in components:
         description = component.description.lower()
         is_library = _NATIVE_MARKER in description
@@ -1169,12 +1420,25 @@ def apply_android_provenance(
                 source_rows.append(row)
                 continue
         if platform_baseline:
-            row = _platform_build_version(component, platform_baseline)
+            row = _platform_build_version(
+                component,
+                platform_baseline,
+                source_project_rules,
+            )
             if row is not None:
                 platform_rows.append(row)
                 continue
         if not (is_library or is_executable):
             continue
+        if is_library:
+            row = _apply_aosp_build_source_revision(
+                component,
+                build_source_catalog,
+                source_project_rules,
+            )
+            if row is not None:
+                build_source_rows.append(row)
+                continue
         row = _parent_version(component, package_versions)
         if row is not None:
             parent_rows.append(row)
@@ -1254,10 +1518,16 @@ def apply_android_provenance(
         "parent_package_versions_applied": len(parent_rows),
         "platform_build_versions_applied": len(platform_rows),
         "framework_platform_build_versions_applied": sum(
-            not row.get("source_projects") for row in platform_rows
+            row.get("baseline_type") == "android-framework-build"
+            for row in platform_rows
         ),
         "platform_source_build_versions_applied": sum(
-            bool(row.get("source_projects")) for row in platform_rows
+            row.get("baseline_type") == "android-aosp-source-build"
+            for row in platform_rows
+        ),
+        "platform_rule_build_versions_applied": sum(
+            row.get("baseline_type") == "android-aosp-component-rule-build"
+            for row in platform_rows
         ),
         "aosp_release_versions_applied": sum(
             row.get("resolution_state") == "estimated-aosp-release"
@@ -1267,12 +1537,14 @@ def apply_android_provenance(
             row.get("resolution_state") == "estimated-aosp-source-revision"
             for row in release_rows
         ),
+        "aosp_build_source_revisions_applied": len(build_source_rows),
         "identified_version_abstentions": len(abstention_rows),
         "byte_identical_provenance_propagated": len(propagated_rows),
         "source_rows": source_rows,
         "parent_package_rows": parent_rows,
         "platform_build_rows": platform_rows,
         "aosp_release_rows": release_rows,
+        "aosp_build_source_revision_rows": build_source_rows,
         "version_abstention_rows": abstention_rows,
         "propagated_rows": propagated_rows,
         "scope": (

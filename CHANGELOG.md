@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.0] - 2026-11-20
+
+### Added
+- Resolve third-party project revisions from a pinned official AOSP
+  build-ID/tag manifest when an ELF has matching source-path evidence and an
+  explicit component-to-project rule
+- Recognize selected AOSP platform runtime, stagefright and native-helper
+  component rules as system-partition platform build provenance
+
+### Changed
+- Keep AOSP build-ID source fallbacks distinct from image-matched source
+  revisions and upstream releases
+- Advance the packaged rule lock to `builtin-2026.11.20.14`
+
 ## [0.35.0] - 2026-11-20
 
 ### Added

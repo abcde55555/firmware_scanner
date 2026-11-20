@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release": "builtin-2026.11.20.13",
+  "release": "builtin-2026.11.20.14",
   "files": [
     {
       "path": "binary_reference.json",
@@ -39,7 +39,12 @@
     },
     {
       "path": "provenance/android_source_project_rules.json",
-      "sha256": "56793e84f0a57b93360c01517c5f5405bacb0e47cc8856375e049838d1729d0e",
+      "sha256": "a3ba932b000d8f473675cdccee67c8d991195417d82b8d4f11a97bda611aa3ec",
+      "kind": "provenance-pack"
+    },
+    {
+      "path": "provenance/aosp-build-source-manifests.json",
+      "sha256": "4556e70c83ae1cfc68a60c4769c7202e513f7d8ceae4f6ce7c710723bf4c77d0",
       "kind": "provenance-pack"
     },
     {

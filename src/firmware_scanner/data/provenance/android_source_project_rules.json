@@ -330,6 +330,7 @@
       "pattern": "^libFFTEm\\.so(?:\\.[0-9]+)*$",
       "project_path": "external/neven",
       "confidence": 0.9,
+      "require_source_path": true,
       "evidence": "The binary embeds external/neven source files"
     },
     {
@@ -344,6 +345,7 @@
       "pattern": "^libcompiler_rt\\.so(?:\\.[0-9]+)*$",
       "project_path": "external/compiler-rt",
       "confidence": 0.9,
+      "require_source_path": true,
       "evidence": "The binary embeds external/compiler-rt source files"
     },
     {
@@ -450,6 +452,75 @@
       "project_path": "packages/modules/NeuralNetworks",
       "confidence": 0.9,
       "evidence": "The binary embeds NeuralNetworks module source files"
+    },
+    {
+      "name": "Chromium network helper",
+      "pattern": "^libchromium_net\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/chromium",
+      "confidence": 0.9,
+      "require_source_path": true,
+      "evidence": "The binary embeds external/chromium source files"
+    },
+    {
+      "name": "Chromium libpac runtime",
+      "pattern": "^libpac\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/v8",
+      "confidence": 0.9,
+      "require_source_path": true,
+      "evidence": "The binary embeds external/v8 source files"
+    },
+    {
+      "name": "Skia graphics library",
+      "pattern": "^libskia\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/skia",
+      "confidence": 0.9,
+      "require_source_path": true,
+      "evidence": "The binary embeds external/skia source files"
+    },
+    {
+      "name": "WebRTC audio preprocessing",
+      "pattern": "^libwebrtc_audio_preprocessing\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/webrtc",
+      "confidence": 0.9,
+      "require_source_path": true,
+      "evidence": "The binary embeds external/webrtc source files"
+    },
+    {
+      "name": "BlueDroid A2DP HAL",
+      "pattern": "^audio\\.a2dp\\.default\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/bluetooth/bluedroid",
+      "confidence": 0.9,
+      "require_source_path": true,
+      "evidence": "The binary embeds external/bluetooth/bluedroid source files"
+    },
+    {
+      "name": "BlueDroid Bluetooth HAL",
+      "pattern": "^bluetooth\\.default\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/bluetooth/bluedroid",
+      "confidence": 0.9,
+      "require_source_path": true,
+      "evidence": "The binary embeds external/bluetooth/bluedroid source files"
+    },
+    {
+      "name": "Android framework runtime libraries",
+      "pattern": "^lib(?:android_runtime|android_servers)\\.so(?:\\.[0-9]+)*$",
+      "project_path": "frameworks/base",
+      "confidence": 0.88,
+      "evidence": "Android framework runtime SONAMEs are built from frameworks/base"
+    },
+    {
+      "name": "Android native helper",
+      "pattern": "^libnativehelper\\.so(?:\\.[0-9]+)*$",
+      "project_path": "libnativehelper",
+      "confidence": 0.9,
+      "evidence": "The AOSP native helper library is built from libnativehelper"
+    },
+    {
+      "name": "Stagefright common codec libraries",
+      "pattern": "^libstagefright_(?:amrnb|avc|enc)_common\\.so(?:\\.[0-9]+)*$",
+      "project_path": "frameworks/av",
+      "confidence": 0.88,
+      "evidence": "The stagefright common codec SONAMEs are built from frameworks/av"
     }
   ]
 }
