@@ -275,6 +275,20 @@
       "evidence": "The binary embeds external/openssh source files"
     },
     {
+      "name": "OpenSSH embedded component",
+      "pattern": "^OpenSSH$",
+      "project_path": "external/openssh",
+      "confidence": 0.94,
+      "evidence": "The embedded OpenSSH identity and source path agree"
+    },
+    {
+      "name": "libevent embedded component",
+      "pattern": "^libevent$",
+      "project_path": "external/libevent",
+      "confidence": 0.92,
+      "evidence": "The embedded libevent identity and source path agree"
+    },
+    {
       "name": "ICU host-name alias",
       "pattern": "^icu$",
       "project_path": "external/icu",

@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "release": "builtin-2026.11.20.7",
+  "release": "builtin-2026.11.20.8",
   "files": [
     {
       "path": "binary_reference.json",
-      "sha256": "038a90e1899cac8b789541a38c01961512e5e6859858536aeac9ce4bd1bc32ff",
+      "sha256": "c9f902c45a0b4d318873cd8faef80701dac9fd07e4a8898981d4ce60b2c54285",
       "kind": "binary-rule-pack"
     },
     {
@@ -39,7 +39,7 @@
     },
     {
       "path": "provenance/android_source_project_rules.json",
-      "sha256": "4ea0bcff3d91320cef6f4a13ad3568fe47cb376aaadde2b50971af2b05fdc800",
+      "sha256": "9fc6c907d4b1ea98a27f52505ad5e30e6a495f0b91f84caebefb9eea0973237c",
       "kind": "provenance-pack"
     },
     {

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-11-20
+
+### Fixed
+- Stop treating OpenSSH compatibility globs such as `OpenSSH_7.4*` as release
+  banners; only a bounded, non-wildcard OpenSSH version string can resolve the
+  component
+- Let contained components inherit matching host source paths and safely
+  refine an exact base release with its exact source-pinned full version
+
+### Changed
+- Advance the packaged rule lock to `builtin-2026.11.20.8`
+
 ## [0.22.0] - 2026-11-20
 
 ### Added

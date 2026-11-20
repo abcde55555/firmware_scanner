@@ -192,6 +192,15 @@ rate is 0% on both images. NSRL has zero exact-file matches. These databases are
 retained as identity or exact-file evidence and never overwrite target versions.
 See `docs/version-0.22-target-derived-components-2026-11-20.md`.
 
+Version 0.23.0 fixes OpenSSH compatibility globs being mistaken for release
+banners and allows exact source revisions to refine contained components. Modern
+now resolves OpenSSH `9.0p1` and libevent `2.1.12-stable`. The fixed cohort
+improves from 786/1,129 to **787/1,129** (native 622/774 to **623/774**).
+BOM rows decrease from 1,577 to 1,572 because four incorrect parent-package
+libevent variants and one duplicate generic zlib row consolidate into their
+single source-pinned components. See
+`docs/version-0.23-source-path-refinement-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

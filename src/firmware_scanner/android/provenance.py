@@ -353,6 +353,15 @@ def _apply_source_revision(
     candidates = [manifest[label] for label in sorted(labels) if label in manifest]
     rule_evidence = ""
     confidence = 0.68
+    existing_version = component.resolved_version
+    existing_state = next(
+        (
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:version:resolution-state"
+        ),
+        "",
+    )
     source_path_projects = _source_path_projects(component)
     source_path_evidence = _source_path_evidence(component)
     if not candidates and source_path_projects:
@@ -405,8 +414,18 @@ def _apply_source_revision(
         {str(item.get("source_path", "")) for item in source_path_evidence.values()},
     )
     version = pin["version"] if pin else f"git:{revision}"
+    if existing_version:
+        if (
+            existing_state != "exact"
+            or pin is None
+            or not _pinned_version_extends(existing_version, str(pin["version"]))
+        ):
+            return None
+    elif pin is None:
+        version = f"git:{revision}"
     component.resolved_version = version
-    component.versions = [version for version in component.versions if version.version]
+    if not existing_version:
+        component.versions = [version for version in component.versions if version.version]
     component.versions.append(
         VersionConfidence(
             version=version,
@@ -490,6 +509,18 @@ def _apply_source_revision(
         "project_path": project["path"],
         "revision": revision,
     }
+
+
+def _pinned_version_extends(base: str, pinned: str) -> bool:
+    """Allow a source pin to complete a proven base release, never replace it."""
+    if pinned == base or not pinned.startswith(base):
+        return False
+    suffix = pinned[len(base) :]
+    return bool(
+        re.fullmatch(r"\d+(?:\.\d+)+", base)
+        and suffix
+        and suffix[0] in {".", "+", "-", "p"}
+    )
 
 
 def _parent_version(component: Component, package_versions: dict[str, str]) -> dict | None:
@@ -923,27 +954,59 @@ def apply_android_provenance(
             if location.endswith((".apex", ".capex", ".apk")):
                 package_versions[location] = component.resolved_version
 
+    source_path_properties = {
+        "firmware:source:path-prefix-evidence",
+        "firmware:source:path-project",
+        "firmware:source:path-evidence",
+    }
+    source_properties_by_location: dict[str, list[dict]] = defaultdict(list)
+    for component in components:
+        inherited = [
+            prop
+            for prop in component.properties
+            if prop.get("name") in source_path_properties
+        ]
+        if not inherited:
+            continue
+        for location in _locations(component):
+            source_properties_by_location[location].extend(inherited)
+    for component in components:
+        if not any(
+            prop.get("name") == "firmware:relationship"
+            and prop.get("value") == "contains-evidence-for"
+            for prop in component.properties
+        ):
+            continue
+        for location in _locations(component):
+            for prop in source_properties_by_location.get(location, ()):
+                if prop not in component.properties:
+                    component.properties.append(dict(prop))
+
     source_rows = []
     parent_rows = []
     platform_rows = []
     for component in components:
+        description = component.description.lower()
+        is_library = _NATIVE_MARKER in description
+        is_executable = _EXECUTABLE_MARKER in description
+        labels = {
+            label
+            for location in _locations(component)
+            for label in notice_attributions.get(location, ())
+        }
         if component.resolved_version:
+            if is_library:
+                row = _apply_source_revision(component, labels, manifest, source_project_rules)
+                if row is not None:
+                    source_rows.append(row)
             continue
         if platform_baseline:
             row = _platform_build_version(component, platform_baseline)
             if row is not None:
                 platform_rows.append(row)
                 continue
-        description = component.description.lower()
-        is_library = _NATIVE_MARKER in description
-        is_executable = _EXECUTABLE_MARKER in description
         if not (is_library or is_executable):
             continue
-        labels = {
-            label
-            for location in _locations(component)
-            for label in notice_attributions.get(location, ())
-        }
         if is_library:
             row = _apply_source_revision(component, labels, manifest, source_project_rules)
             if row is not None:

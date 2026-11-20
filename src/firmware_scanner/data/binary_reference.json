@@ -155,7 +155,7 @@
       "name": "OpenSSH",
       "source": "https://github.com/openssh/openssh-portable",
       "version_policy": "banner",
-      "banner_regex": "OpenSSH_([0-9]+\\.[0-9]+(?:p[0-9]+)?[A-Za-z0-9.-]*)",
+      "banner_regex": "OpenSSH_([0-9]+\\.[0-9]+(?:p[0-9]+)?[A-Za-z0-9.-]*)(?![A-Za-z0-9.*+_-])",
       "filename_patterns": [
         "ssh"
       ]

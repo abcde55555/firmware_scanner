@@ -4,6 +4,7 @@ import json
 import pytest
 
 from firmware_scanner.android.provenance import (
+    _pinned_version_extends,
     apply_android_provenance,
     apply_component_taxonomy,
     classify_source_project,
@@ -241,6 +242,86 @@ def test_upstream_source_evidence_marks_third_party_oss_without_guessing():
         prop.get("name") == "firmware:taxonomy"
         for prop in emba_component.properties
     )
+
+
+@pytest.mark.parametrize(
+    ("component_name", "project_path", "base_version", "expected"),
+    [
+        ("libevent", "external/libevent", "", "2.1.12-stable"),
+        ("OpenSSH", "external/openssh", "9.0", "9.0p1"),
+    ],
+)
+def test_contained_component_inherits_host_source_path_and_uses_exact_pin(
+    component_name,
+    project_path,
+    base_version,
+    expected,
+):
+    pin = next(
+        item
+        for item in load_source_version_pins()
+        if item["project_path"] == project_path
+    )
+    location = f"/system/bin/{component_name.lower()}"
+    host = native("host-bin", location)
+    host.properties.extend(
+        [
+            {"name": "firmware:source:path-project", "value": project_path},
+            {
+                "name": "firmware:source:path-evidence",
+                "value": (
+                    f'{{"project": "{project_path}", "source_path": '
+                    f'"{project_path}/source.c", "file_offset": 16}}'
+                ),
+            },
+        ]
+    )
+    contained = native(component_name, location)
+    contained.resolved_version = base_version
+    contained.properties.extend(
+        [
+            {"name": "firmware:evidence:container", "value": "host-bin"},
+            {"name": "firmware:relationship", "value": "contains-evidence-for"},
+            {"name": "firmware:identity", "value": component_name},
+        ]
+    )
+    if base_version:
+        contained.properties.append(
+            {"name": "firmware:version:resolution-state", "value": "exact"}
+        )
+
+    stats = apply_android_provenance(
+        [host, contained],
+        source_manifest={
+            "projects": [
+                {
+                    "path": project_path,
+                    "name": f"test/{project_path}",
+                    "revision": pin["revision"],
+                }
+            ]
+        },
+        source_project_rules=[
+            {
+                "pattern": f"^{component_name}$",
+                "project_path": project_path,
+                "confidence": 0.94,
+                "evidence": "test exact source-path identity",
+            }
+        ],
+    )
+
+    assert contained.resolved_version == expected
+    assert stats["source_versions_applied"] == 1
+    assert {
+        "name": "firmware:source:revision",
+        "value": pin["revision"],
+    } in contained.properties
+
+
+def test_source_pin_does_not_replace_an_unrelated_exact_version():
+    assert not _pinned_version_extends("9.0", "10.0p1")
+    assert not _pinned_version_extends("9.0", "9.1p1")
 
 
 @pytest.mark.parametrize(

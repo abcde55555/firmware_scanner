@@ -44,6 +44,24 @@ def test_binary_banners_preserve_full_development_versions():
         assert match.identity_only is (expected_version == "")
 
 
+def test_openssh_compatibility_globs_are_not_versions():
+    payload = (
+        b"OpenSSH_2.*,OpenSSH_3.0*,OpenSSH_3.1*\0"
+        b"OpenSSH_6.5*,OpenSSH_6.6*\0"
+        b"OpenSSH_7.0*,OpenSSH_7.1*,OpenSSH_7.2*,OpenSSH_7.3*,\0"
+        b"OpenSSH_7.4*,OpenSSH_7.5*,OpenSSH_7.6*,OpenSSH_7.7*\0"
+        b"OpenSSH_9.0\0"
+    )
+
+    matches = [
+        match
+        for match in BinaryReferenceMatcher().match(payload, "libssh.so")
+        if match.name == "OpenSSH"
+    ]
+
+    assert [(match.version, match.identity_only) for match in matches] == [("9.0", False)]
+
+
 def test_filename_only_is_not_a_match_and_raw_bytes_need_a_real_signature():
     matcher = BinaryReferenceMatcher()
     assert matcher.match(b"ordinary unrelated payload", "libcurl.so") == []

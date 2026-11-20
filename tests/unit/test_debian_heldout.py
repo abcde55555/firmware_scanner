@@ -80,7 +80,7 @@ def test_heldout_run_provenance_binds_rules_and_source_hashes():
     provenance = _run_provenance()
 
     assert len(provenance["git_head"]) == 40
-    assert provenance["rules_release"] == "builtin-2026.11.20.7"
+    assert provenance["rules_release"] == "builtin-2026.11.20.8"
     assert len(provenance["rules_lock_sha256"]) == 64
     assert {
         "src/firmware_scanner/extraction/static_version.py",
