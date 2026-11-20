@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0] - 2026-11-20
+
+### Added
+- Resolve BoringSSL `libcrypto.so` and `libssl.so` only to the exact
+  `git:<revision>` when the component also contains matching full source-path
+  evidence; names alone, unrelated source projects and incomplete source-path
+  properties cannot match this rule
+
+### Changed
+- Advance the packaged rule lock to `builtin-2026.11.20.11`
+
 ## [0.25.0] - 2026-11-20
 
 ### Fixed

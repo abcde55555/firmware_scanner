@@ -216,6 +216,17 @@ already counted; the BOM no longer contains a paired resolved host and
 unresolved canonical subcomponent. See
 `docs/version-0.25-component-location-releases-2026-11-20.md`.
 
+Version 0.26.0 resolves Android BoringSSL `libcrypto.so` and `libssl.so` to the
+image-pinned `git:ecc1358826150d6a1851c517c325b0e6c0e1b8be` revision only when
+full `external/boringssl` source-path evidence is present. Missing, incomplete
+or unrelated source-path evidence cannot trigger the rule, so ordinary OpenSSL
+components remain ineligible. Modern's fixed cohort moves from 788/1,129 to
+**789/1,129** usable and from 624/774 to **625/774** native usable fields; exact
+and estimated rows are 228/561. The value is an estimated source revision, not a
+BoringSSL release or OpenSSL version. The 111/111 fixed third-party result is
+selected-taxonomy field coverage, not whole-image recall or accuracy. See
+`docs/version-0.26-boringssl-source-revision-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

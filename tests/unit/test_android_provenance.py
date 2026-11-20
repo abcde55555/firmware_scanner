@@ -349,6 +349,109 @@ def test_contained_identity_uses_location_filename_for_aosp_release_rule():
     assert stats["aosp_release_versions_applied"] == 2
 
 
+def test_boringssl_revision_requires_an_embedded_source_path():
+    revision = "ecc1358826150d6a1851c517c325b0e6c0e1b8be"
+    component = native("libcrypto.so", "/system/lib64/libcrypto.so")
+    component.properties.extend(
+        [
+            {"name": "firmware:source:path-project", "value": "external/boringssl"},
+            {
+                "name": "firmware:source:path-evidence",
+                "value": json.dumps(
+                    {
+                        "project": "external/boringssl",
+                        "source_path": "external/boringssl/src/crypto/err/err.c",
+                        "file_offset": 128,
+                    }
+                ),
+            },
+        ]
+    )
+    rules = [
+        {
+            "pattern": r"^lib(?:crypto|ssl)\.so(?:\.[0-9]+)*$",
+            "project_path": "external/boringssl",
+            "confidence": 0.9,
+            "require_source_path": True,
+            "evidence": "test source-path-required BoringSSL identity",
+        }
+    ]
+    manifest = {
+        "projects": [
+            {
+                "path": "external/boringssl",
+                "name": "platform/external/boringssl",
+                "revision": revision,
+            }
+        ]
+    }
+
+    stats = apply_android_provenance(
+        [component],
+        source_manifest=manifest,
+        source_project_rules=rules,
+    )
+
+    assert component.resolved_version == f"git:{revision}"
+    assert stats["source_revisions_applied"] == 1
+    assert stats["source_versions_applied"] == 0
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-source-revision",
+    } in component.properties
+
+    without_path = native("libcrypto.so", "/system/lib64/libcrypto.so")
+    apply_android_provenance(
+        [without_path],
+        source_manifest=manifest,
+        source_project_rules=rules,
+    )
+    assert without_path.resolved_version == ""
+
+    wrong_path = native("libcrypto.so", "/system/lib64/libcrypto.so")
+    wrong_path.properties.extend(
+        [
+            {"name": "firmware:source:path-project", "value": "external/openssl"},
+            {
+                "name": "firmware:source:path-evidence",
+                "value": json.dumps(
+                    {
+                        "project": "external/openssl",
+                        "source_path": "external/openssl/crypto/cryptlib.c",
+                        "file_offset": 256,
+                    }
+                ),
+            },
+        ]
+    )
+    apply_android_provenance(
+        [wrong_path],
+        source_manifest={
+            "projects": [
+                *manifest["projects"],
+                {
+                    "path": "external/openssl",
+                    "name": "platform/external/openssl",
+                    "revision": "f" * 40,
+                },
+            ]
+        },
+        source_project_rules=rules,
+    )
+    assert wrong_path.resolved_version == ""
+
+    incomplete_path = native("libcrypto.so", "/system/lib64/libcrypto.so")
+    incomplete_path.properties.append(
+        {"name": "firmware:source:path-project", "value": "external/boringssl"}
+    )
+    apply_android_provenance(
+        [incomplete_path],
+        source_manifest=manifest,
+        source_project_rules=rules,
+    )
+    assert incomplete_path.resolved_version == ""
+
+
 @pytest.mark.parametrize(
     ("filename", "identity", "expected_version", "project_path"),
     [

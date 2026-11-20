@@ -369,6 +369,8 @@ def _apply_source_revision(
             project_path = str(rule.get("project_path", ""))
             if project_path not in source_path_projects:
                 continue
+            if rule.get("require_source_path") and project_path not in source_path_evidence:
+                continue
             try:
                 matched = re.search(str(rule.get("pattern", "")), component.name)
             except re.error:
@@ -390,13 +392,19 @@ def _apply_source_revision(
             break
     if not candidates:
         for rule in source_project_rules:
+            project_path = str(rule.get("project_path", ""))
+            if rule.get("require_source_path") and (
+                project_path not in source_path_projects
+                or project_path not in source_path_evidence
+            ):
+                continue
             try:
                 matched = re.search(str(rule.get("pattern", "")), component.name)
             except re.error:
                 continue
             if not matched:
                 continue
-            project = manifest.get(str(rule.get("project_path", "")))
+            project = manifest.get(project_path)
             if project is None:
                 continue
             candidates = [project]

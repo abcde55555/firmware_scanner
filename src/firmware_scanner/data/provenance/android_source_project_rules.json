@@ -226,6 +226,14 @@
       "evidence": "BoringSSL identity is emitted by the binary reference rules"
     },
     {
+      "name": "BoringSSL Android shared libraries",
+      "pattern": "^lib(?:crypto|ssl)\\.so(?:\\.[0-9]+)*$",
+      "project_path": "external/boringssl",
+      "confidence": 0.9,
+      "require_source_path": true,
+      "evidence": "The libcrypto/libssl identity and embedded external/boringssl source path agree"
+    },
+    {
       "name": "DNG SDK SONAME",
       "pattern": "^libdng_sdk\\.so(?:\\.[0-9]+)*$",
       "project_path": "external/dng_sdk",
