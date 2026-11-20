@@ -253,6 +253,61 @@ def test_aosp_release_project_estimates_require_exact_build_and_identity(
         "name": "firmware:source:aosp-tag",
         "value": "android-4.4.4_r2",
     } in component.properties
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in component.properties
+
+
+@pytest.mark.parametrize(
+    ("filename", "expected_version", "project_path"),
+    [
+        ("libmtp.so", "1.0.1", "external/libmtp"),
+        ("libvorbisidec.so", "0.07", "external/tremolo"),
+        ("libstagefright_soft_vorbisdec.so", "0.07", "external/tremolo"),
+        ("libwebviewchromium.so", "33.0.1750.166", "external/chromium_org"),
+    ],
+)
+def test_aosp_filename_only_estimates_require_exact_build_and_soname(
+    filename: str,
+    expected_version: str,
+    project_path: str,
+):
+    component = native(filename, f"/lib/{filename}")
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 1
+    assert component.resolved_version == expected_version
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-aosp-release",
+    } in component.properties
+    assert {
+        "name": "firmware:source:project",
+        "value": project_path,
+    } in component.properties
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in component.properties
+
+
+def test_aosp_filename_only_estimate_does_not_match_a_suffix_collision():
+    component = native("vendor-libmtp.so", "/lib/vendor-libmtp.so")
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 0
+    assert component.resolved_version == ""
 
 
 def test_aosp_release_estimate_can_version_an_identified_resampler_host():

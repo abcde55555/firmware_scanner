@@ -76,6 +76,43 @@
           "version": "2.87",
           "source_url": "https://android.googlesource.com/platform/external/jhead/+/refs/tags/android-4.4.4_r2/jhead.c",
           "version_authority": "JHEAD_VERSION build definition"
+        },
+        {
+          "project_path": "external/libmtp",
+          "filename_only": true,
+          "filename_patterns": [
+            "libmtp.so"
+          ],
+          "filename_match": "exact",
+          "component_name": "libmtp",
+          "version": "1.0.1",
+          "source_url": "https://android.googlesource.com/platform/external/libmtp/+/refs/tags/android-4.4.4_r2/configure.ac",
+          "version_authority": "AC_INIT package version"
+        },
+        {
+          "project_path": "external/tremolo",
+          "filename_only": true,
+          "filename_patterns": [
+            "libvorbisidec.so",
+            "libstagefright_soft_vorbisdec.so"
+          ],
+          "filename_match": "exact",
+          "component_name": "Tremolo",
+          "version": "0.07",
+          "source_url": "https://android.googlesource.com/platform/external/tremolo/+/refs/tags/android-4.4.4_r2/README",
+          "version_authority": "README-derived Tremolo library version"
+        },
+        {
+          "project_path": "external/chromium_org",
+          "filename_only": true,
+          "filename_patterns": [
+            "libwebviewchromium.so"
+          ],
+          "filename_match": "exact",
+          "component_name": "Chromium WebView",
+          "version": "33.0.1750.166",
+          "source_url": "https://android.googlesource.com/platform/external/chromium_org/+/refs/tags/android-4.4.4_r2/chrome/VERSION",
+          "version_authority": "MAJOR, MINOR, BUILD and PATCH"
         }
       ]
     }

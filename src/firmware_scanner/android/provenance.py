@@ -660,10 +660,17 @@ def _android_release_project_versions(
                 for name, value in required_properties.items()
             ):
                 continue
-            if not identities.intersection(rule_identities):
+            if (
+                not identities.intersection(rule_identities)
+                and not bool(rule.get("filename_only"))
+            ):
                 continue
-            if filename_patterns and not any(pattern in filename for pattern in filename_patterns):
-                continue
+            if filename_patterns:
+                if rule.get("filename_match") == "exact":
+                    if filename not in filename_patterns:
+                        continue
+                elif not any(pattern in filename for pattern in filename_patterns):
+                    continue
             version = str(rule.get("version", ""))
             if not version:
                 continue
@@ -718,6 +725,14 @@ def _android_release_project_versions(
                 "firmware:source:version-evidence",
                 str(rule.get("source_url", "")),
             )
+            taxonomy = classify_source_project(str(rule["project_path"]))
+            if taxonomy != "unknown":
+                _append_unique(component.properties, "firmware:taxonomy", taxonomy)
+                _append_unique(
+                    component.properties,
+                    "firmware:taxonomy:evidence",
+                    "source-project-path",
+                )
             rows.append(
                 {
                     "name": component.name,

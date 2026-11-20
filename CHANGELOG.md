@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-11-20
+
+### Added
+- Recognize documented release getters for libfuse, libarchive, json-c,
+  Jansson, MaxMind DB, liborc and libsodium
+- Apply filename-checked AOSP release estimates for Allwinner libmtp,
+  Tremolo/Vorbis and Chromium WebView only when both Android release and
+  build ID match the pinned source tag
+
+### Changed
+- Attach explicit third-party taxonomy to AOSP release-derived estimates
+- Advance the packaged rule lock to `builtin-2026.11.20.4`
+
 ## [0.15.0] - 2026-11-20
 
 ### Added

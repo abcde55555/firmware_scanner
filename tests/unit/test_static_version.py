@@ -1,5 +1,5 @@
-import struct
 import shutil
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -122,3 +122,100 @@ def test_x86_64_compiler_getter_fixture_returns_full_dev_git_version():
         matches = StaticVersionExtractor().extract(elf_path.read_bytes())
 
     assert [(m.name, m.version) for m in matches] == [("zstd", "1.5.7-dev-git-deadbeef")]
+
+
+def test_libfuse_package_version_uses_the_release_string_pointer():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *fuse_pkgversion(void) {
+            return "3.18.1";
+        }
+        __attribute__((visibility("default"), noinline, used))
+        int fuse_version(void) {
+            return 318;
+        }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "fuse.c"
+        elf_path = Path(temp_dir) / "libfuse3.so.3"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert [(m.name, m.version) for m in matches] == [("libfuse", "3.18.1")]
+    assert "fuse_pkgversion" in matches[0].evidence
+
+
+def test_libarchive_and_json_c_release_string_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *archive_version_string(void) {
+            return "libarchive 3.8.5";
+        }
+        __attribute__((visibility("default"), noinline, used))
+        const char *json_c_version(void) {
+            return "0.18";
+        }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(m.name, m.version) for m in matches} == {
+        ("libarchive", "3.8.5"),
+        ("json-c", "0.18"),
+    }
+
+
+def test_additional_documented_string_version_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    getters = {
+        "jansson_version_str": "2.14",
+        "MMDB_lib_version": "1.12.2",
+        "orc_version_string": "0.4.42",
+        "sodium_version_string": "1.0.18",
+    }
+    source = "\n".join(
+        f'__attribute__((visibility("default"), noinline, used))\n'
+        f'const char *{symbol}(void) {{ return "{version}"; }}'
+        for symbol, version in getters.items()
+    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "getters.c"
+        elf_path = Path(temp_dir) / "libgetters.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(m.name, m.version) for m in matches} == {
+        ("Jansson", "2.14"),
+        ("libmaxminddb", "1.12.2"),
+        ("liborc", "0.4.42"),
+        ("libsodium", "1.0.18"),
+    }
