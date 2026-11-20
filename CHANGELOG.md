@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Prove documented `check_version(NULL)` APIs that return a release string only
-  on the zero-argument branch, including x86-64, AArch64 and ARM paths
+  on the zero-argument branch, including c-ares optional output APIs and
+  x86-64, AArch64 and ARM paths
 - Persist scan-level database provenance with release, SHA-256, schema, source,
   license, architecture and integrity status
 - Report NSRL total matches and truncation, with an exact-file self-check and

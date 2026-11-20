@@ -77,6 +77,10 @@ NULL_ARGUMENT_VERSION_GETTERS = {
         'libtasn1',
         'https://gitlab.com/gnutls/libtasn1/-/blob/master/lib/version.c',
     ),
+    'ares_version': (
+        'c-ares',
+        'https://github.com/c-ares/c-ares/blob/main/src/lib/ares_version.c',
+    ),
 }
 X86_32_STRING_GETTERS = {
     'Cronet_Engine_GetVersionString': ('Cronet', ''),

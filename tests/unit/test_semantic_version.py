@@ -152,6 +152,27 @@ def test_aarch64_null_argument_getter_returns_release_string():
     ]
 
 
+def test_optional_integer_output_getter_preserves_cares_release(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "cares_getter",
+        """
+        const char *ares_version(int *version) {
+            if (version) *version = 0x12206;
+            return "1.34.6";
+        }
+        """,
+        flags=("-O2", "-fno-stack-protector"),
+    )
+
+    assert [(match.name, match.version) for match in SemanticVersionExtractor().extract(data)] == [
+        ("c-ares", "1.34.6")
+    ]
+
+
 def test_import_only_undefined_getter_is_not_treated_as_a_definition(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

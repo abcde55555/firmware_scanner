@@ -16,15 +16,15 @@ extractor:
 | Metric | 0.16.0 | 0.17.0 |
 |---|---:|---:|
 | Identity matched | 20/20 | 20/20 |
-| Exact versions | 7 | **9** |
+| Exact versions | 7 | **10** |
 | Estimated | 0 | 0 |
 | Wrong exact / estimated | 0 / 0 | 0 / 0 |
-| Unknown | 13 | 11 |
-| Usable coverage | 35% | **45%** |
+| Unknown | 13 | 10 |
+| Usable coverage | 35% | **50%** |
 
-The two additions are libidn2 `2.3.8` and libtasn1 `4.21.0`. GnuTLS `3.8.13`
-was already recovered by existing banner evidence, and the new path provides a
-second independent proof.
+The three additions are c-ares `1.34.6`, libidn2 `2.3.8` and libtasn1
+`4.21.0`. GnuTLS `3.8.13` was already recovered by existing banner evidence,
+and the new path provides a second independent proof.
 
 ## NULL-argument proof
 
@@ -46,6 +46,8 @@ Current probes:
 - GnuTLS `gnutls_check_version`
 - libidn2 `idn2_check_version`
 - libtasn1 `asn1_check_version`
+- c-ares `ares_version`, whose optional integer output does not change the
+  returned release string
 
 ## Database provenance
 
@@ -152,6 +154,7 @@ used as a performance-regression result.
 ## Artifacts
 
 - `reports/heldout-debian-independent3-20261120-null-getters/heldout-report.json`
+- `reports/heldout-debian-independent3-20261120-ares-getter/heldout-report.json`
 - `reports/version-coverage-getters-20261120/database-positive-controls-20261120.json`
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-a2a7e63/evaluation-fixed.json`
@@ -163,7 +166,6 @@ used as a performance-regression result.
 
 ## Next gaps
 
-- Add documented optional-output APIs such as c-ares `ares_version`.
 - Handle complete major/minor-only APIs such as Nettle without inventing patch
   versions.
 - Run broader BLintDB identity positive controls across architectures.
