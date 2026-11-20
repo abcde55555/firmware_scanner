@@ -215,6 +215,19 @@ def test_mpfr_mpc_portaudio_and_ffado_release_string_getters():
         const char *ffado_get_version(void) { return "libffado 2.5.0"; }
         __attribute__((visibility("default"), noinline, used))
         int yajl_version(void) { return 20100; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *GeoIP_lib_version(void) { return "1.6.12"; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *hid_version_str(void) { return "0.15.0"; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *ub_version(void) { return "1.24.2"; }
+        static const char slang_version[] = "2.3.3";
+        __attribute__((visibility("default"), used))
+        const char *SLang_Version_String = slang_version;
+        __attribute__((visibility("default"), noinline, used))
+        void SLang_init_tty(void) {}
+        __attribute__((visibility("default"), noinline, used))
+        void SLsmg_init_smg(void) {}
     '''
     with tempfile.TemporaryDirectory() as temp_dir:
         source_path = Path(temp_dir) / "getters.c"
@@ -234,6 +247,10 @@ def test_mpfr_mpc_portaudio_and_ffado_release_string_getters():
         ("PortAudio", "19.7.0"),
         ("libffado", "2.5.0"),
         ("YAJL", "2.1.0"),
+        ("GeoIP", "1.6.12"),
+        ("libhidapi-hidraw", "0.15.0"),
+        ("libunbound", "1.24.2"),
+        ("libslang", "2.3.3"),
     }
 
 
