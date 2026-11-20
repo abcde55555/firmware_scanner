@@ -201,6 +201,13 @@ libevent variants and one duplicate generic zlib row consolidate into their
 single source-pinned components. See
 `docs/version-0.23-source-path-refinement-2026-11-20.md`.
 
+Version 0.24.0 adds exact source pins for SpeexDSP `1.2.1` and libyuv `1883`.
+Modern's fixed cohort rises to **788/1,129** usable fields and **624/774**
+native libraries. The only BOM-row reduction is the expected libyuv
+parent-version consolidation. No new source rule is applied to Allwinner, which
+has no matching source manifest. See
+`docs/version-0.24-source-declared-releases-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

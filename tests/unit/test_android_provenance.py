@@ -249,6 +249,8 @@ def test_upstream_source_evidence_marks_third_party_oss_without_guessing():
     [
         ("libevent", "external/libevent", "", "2.1.12-stable"),
         ("OpenSSH", "external/openssh", "9.0", "9.0p1"),
+        ("SpeexDSP", "external/speex", "", "1.2.1"),
+        ("libyuv", "external/libyuv", "", "1883"),
     ],
 )
 def test_contained_component_inherits_host_source_path_and_uses_exact_pin(

@@ -289,6 +289,20 @@
       "evidence": "The embedded libevent identity and source path agree"
     },
     {
+      "name": "SpeexDSP embedded component",
+      "pattern": "^(?:SpeexDSP|libspeexresampler\\.so(?:\\.[0-9]+)*)$",
+      "project_path": "external/speex",
+      "confidence": 0.92,
+      "evidence": "The SpeexDSP API identity maps to Android external/speex"
+    },
+    {
+      "name": "libyuv embedded component",
+      "pattern": "^libyuv$",
+      "project_path": "external/libyuv",
+      "confidence": 0.92,
+      "evidence": "The defined libyuv APIs map to Android external/libyuv"
+    },
+    {
       "name": "ICU host-name alias",
       "pattern": "^icu$",
       "project_path": "external/icu",

@@ -3,6 +3,13 @@
   "scope": "Exact project revisions whose source tree declares an upstream release",
   "pins": [
     {
+      "project_path": "external/speex",
+      "revision": "6c44585f68f6f7f71c51ff1d56d9a5d0409d2d29",
+      "version": "1.2.1",
+      "source_url": "https://android.googlesource.com/platform/external/speex/+/6c44585f68f6f7f71c51ff1d56d9a5d0409d2d29/configure.ac",
+      "authority": "AC_INIT speexdsp version"
+    },
+    {
       "project_path": "external/freetype",
       "revision": "d968d2541f7158e18ab22680bfa08a538019bf6a",
       "version": "2.13.2",
