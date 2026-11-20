@@ -249,6 +249,42 @@ def test_forwarded_null_argument_version_getter_is_bounded_to_one_jump(tmp_path,
     ]
 
 
+def test_modern_protobuf_boundary_constant_requires_protocol_messages(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    source = """
+    .text
+    .globl _ZN6google8protobuf8internal13VerifyVersionEiiPKc
+    .type _ZN6google8protobuf8internal13VerifyVersionEiiPKc,@function
+    _ZN6google8protobuf8internal13VerifyVersionEiiPKc:
+      cmp $3021012, %esi
+      jg .Lfail
+      cmp $3020999, %edi
+      jle .Lok
+    .Lfail:
+      ret
+    .Lok:
+      ret
+    .size _ZN6google8protobuf8internal13VerifyVersionEiiPKc, .-_ZN6google8protobuf8internal13VerifyVersionEiiPKc
+    .section .rodata
+      .asciz "This program requires version "
+      .asciz "but the installed version is "
+    .section .note.GNU-stack,"",@progbits
+    """
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "protobuf_boundary",
+        source,
+        language="asm",
+        flags=("-nostdlib",),
+    )
+
+    assert [(match.name, match.version) for match in SemanticVersionExtractor().extract(data)] == [
+        ("Protobuf", "3.21.12")
+    ]
+
+
 def test_import_only_undefined_getter_is_not_treated_as_a_definition(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

@@ -268,6 +268,8 @@ class SemanticVersionExtractor:
                     result.append(StaticVersionMatch(component, version, json.dumps(evidence), .94))
             if image.machine == 'EM_X86_64':
                 protobuf = self._protobuf(image)
+                if protobuf is None:
+                    protobuf = self._protobuf_boundary_constant(image, data)
                 if protobuf:
                     result.append(protobuf)
             return result
@@ -718,6 +720,65 @@ class SemanticVersionExtractor:
             'source': 'https://raw.githubusercontent.com/protocolbuffers/protobuf/v21.12/src/google/protobuf/stubs/common.cc',
         }
         return StaticVersionMatch('Protobuf', version, json.dumps(evidence), .94)
+
+    @staticmethod
+    def _protobuf_boundary_constant(image: ELFView, data: bytes) -> StaticVersionMatch | None:
+        """Recover the modern ABI-tagged VerifyVersion library boundary."""
+        if (
+            image.machine != 'EM_X86_64'
+            or b'This program requires version ' not in data
+            or b'but the installed version is ' not in data
+        ):
+            return None
+        function = image.functions.get(VERIFY)
+        if function is None or not 0 < function[1] <= 4096:
+            return None
+        instructions = image.instructions(*function)
+        library_boundary = None
+        header_boundary = None
+        branch = None
+        for index, insn in enumerate(instructions[:32]):
+            if insn.mnemonic != 'cmp' or len(insn.operands) != 2:
+                continue
+            register, immediate = insn.operands
+            if register.type != X86_OP_REG or immediate.type != X86_OP_IMM:
+                continue
+            register_name = insn.reg_name(register.reg)
+            if register_name == 'esi' and index + 1 < len(instructions):
+                candidate_branch = instructions[index + 1]
+                if (
+                    candidate_branch.mnemonic in ('jg', 'jge')
+                    and len(candidate_branch.operands) == 1
+                    and candidate_branch.operands[0].type == X86_OP_IMM
+                    and function[0]
+                    <= int(candidate_branch.operands[0].imm)
+                    < function[0] + function[1]
+                ):
+                    library_boundary = int(immediate.imm)
+                    branch = candidate_branch
+            elif register_name in ('ebp', 'edi') and header_boundary is None:
+                header_boundary = int(immediate.imm)
+            if library_boundary is not None and header_boundary is not None:
+                break
+        if library_boundary is None or header_boundary is None or branch is None:
+            return None
+        version = decode_integer(library_boundary, 'decimal1000')
+        if version is None:
+            return None
+        evidence = {
+            'prototype': 'abi-tagged-version-boundary-v1',
+            'function': VERIFY,
+            'vaddr': hex(function[0]),
+            'library_boundary': library_boundary,
+            'header_boundary': header_boundary,
+            'comparison': image.format_instructions([branch]),
+            'messages': [
+                'This program requires version ',
+                'but the installed version is ',
+            ],
+            'source': 'https://github.com/protocolbuffers/protobuf/blob/v21.12/src/google/protobuf/stubs/common.cc',
+        }
+        return StaticVersionMatch('Protobuf', version, json.dumps(evidence, sort_keys=True), .92)
 
     @staticmethod
     def _x86_register(name):

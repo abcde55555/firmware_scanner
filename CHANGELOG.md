@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Combine ATK major/minor/micro getters and recognize libsrtp's prefixed
   release string
 - Cross-check Lua's numeric ABI version with its official release banner
+- Recover Berkeley DB output-parameter versions, the ABI-tagged modern
+  Protobuf version boundary, and Jemalloc's API-corroborated release banner
 - Add a fourth, previously disconnected Debian black-box catalog
 
 ### Changed

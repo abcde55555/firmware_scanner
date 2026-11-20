@@ -36,11 +36,11 @@ independent-3 catalogs.
 | Metric | 0.17.0 blind | 0.18.0 after documented API expansion |
 |---|---:|---:|
 | Catalog identity matched | 18/20 | 20/20 |
-| Exact versions | 2 | **7** |
+| Exact versions | 2 | **10** |
 | Estimated | 2 | 0 |
 | Wrong exact / estimate | 0 / 0 | 0 / 0 |
-| Unknown | 16 | 13 |
-| Usable coverage | 20% | **35%** |
+| Unknown | 16 | 10 |
+| Usable coverage | 20% | **50%** |
 
 The five usable additions/upgrades are:
 
@@ -49,8 +49,13 @@ The five usable additions/upgrades are:
 - ATK `2.59.1` from major/minor/micro getters;
 - libsrtp `2.7.0` from its defined prefixed string getter;
 - Lua `5.4.8` from agreement between `lua_version()` and the official banner.
+- Berkeley DB `5.3.28` from `db_version()` output parameters and its returned
+  banner;
+- Protobuf `3.21.12` from the modern ABI-tagged `VerifyVersion` boundary;
+- Jemalloc `5.3.0` from its git release description plus allocator-specific
+  public APIs.
 
-The tuned 35% is not a held-out accuracy result because this catalog's failures
+The tuned 50% is not a held-out accuracy result because this catalog's failures
 informed the new rules. The untouched blind result remains 20%, which is the
 more honest estimate of generalization for 0.17.0.
 
@@ -215,6 +220,7 @@ self-check paths do not alter component or version decisions. Runtime was
 - `reports/heldout-debian-independent3-20261120-forwarded-getter/heldout-report.json`
 - `reports/heldout-debian-independent4-20261120-blind/heldout-report.json`
 - `reports/heldout-debian-independent4-20261120-tuned2/heldout-report.json`
+- `reports/heldout-debian-independent4-20261120-tuned4/heldout-report.json`
 - `reports/version-coverage-getters-20261120/database-positive-controls-20261120.json`
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
 - `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/evaluation-fixed.json`

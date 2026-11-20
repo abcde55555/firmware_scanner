@@ -72,6 +72,13 @@ _BANNER_RULES = (
         re.compile(rb"(\d+\.\d+\.\d+) \(\d{4}-\d{2}-\d{2}\)"),
         "https://gitlab.com/lvmteam/lvm2/-/blob/main/libdm/libdm-common.c",
     ),
+    _BannerRule(
+        "jemalloc",
+        frozenset({"mallctl", "malloc_stats_print"}),
+        re.compile(rb"\b(\d+\.\d+\.\d+)(?:-[0-9]+-g[0-9a-f]{12,40})\b"),
+        "https://github.com/jemalloc/jemalloc",
+        confidence=0.95,
+    ),
 )
 _PREFILTER = (
     b"assuan_check_version",
@@ -87,6 +94,8 @@ _PREFILTER = (
     b"cmsGetEncodedCMMversion",
     b"libevent using: %s",
     b"$LuaVersion:",
+    b"db_full_version",
+    b"malloc_stats_print",
 )
 
 
@@ -135,6 +144,7 @@ def extract_public_versions(data: bytes) -> list[StaticVersionMatch]:
             _magic_version,
             _lcms2_version,
             _lua_version,
+            _berkeley_db_version,
         ):
             hit = extractor(data, image, symbols)
             if hit is not None:
@@ -392,6 +402,72 @@ def _lua_version(data, image, symbols) -> StaticVersionMatch | None:
             constant_file_offset=constant_offset,
             supporting_api="luaL_checkversion_",
             source="https://www.lua.org/source/5.4/lua.h.html",
+        ),
+        0.96,
+    )
+
+
+def _berkeley_db_version(data, image, symbols) -> StaticVersionMatch | None:
+    if not {"db_version", "db_full_version"}.issubset(symbols):
+        return None
+    if image.header["e_machine"] != "EM_X86_64":
+        return None
+    function = _function_bytes(image, data, "db_version")
+    if function is None:
+        return None
+    code, file_offset = function
+    address = int(symbols["db_version"]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    instructions = list(disassembler.disasm(code, address))
+    parts = {}
+    returned_pointer = None
+    for index, instruction in enumerate(instructions):
+        if (
+            instruction.mnemonic == "mov"
+            and len(instruction.operands) == 2
+            and instruction.operands[0].type == X86_OP_MEM
+            and instruction.operands[1].type == X86_OP_IMM
+        ):
+            memory = instruction.operands[0].mem
+            if not memory.index and instruction.reg_name(memory.base) in ("rdi", "rsi", "rdx"):
+                parts[instruction.reg_name(memory.base)] = int(instruction.operands[1].imm)
+        if (
+            instruction.id == X86_INS_LEA
+            and len(instruction.operands) == 2
+            and instruction.operands[0].type == X86_OP_REG
+            and instruction.reg_name(instruction.operands[0].reg) == "rax"
+            and instruction.operands[1].type == X86_OP_MEM
+            and instruction.reg_name(instruction.operands[1].mem.base) == "rip"
+            and index + 1 < len(instructions)
+            and instructions[index + 1].id == X86_INS_RET
+        ):
+            returned_pointer = (
+                instruction.address
+                + instruction.size
+                + int(instruction.operands[1].mem.disp)
+            )
+    if set(parts) != {"rdi", "rsi", "rdx"} or returned_pointer is None:
+        return None
+    major, minor, patch = parts["rdi"], parts["rsi"], parts["rdx"]
+    if not (0 < major <= 99 and 0 <= minor <= 99 and 0 <= patch <= 99):
+        return None
+    version = f"{major}.{minor}.{patch}"
+    text = _read_c_string(image, data, returned_pointer)
+    if text is None or not text.startswith("Berkeley DB ") or version not in text:
+        return None
+    return StaticVersionMatch(
+        "Berkeley DB",
+        version,
+        _evidence(
+            "defined-output-parameter-version-getter",
+            version=version,
+            function="db_version",
+            function_file_offset=file_offset,
+            output_values={"major": major, "minor": minor, "patch": patch},
+            returned_string=text,
+            supporting_api="db_full_version",
+            source="https://github.com/berkeleydb/libdb",
         ),
         0.96,
     )

@@ -149,6 +149,48 @@ def test_lua_numeric_api_and_official_banner_must_agree(tmp_path):
     assert extract_public_versions(incompatible) == []
 
 
+def test_berkeley_db_output_parameters_and_returned_string_agree(tmp_path):
+    data = _compile(
+        tmp_path,
+        'static const char db_banner[] = "Berkeley DB 5.3.28: (test)";\n'
+        "const char *db_version(int *major, int *minor, int *patch) {\n"
+        "  if (major) *major = 5;\n"
+        "  if (minor) *minor = 3;\n"
+        "  if (patch) *patch = 28;\n"
+        "  return db_banner;\n"
+        "}\n"
+        "const char *db_full_version(int *major, int *minor, int *patch,\n"
+        "                            int *sublevel, int *patch2) {\n"
+        "  (void)sublevel; (void)patch2;\n"
+        "  return db_version(major, minor, patch);\n"
+        "}\n",
+    )
+
+    assert [(hit.name, hit.version) for hit in extract_public_versions(data)] == [
+        ("Berkeley DB", "5.3.28")
+    ]
+
+
+def test_jemalloc_git_release_description_requires_its_allocator_apis(tmp_path):
+    data = _compile(
+        tmp_path,
+        'const char je_release[] = "5.3.0-0-g54eaed1d8b56b1aa528be3bdd1877e59c56fa90c";\n'
+        "void mallctl(void) {}\n"
+        "void malloc_stats_print(void) {}\n",
+    )
+
+    assert [(hit.name, hit.version) for hit in extract_public_versions(data)] == [
+        ("jemalloc", "5.3.0")
+    ]
+
+    without_api = _compile(
+        tmp_path,
+        'const char je_release[] = "5.3.0-0-g54eaed1d8b56b1aa528be3bdd1877e59c56fa90c";\n',
+        "jemalloc-without-api.so",
+    )
+    assert extract_public_versions(without_api) == []
+
+
 def test_conflicting_release_banners_are_not_a_match(tmp_path):
     data = _compile(
         tmp_path,
