@@ -1,29 +1,30 @@
 """CLI application root using Typer."""
 
 import asyncio
+import json
 import sys
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
+from .. import __version__
+from ..arch.detector import ArchDetector
 from ..core.config import AnalysisConfig
 from ..core.context import AnalysisContext
-from ..core.pipeline import AnalysisPipeline
 from ..core.plugin_manager import PluginManager
-from ..core.user_config import UserConfig, DependencyChecker, print_dependency_report, init_config
-from ..firmware.loader import FirmwareLoader
-from ..firmware.unpacker import FirmwareUnpacker
-from ..arch.detector import ArchDetector
-from ..rtos.registry import RTOSRegistry
+from ..core.user_config import DependencyChecker, init_config, print_dependency_report
+from ..extraction.deep_scanner import ComponentDatabase, DeepScanner
 from ..extraction.orchestrator import ExtractionOrchestrator
-from ..extraction.deep_scanner import DeepScanner, ComponentDatabase
+from ..firmware.loader import FirmwareLoader
 from ..firmware.recursive_unpacker import RecursiveUnpacker
-from ..sbom.generator import SBOMGenerator
+from ..firmware.unpacker import FirmwareUnpacker
+from ..rtos.registry import RTOSRegistry
 
 # Suppress lief's verbose warnings about malformed/truncated ELFs
 try:
@@ -280,6 +281,79 @@ def check_deps():
     results = checker.check_all()
     report = print_dependency_report(results)
     console.print(report)
+
+
+@app.command(name="database-audit")
+def database_audit(
+    blint_db: Optional[Path] = typer.Option(
+        None,
+        "--blint-db",
+        exists=True,
+        help="Pinned BLintDB SQLite database to audit",
+    ),
+    nsrl_db: Optional[Path] = typer.Option(
+        None,
+        "--nsrl-db",
+        exists=True,
+        help="Pinned NIST NSRL RDSv3 SQLite database to audit",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Write the machine-readable audit report to this JSON file",
+    ),
+    verify_database_integrity: bool = typer.Option(
+        True,
+        "--verify-database-integrity/--skip-database-integrity",
+        help="Verify database size and SHA-256 before auditing",
+    ),
+):
+    """Validate database integrity, schemas and production query controls."""
+    if blint_db is None and nsrl_db is None:
+        raise typer.BadParameter("at least one of --blint-db or --nsrl-db is required")
+
+    from ..databases import DatabaseEnricher
+
+    started = time.perf_counter()
+    report = {
+        "schema_version": 1,
+        "scanner_version": __version__,
+        "status": "failed",
+        "database_provenance": {"schema_version": 1, "databases": []},
+        "self_checks": {},
+        "errors": [],
+    }
+    enricher = None
+    try:
+        enricher = DatabaseEnricher.from_paths(
+            blint_path=blint_db,
+            nsrl_path=nsrl_db,
+            verify_hash=verify_database_integrity,
+        )
+        report.update(
+            {
+                "status": "passed",
+                "database_provenance": enricher.stats.database_provenance,
+                "self_checks": enricher.stats.self_checks,
+                "errors": enricher.stats.errors,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001 - audit failures are serialized for operators
+        report["errors"] = [f"{type(exc).__name__}: {exc}"]
+    finally:
+        if enricher is not None:
+            enricher.close()
+        report["duration_seconds"] = round(time.perf_counter() - started, 6)
+
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    console.print_json(data=report)
+    if output is not None:
+        console.print(f"[green]Database audit written to {output}[/green]")
+    if report["status"] != "passed":
+        raise typer.Exit(code=1)
 
 
 @app.command(name="init")
