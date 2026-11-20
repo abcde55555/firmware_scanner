@@ -192,6 +192,43 @@ def test_liburing_major_and_minor_getters_form_the_release(tmp_path, cc):
     ]
 
 
+def test_forwarded_null_argument_version_getter_is_bounded_to_one_jump(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    source = """
+    .text
+    .globl gpgrt_check_version
+    .type gpgrt_check_version,@function
+    gpgrt_check_version:
+      jmp .Limplementation
+    .size gpgrt_check_version, .-gpgrt_check_version
+    .Limplementation:
+      test %rdi, %rdi
+      je .Lnull
+      xor %eax, %eax
+      ret
+    .Lnull:
+      lea release(%rip), %rax
+      ret
+    .section .rodata
+    release:
+      .asciz "1.59"
+    .section .note.GNU-stack,"",@progbits
+    """
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "gpg_error_forwarder",
+        source,
+        language="asm",
+        flags=("-nostdlib",),
+    )
+
+    assert [(match.name, match.version) for match in SemanticVersionExtractor().extract(data)] == [
+        ("libgpg-error", "1.59")
+    ]
+
+
 def test_import_only_undefined_getter_is_not_treated_as_a_definition(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

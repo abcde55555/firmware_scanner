@@ -88,6 +88,10 @@ NULL_ARGUMENT_VERSION_GETTERS = {
         'c-ares',
         'https://github.com/c-ares/c-ares/blob/main/src/lib/ares_version.c',
     ),
+    'gpgrt_check_version': (
+        'libgpg-error',
+        'https://git.gnupg.org/cgi-bin/gitweb.cgi?p=libgpg-error.git;a=blob_plain;f=src/version.c;hb=HEAD',
+    ),
 }
 X86_32_STRING_GETTERS = {
     'Cronet_Engine_GetVersionString': ('Cronet', ''),
@@ -256,6 +260,42 @@ class SemanticVersionExtractor:
         if function is None or not 0 < function[1] <= 256:
             return None
         instructions = image.instructions(*function)
+        wrapper_vaddr = function[0]
+        jump_target = None
+        jump_code_end = None
+        if image.machine == 'EM_X86_64':
+            meaningful = [
+                insn for insn in instructions if insn.mnemonic not in ('endbr64', 'nop')
+            ]
+            if (
+                meaningful
+                and meaningful[0].mnemonic == 'jmp'
+                and len(meaningful[0].operands) == 1
+                and meaningful[0].operands[0].type == X86_OP_IMM
+            ):
+                jump_target = int(meaningful[0].operands[0].imm)
+                remaining = max(
+                    (
+                        int(segment['p_vaddr'])
+                        + int(segment['p_filesz'])
+                        - jump_target
+                        for segment in image.loads
+                        if int(segment['p_flags']) & 1
+                        and int(segment['p_vaddr'])
+                        <= jump_target
+                        < int(segment['p_vaddr']) + int(segment['p_filesz'])
+                    ),
+                    default=0,
+                )
+                code = image.read(
+                    jump_target,
+                    min(256, remaining),
+                    executable=True,
+                )
+                if code is None:
+                    return None
+                instructions = list(image.disassembler.disasm(code, jump_target))
+                jump_code_end = jump_target + len(code)
         if not instructions:
             return None
 
@@ -307,8 +347,12 @@ class SemanticVersionExtractor:
                     target = int(destination.imm)
                     break
 
-        start = function[0] & ~1 if image.machine == 'EM_ARM' else function[0]
-        end = start + function[1]
+        if jump_target is not None:
+            start = jump_target
+            end = jump_code_end or jump_target
+        else:
+            start = function[0] & ~1 if image.machine == 'EM_ARM' else function[0]
+            end = start + function[1]
         if branch is None or target is None or not start < target < end:
             return None
         null_block = [insn for insn in instructions if insn.address >= target]
@@ -369,7 +413,8 @@ class SemanticVersionExtractor:
         evidence = {
             'prototype': 'null-argument-version-getter-v1',
             'function': symbol,
-            'vaddr': hex(function[0] & ~1 if image.machine == 'EM_ARM' else function[0]),
+            'vaddr': hex(wrapper_vaddr & ~1 if image.machine == 'EM_ARM' else wrapper_vaddr),
+            'single_local_jump_target': hex(jump_target) if jump_target is not None else None,
             'parameter': 'first argument',
             'zero_test': image.format_instructions([null_test] if null_test else []),
             'conditional_branch': image.format_instructions([branch]),

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on the zero-argument branch, including c-ares optional output APIs and
   x86-64, AArch64 and ARM paths
 - Combine liburing major/minor integer getters without inventing a patch value
+- Follow one local forwarding jump for libgpg-error's public version wrapper
 - Persist scan-level database provenance with release, SHA-256, schema, source,
   license, architecture and integrity status
 - Report NSRL total matches and truncation, with an exact-file self-check and
