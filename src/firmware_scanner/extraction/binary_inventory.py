@@ -325,10 +325,12 @@ class BinaryInventory:
         for key, matches in groups.items():
             # An unversioned defined-symbol set is still useful identity
             # evidence. Its location is retained for later independent review.
+            claim_properties = deep.claim_facts.get(matches[0][0], []) if deep else []
             extra = self._component(matches[0][0], 'library', location, matches, [
                 {'name': 'firmware:evidence:location', 'value': location},
                 {'name': 'firmware:evidence:container', 'value': filename},
                 {'name': 'firmware:relationship', 'value': 'contains-evidence-for'},
+                *claim_properties,
             ])
             components.append(extra)
         if self._database_enricher is not None:

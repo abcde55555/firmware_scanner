@@ -9,6 +9,7 @@ from firmware_scanner.extraction import elf_deep_extractor
 from firmware_scanner.extraction.elf_deep_extractor import (
     AES_SBOX_PREFIX,
     ELFDeepExtractor,
+    ELFExtractionResult,
 )
 from firmware_scanner.extraction.models import ExtractionMethod
 
@@ -149,7 +150,7 @@ def test_landmark_symbol_fingerprinting(extractor):
 def test_crypto_magic_constants(extractor):
     """Test Layer 4: Cryptographic magic constants detection."""
     data = b"\x7fELF" + b"\x00" * 20 + AES_SBOX_PREFIX + b"\x00" * 20
-    res = extractor._extract_crypto_constants(
+    extractor._extract_crypto_constants(
         data, extractor.extract("libsec.so", b"\x7fELF" + b"\x00" * 60) or extractor.__class__()
     )
 
@@ -196,6 +197,82 @@ def test_symbol_sets_containment(extractor):
     )
     res = extractor.extract("libcustom_audio.so", ogg_data)
     assert res is None
+
+
+def test_codec_symbol_identity_emits_third_party_taxonomy(extractor):
+    result = ELFExtractionResult()
+    extractor._extract_symbol_sets(
+        "libstagefright_soft_mp3dec.so",
+        b"",
+        result,
+        {
+            "pvmp3_InitDecoder",
+            "pvmp3_framedecoder",
+            "pvmp3_decode_header",
+            "pvmp3_alias_reduction",
+            "pvmp3_dct_9",
+        },
+    )
+
+    assert result.canonical_name == "pvmp3dec"
+    assert result.version == ""
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in result.claim_facts["pvmp3dec"]
+    assert {
+        "name": "firmware:taxonomy:evidence",
+        "value": "confirmed-symbol-set-identity",
+    } in result.claim_facts["pvmp3dec"]
+    assert any(
+        fact["name"] == "firmware:evidence:source"
+        and fact["value"] == "https://android.googlesource.com/platform/frameworks/av/"
+        for fact in result.claim_facts["pvmp3dec"]
+    )
+
+
+def test_binary_inventory_scopes_codec_facts_to_contained_identity(tmp_path):
+    from firmware_scanner.extraction.binary_inventory import BinaryInventory
+
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        pytest.skip("host C compiler unavailable")
+    source = tmp_path / "codec.c"
+    output = tmp_path / "libstagefright_soft_mp3dec.so"
+    source.write_text(
+        """
+        __attribute__((visibility("default"))) void pvmp3_InitDecoder(void) {}
+        __attribute__((visibility("default"))) void pvmp3_framedecoder(void) {}
+        __attribute__((visibility("default"))) void pvmp3_decode_header(void) {}
+        __attribute__((visibility("default"))) void pvmp3_alias_reduction(void) {}
+        __attribute__((visibility("default"))) void pvmp3_dct_9(void) {}
+        """
+    )
+    subprocess.run(
+        [compiler, "-shared", "-fPIC", "-o", str(output), str(source)],
+        check=True,
+        capture_output=True,
+    )
+
+    components = BinaryInventory().extract(
+        output.read_bytes(),
+        output.name,
+        f"/lib/{output.name}",
+    )
+
+    codec = next(component for component in components if component.name == "pvmp3dec")
+    properties = {
+        prop["name"]: prop["value"]
+        for prop in codec.properties
+        if prop.get("name")
+    }
+    assert codec.resolved_version == ""
+    assert properties["firmware:taxonomy"] == "third-party-oss"
+    assert properties["firmware:taxonomy:evidence"] == "confirmed-symbol-set-identity"
+    assert (
+        properties["firmware:evidence:source"]
+        == "https://android.googlesource.com/platform/frameworks/av/"
+    )
 
 
 def test_go_buildinfo(extractor):

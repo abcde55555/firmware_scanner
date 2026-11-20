@@ -42,6 +42,7 @@ class ELFExtractionResult:
     is_platform_component: bool = False
     version_kind: str = "release"
     facts: list[dict[str, str]] = field(default_factory=list)
+    claim_facts: dict[str, list[dict[str, str]]] = field(default_factory=dict)
     defined_symbols: set[str] | None = None
 
 
@@ -511,6 +512,17 @@ SYMBOL_SETS: list[tuple[str, str, int, tuple[str, ...]]] = [
     ),
 ]
 
+SYMBOL_SET_SOURCES: dict[str, tuple[str, str]] = {
+    "pvmp3dec": (
+        "https://android.googlesource.com/platform/frameworks/av/",
+        "android-framework-derived-codec",
+    ),
+    "opencore-amr": (
+        "https://android.googlesource.com/platform/frameworks/av/",
+        "android-framework-derived-codec",
+    ),
+}
+
 GO_MAGIC = b"\xff Go buildinf:"
 
 
@@ -808,6 +820,18 @@ class ELFDeepExtractor:
                 result.method = ExtractionMethod.SYMBOL_TABLE
                 result.evidence = f"Exported symbol set matched: {hits}/{len(syms)} APIs of {name}"
                 result.purl = f"pkg:generic/{canonical}"
+                source = SYMBOL_SET_SOURCES.get(canonical)
+                if source is not None:
+                    source_url, source_scope = source
+                    result.claim_facts[canonical] = [
+                        {"name": "firmware:evidence:source", "value": source_url},
+                        {"name": "firmware:evidence:source-scope", "value": source_scope},
+                        {"name": "firmware:taxonomy", "value": "third-party-oss"},
+                        {
+                            "name": "firmware:taxonomy:evidence",
+                            "value": "confirmed-symbol-set-identity",
+                        },
+                    ]
                 return
 
     def _extract_go_buildinfo(self, data: bytes, result: ELFExtractionResult):

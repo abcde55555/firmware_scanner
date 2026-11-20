@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0] - 2026-11-20
+
+### Fixed
+- Scope deep-ELF evidence to the component identity that produced it instead of
+  attaching contained-component taxonomy and source facts to the host library
+- Correctly classify OpenCORE-AMR and PVMP3 as confirmed third-party OSS while
+  preserving their structured version abstentions
+
 ## [0.33.0] - 2026-11-20
 
 ### Added

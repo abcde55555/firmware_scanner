@@ -295,6 +295,12 @@ not component releases. The BOM now records the reason, identity-only evidence
 tier and the evidence required to promote the version, without changing headline
 coverage. See `docs/version-0.33-version-abstention-2026-11-20.md`.
 
+Version 0.34.0 fixes the evidence scope for deep symbol-set matches. Source and
+taxonomy facts are now attached to the contained identity rather than its host
+`.so`. OpenCORE-AMR and PVMP3 therefore become confirmed `third-party-oss`
+components while retaining their version abstentions. See
+`docs/version-0.34-identity-scoped-evidence-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 
