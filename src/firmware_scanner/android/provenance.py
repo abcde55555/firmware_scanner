@@ -586,14 +586,55 @@ def _parent_version(component: Component, package_versions: dict[str, str]) -> d
     return None
 
 
+def _exclusive_aosp_platform_source_evidence(component: Component) -> list[dict]:
+    """Return source evidence only when every attributed project is AOSP first-party."""
+    if any(
+        prop.get("name") == "firmware:relationship"
+        and prop.get("value") == "contains-evidence-for"
+        for prop in component.properties
+    ):
+        return []
+    evidence = [dict(item) for item in _source_path_evidence(component).values()]
+    evidence.extend(
+        dict(item) for item in _embedded_source_prefixes(component).values()
+    )
+    if not evidence:
+        return []
+    projects = {
+        str(item.get("project", item.get("project_path", ""))).strip()
+        for item in evidence
+    }
+    if not projects or any(
+        classify_source_project(project) != "platform-first-party"
+        for project in projects
+    ):
+        return []
+    for item in evidence:
+        item["project_path"] = str(
+            item.get("project_path", item.get("project", ""))
+        )
+        item["source_path"] = str(item.get("source_path", ""))
+        item.setdefault("file_offset", 0)
+    return sorted(
+        evidence,
+        key=lambda item: (
+            str(item["project_path"]),
+            str(item["source_path"]),
+            int(item["file_offset"]),
+        ),
+    )
+
+
 def _platform_build_version(component: Component, baseline: str) -> dict | None:
     locations = _locations(component)
     framework_paths = [*locations, component.description]
-    if (
-        component.component_type != "framework"
-        or not component.name.startswith("framework/")
-        or not any(_FRAMEWORK_PATH_RE.search(path) for path in framework_paths)
-    ):
+    framework_component = (
+        component.component_type == "framework"
+        and component.name.startswith("framework/")
+        and any(_FRAMEWORK_PATH_RE.search(path) for path in framework_paths)
+    )
+    source_evidence = _exclusive_aosp_platform_source_evidence(component)
+    if not framework_component and not source_evidence:
         return None
     component.resolved_version = baseline
     component.purl = (
@@ -608,8 +649,16 @@ def _platform_build_version(component: Component, baseline: str) -> dict | None:
             confidence=0.74,
             method=ExtractionMethod.VERSION_ESTIMATE,
             evidence=(
-                f"Android framework component {component.name} shares the "
-                f"enclosing platform build baseline"
+                (
+                    f"Android framework component {component.name} shares the "
+                    f"enclosing platform build baseline"
+                )
+                if framework_component
+                else (
+                    f"ELF {component.name} contains exclusively AOSP platform "
+                    f"source-path evidence ({', '.join(item['source_path'] for item in source_evidence)}); "
+                    f"the enclosing Android image declares build baseline {baseline}"
+                )
             ),
         )
     )
@@ -630,11 +679,25 @@ def _platform_build_version(component: Component, baseline: str) -> dict | None:
         "firmware:taxonomy:evidence",
         "android-framework-archive",
     )
+    if source_evidence:
+        _append_unique(
+            component.properties,
+            "firmware:version:evidence-tier",
+            "platform-build-with-aosp-source-path",
+        )
+        _append_unique(
+            component.properties,
+            "firmware:taxonomy:evidence",
+            "aosp-source-path",
+        )
     _set_property(component, "firmware:version:resolution-state", "estimated-platform-build")
     return {
         "name": component.name,
         "version": baseline,
         "baseline_type": "android-platform-build",
+        "source_projects": sorted(
+            {str(item["project_path"]) for item in source_evidence}
+        ),
     }
 
 
@@ -1100,6 +1163,11 @@ def apply_android_provenance(
                 if row is not None:
                     source_rows.append(row)
             continue
+        if is_library:
+            row = _apply_source_revision(component, labels, manifest, source_project_rules)
+            if row is not None:
+                source_rows.append(row)
+                continue
         if platform_baseline:
             row = _platform_build_version(component, platform_baseline)
             if row is not None:
@@ -1107,11 +1175,6 @@ def apply_android_provenance(
                 continue
         if not (is_library or is_executable):
             continue
-        if is_library:
-            row = _apply_source_revision(component, labels, manifest, source_project_rules)
-            if row is not None:
-                source_rows.append(row)
-                continue
         row = _parent_version(component, package_versions)
         if row is not None:
             parent_rows.append(row)
@@ -1190,6 +1253,12 @@ def apply_android_provenance(
         ),
         "parent_package_versions_applied": len(parent_rows),
         "platform_build_versions_applied": len(platform_rows),
+        "framework_platform_build_versions_applied": sum(
+            not row.get("source_projects") for row in platform_rows
+        ),
+        "platform_source_build_versions_applied": sum(
+            bool(row.get("source_projects")) for row in platform_rows
+        ),
         "aosp_release_versions_applied": sum(
             row.get("resolution_state") == "estimated-aosp-release"
             for row in release_rows

@@ -129,6 +129,33 @@ def test_explicit_taxonomy_gets_a_separate_coverage_breakdown():
     assert third_party["usable_coverage"] == 1.0
 
 
+def test_estimated_coverage_retains_resolution_state_breakdown():
+    baseline = [
+        record("libplatform.so", "/system/lib/libplatform.so"),
+        record("libsource.so", "/system/lib/libsource.so"),
+    ]
+    platform = record("libplatform.so", "/system/lib/libplatform.so", "4.4.4")
+    platform["properties"] = [{
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-platform-build",
+    }]
+    source = record("libsource.so", "/system/lib/libsource.so", "git:abc")
+    source["properties"] = [{
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-source-revision",
+    }]
+
+    result = evaluate(baseline, [platform, source], {})
+
+    metrics = result["fixed"]["all"]
+    assert metrics["estimated_versions"] == 2
+    assert metrics["estimated_by_state"] == {
+        "estimated-platform-build": 1,
+        "estimated-source-revision": 1,
+    }
+    assert result["fixed"]["by_taxonomy"] == {}
+
+
 def test_adjacent_estimate_agreement_is_reported_separately_from_exact_agreement():
     from experiments.version_coverage.evaluate import observation_key
 
