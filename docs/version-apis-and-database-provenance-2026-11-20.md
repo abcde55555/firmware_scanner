@@ -129,11 +129,33 @@ NSRL still has zero exact-file matches on the two target firmware images.
 BLintDB remains useful for identity confirmation and mismatch diagnostics, but
 does not directly increase verified version coverage in these samples.
 
+The final Allwinner 0.17.0 scan at commit `a2a7e63` revalidated the full path:
+
+| Metric | Result |
+|---|---:|
+| Firmware SHA-256 | `87c2d561464ec8144f2c580ce5f781262f0506f57a506d534e652e96099f0cf2` |
+| Components | 593 |
+| Analysed ELF files | 444 |
+| Fixed cohort usable | 193/582, 33.16% |
+| Native usable | 56/312, 17.95% |
+| Independently verified | 5 correct, 0 errors |
+| BLintDB queried / candidates | 430 / 5 |
+| BLintDB identity confirmations | 4 |
+| BLintDB comparable version mismatches | 3 |
+| NSRL queried / matched | 430 / 0 |
+| NSRL positive control | passed |
+| CycloneDX 1.6 schema | valid |
+
+The scan duration was 162.392 seconds under heavy host I/O contention and is not
+used as a performance-regression result.
+
 ## Artifacts
 
 - `reports/heldout-debian-independent3-20261120-null-getters/heldout-report.json`
 - `reports/version-coverage-getters-20261120/database-positive-controls-20261120.json`
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
+- `reports/version-coverage-getters-20261120/database-evidence-allwinner-a2a7e63/evaluation-fixed.json`
+- `reports/version-coverage-getters-20261120/database-evidence-allwinner-a2a7e63/schema-validation.json`
 - `src/firmware_scanner/extraction/semantic_version.py`
 - `src/firmware_scanner/databases/manifest.py`
 - `src/firmware_scanner/databases/enricher.py`
