@@ -1,5 +1,8 @@
 """Debian held-out truth normalization and identity aliases."""
 
+import subprocess
+from pathlib import Path
+
 
 def test_debian_package_versions_normalize_to_upstream_releases():
     from experiments.version_coverage.debian_heldout import normalize_upstream_version
@@ -8,10 +11,13 @@ def test_debian_package_versions_normalize_to_upstream_releases():
     assert normalize_upstream_version("libssl3t64", "3.6.3-1") == "3.6.3"
     assert normalize_upstream_version("libjpeg62-turbo", "1:3.1.3-4") == "3.1.3"
     assert normalize_upstream_version("zlib1g", "1:1.3.dfsg+really1.3.1-3") == "1.3.1"
-    assert normalize_upstream_version(
-        "libevent-2.1-7t64",
-        "2.1.12-stable-10+b2",
-    ) == "2.1.12-stable"
+    assert (
+        normalize_upstream_version(
+            "libevent-2.1-7t64",
+            "2.1.12-stable-10+b2",
+        )
+        == "2.1.12-stable"
+    )
 
 
 def test_heldout_catalog_uses_explicit_upstream_aliases():
@@ -34,3 +40,48 @@ def test_independent_catalog_remains_a_separate_twenty_library_suite():
 
     assert len(INDEPENDENT_CATALOG) == 20
     assert len({item.library for item in INDEPENDENT_CATALOG}) == 20
+
+
+def test_second_independent_catalog_is_disjoint_and_has_twenty_libraries():
+    from experiments.version_coverage.debian_heldout import (
+        CATALOG,
+        INDEPENDENT_2_CATALOG,
+        INDEPENDENT_CATALOG,
+    )
+
+    second = {item.library for item in INDEPENDENT_2_CATALOG}
+    existing = {item.library for item in (*CATALOG, *INDEPENDENT_CATALOG)}
+    assert len(INDEPENDENT_2_CATALOG) == 20
+    assert len(second) == 20
+    assert second.isdisjoint(existing)
+
+
+def test_heldout_adjacent_versions_are_separate_from_wrong_estimates():
+    from experiments.version_coverage.debian_heldout import _adjacent, _classify_outcome
+
+    assert _adjacent("5.46", "5.47")
+    assert not _adjacent("5.45", "5.47")
+    assert not _adjacent("5.46", "6.47")
+    assert _classify_outcome(set(), {"5.46"}, "5.47") == "adjacent"
+    assert _classify_outcome({"4.0"}, {"5.0"}, "5.0") == "wrong"
+    assert _classify_outcome(set(), {"4.0", "5.0"}, "5.0") == "estimated"
+    assert _classify_outcome(set(), {"4.0", "5.1"}, "5.0") == "wrong_estimate"
+
+
+def test_path_ownership_requires_the_declared_package(monkeypatch):
+    from experiments.version_coverage import debian_heldout
+
+    def owned(*_args, **_kwargs):
+        return subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="libdemo:amd64: /usr/lib/libdemo.so\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(debian_heldout.subprocess, "run", owned)
+    assert debian_heldout._path_owned_by_package(Path("/usr/lib/libdemo.so"), "libdemo")
+    assert not debian_heldout._path_owned_by_package(
+        Path("/usr/lib/libdemo.so"),
+        "libdifferent",
+    )

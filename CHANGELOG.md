@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-11-20
+
+### Added
+- Conservative probes for documented GNU, libcap, libdevmapper, file, GDBM,
+  Little CMS and Readline version APIs
+- A second 20-library Debian cold-start held-out catalog that is disjoint from
+  the previous development and independent suites
+
+### Changed
+- Held-out usable coverage now includes only exact, correct estimated and
+  explicitly accepted adjacent versions; incorrect estimates are not counted
+  as usable
+
 ## [0.14.0] - 2026-11-20
 
 ### Added

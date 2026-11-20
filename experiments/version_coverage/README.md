@@ -290,6 +290,10 @@ PYTHONPATH=src python3 experiments/version_coverage/debian_heldout.py \
 PYTHONPATH=src python3 experiments/version_coverage/debian_heldout.py \
   --suite independent \
   --output reports/heldout-debian-independent-20-20261120-final
+
+PYTHONPATH=src python3 experiments/version_coverage/debian_heldout.py \
+  --suite independent2 \
+  --output reports/heldout-debian-independent2-20261120-final-v5
 ```
 
 The 54-library development suite returns 39 exact, 2 estimated, 13 unknown and
@@ -299,6 +303,12 @@ after general public getters were added; it is no longer fully held out after
 that rule development. Catalog identity matching is explicit
 filename/component mapping, not a claim of independent identity precision. See
 `docs/heldout-debian-version-validation-2026-11-19.md`.
+
+A second disjoint 20-library catalog was first run against 0.14.0 and produced
+0/20 usable versions. General public-API probes then raised the tuned result to
+**11/20 usable (55%)**: 10 exact, 1 estimated, 0 wrong and 9 unknown. The
+blind and tuned results are preserved separately; the tuned set is no longer
+fully held out.
 
 ## Android source and parent provenance
 
@@ -328,13 +338,13 @@ PYTHONPATH=. python experiments/version_coverage/evaluate.py \
   --baseline-commit e890f0c
 ```
 
-On the frozen 1,129/774 cohort, the 0.14.0 evidence update produces 785/1,129
+On the frozen 1,129/774 cohort, the 0.15.0 evidence update produces 785/1,129
 usable fields (69.53%) and 621/774 native libraries (80.23%): 225 exact and 560
 explicit estimates. The 39-row increase is a scoped Android framework platform
 baseline, not additional upstream releases or third-party exact matches.
 
 Allwinner reaches 190/582 usable fields (32.65%) and 53/312 native libraries
-(16.99%): 120 exact and 70 explicit estimates. Five entries have independent
+(16.99%): 119 exact and 71 explicit estimates. Five entries have independent
 AOSP-source expectations and evaluate 5/5 correct; this remains a development
 calibration subset rather than full-firmware accuracy.
 

@@ -1,7 +1,7 @@
 # BLintDB, NSRL and Rust crate version validation
 
 Date: 2026-11-20
-Scanner: 0.14.0
+Scanner: 0.15.0
 
 ## Database releases
 
@@ -176,4 +176,6 @@ reachability and vendor-status analysis before classifying exploitability.
 - `reports/version-coverage-getters-20261120/final-allwinner/allwinner-system_cyclonedx_1.6_cyclonedx_1.6_vex.json`
 - `reports/version-coverage-getters-20261120/schema-validation.json`
 - `experiments/version_coverage/verified/allwinner-ktu84q-aosp-4.4.4.json`
-- `reports/version-coverage-getters-20261120/wheel-0.14.0/wheel-verification.json`
+- `reports/version-coverage-getters-20261120/wheel-0.15.0/wheel-verification.json`
+- `reports/heldout-debian-independent2-20261120/heldout-report.json`
+- `reports/heldout-debian-independent2-20261120-final-v5/heldout-report.json`

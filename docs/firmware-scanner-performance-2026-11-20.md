@@ -1,4 +1,4 @@
-# Firmware Scanner 0.14.0 performance revalidation
+# Firmware Scanner 0.15.0 performance revalidation
 
 Date: 2026-11-20
 
@@ -49,10 +49,16 @@ different host load; the final audited run measured **659.390 seconds**. The slo
 run performed the same 1,789 unique ELF database lookups and produced the same
 version buckets, so it is a host-load observation rather than a usable
 performance regression sample. Allwinner runs ranged from **60.035 to 196.624
-seconds**; the final audit measured **76.227 seconds**. Neither firmware timing
+seconds**; the final 0.15.0 run measured **75.994 seconds**. Neither firmware timing
 series is yet a controlled benchmark.
 
-The final 0.14.0 content results are:
+The final 0.15.0 Modern scan measured **517.177 seconds** and 2,419,848 KiB peak RSS.
+The new public-version extractor uses a byte-string prefilter and only performs
+ELF symbol/disassembly work on candidate files, so neither target gained new
+fixed-cohort versions and the observed timing remains within the host-load
+range rather than establishing a code-path speed claim.
+
+The final 0.15.0 content results are:
 
 - Modern: 1,577 components, 785/1,129 usable, 225 exact, 621/774 native;
 - Allwinner: 593 components, 190/582 usable, 119 exact, 53/312 native;
@@ -78,6 +84,8 @@ The final 0.14.0 content results are:
   target with pyelftools.
 - IJG ABI, AMR-WB and AOSP release-project probes run only after bounded symbol
   checks and do not expand the general regex workload.
+- Public version APIs are reached only after a candidate-name prefilter; the
+  parser then requires documented APIs, objects or integer encodings.
 
 ## Telemetry
 
@@ -96,13 +104,15 @@ SBOM metadata.
 
 ## Verification
 
-- Full Python suite: **725 passed, 39 skipped**.
+- Full Python suite: **748 passed, 39 skipped**.
 - Modern fixed-cohort result is unchanged from 0.13.0 in every version bucket.
 - Allwinner fixed-cohort result increased from 185/582 to **190/582**; exact
   remained **119** and estimated increased from 66 to **71**.
 - The five-item source-verified Allwinner calibration subset is **5/5 correct**.
+- The second disjoint Debian catalog improved from a blind 0/20 to 11/20
+  usable versions, with 10 exact, 1 estimated and 0 wrong.
 - CycloneDX 1.5/1.6 BOM and VEX schemas: **8/8 valid**.
-- Isolated wheel install: module and metadata versions both `0.14.0`;
+- Isolated wheel install: module and metadata versions both `0.15.0`;
   all 15 locked data files verified with `builtin-2026.11.20.3`.
 
 The roadmap target of sub-200-second Modern scans is not yet met. Remaining

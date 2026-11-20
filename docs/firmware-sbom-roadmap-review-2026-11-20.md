@@ -1,4 +1,4 @@
-# 固件 SBOM 路线审查与 0.14.0 实测结论
+# 固件 SBOM 路线审查与 0.15.0 实测结论
 
 Date: 2026-11-20
 Baseline commit: `a1ab86b37ab160f581d93d97fcf76ad56a5b48ab`
@@ -116,6 +116,14 @@ exact。现在：
 - `conflict-unresolved` 不计为 usable；
 - 一个去重后的 BOM 行可以覆盖多个固定基线路径；
 - exact、estimated、range、unknown 和独立已核验结果分开报告。
+
+### 5. 公共版本 API 与泛化验证
+
+0.15.0 增加了要求“定义 API + 版本 banner/getter/只读对象”同时成立的通用
+探针。新的 20 库 Debian 目录首次盲测为 0/20，加入通用探针后的调参结果为
+**11/20 usable，其中 10 exact、1 estimated、0 wrong、9 unknown**。由于规则
+已使用该目录的首次失败进行开发，这 11/20 不再属于完整 held-out，必须与
+盲测结果分别报告。
 
 ## 实测结果
 
@@ -247,3 +255,5 @@ Allwinner 新增的 39 项同样是 `estimated-platform-build`。它没有与分
 - `reports/version-coverage-getters-20261120/schema-validation.json`
 - `experiments/version_coverage/verified/allwinner-ktu84q-aosp-4.4.4.json`
 - `docs/firmware-sbom-roadmap-research-2026-11-20.md`
+- `docs/public-version-api-and-heldout-2026-11-20.md`
+- `reports/heldout-debian-independent2-20261120-final-v5/heldout-report.json`

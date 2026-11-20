@@ -1,13 +1,14 @@
-# Version evidence hardening and 0.14.0 revalidation
+# Version evidence hardening and 0.15.0 revalidation
 
 Date: 2026-11-20
 
 ## Result
 
-Version 0.14.0 adds binary ABI evidence, an official codec banner, and controlled
-AOSP release-project estimates. Source revisions, parent package versions,
-platform builds, and AOSP release derivations remain separate from upstream
-binary self-version evidence.
+Version 0.15.0 adds general public-version API probes on top of binary ABI
+evidence, an official codec banner, and controlled AOSP release-project
+estimates. Source revisions, parent package versions, platform builds, and
+AOSP release derivations remain separate from upstream binary self-version
+evidence.
 
 | Metric | Modern Android 16 | Allwinner Android 4.4 |
 |---|---:|---:|
@@ -169,18 +170,18 @@ rows after only the APEX-contained copy received its parent version.
 The scan harness copies the repository `pyproject.toml` into the frozen source
 bundle. A previous defect caused generated BOMs to report an unrelated
 installed package version (`0.2.0`) instead of the source version. The final
-0.14.0 wheel reports the source version correctly.
+0.15.0 wheel reports the source version correctly.
 
 An isolated wheel install reports:
 
-- module version: `0.14.0`;
-- package metadata version: `0.14.0`;
+- module version: `0.15.0`;
+- package metadata version: `0.15.0`;
 - rule lock: `builtin-2026.11.20.3`;
 - locked rule/provenance JSON files: 15.
 
 ## Validation
 
-- Full Python suite: **725 passed, 39 skipped**.
+- Full Python suite: **748 passed, 39 skipped**.
 - CycloneDX 1.5/1.6 BOM and VEX schemas: **8/8 valid**.
 - BLintDB: Modern confirms 9 identities; Allwinner confirms 4 identities and
   reviews 5 comparable identity-confirmed components.
@@ -188,9 +189,12 @@ An isolated wheel install reports:
 - Vulnerability records remain candidates: Modern 470, Allwinner 1,500.
 - Platform-build components in VEX `affects`: **0 for both images**.
 - AOSP calibration subset: **5/5 correct, 0 errors**.
+- Second independent Debian catalog: blind 0/20; after general public-API
+  expansion, **11/20 usable (55%), 10 exact, 1 estimated, 0 wrong**.
 
 Machine-readable results:
 
 - `reports/version-coverage-getters-20261120/final-summary.json`
 - `reports/version-coverage-getters-20261120/schema-validation.json`
-- `reports/version-coverage-getters-20261120/wheel-0.14.0/wheel-verification.json`
+- `reports/version-coverage-getters-20261120/wheel-0.15.0/wheel-verification.json`
+- `reports/heldout-debian-independent2-20261120-final-v5/heldout-report.json`

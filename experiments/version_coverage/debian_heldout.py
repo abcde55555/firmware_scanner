@@ -108,10 +108,36 @@ INDEPENDENT_CATALOG = (
     CatalogItem("libseccomp2", "libseccomp.so.2", ("seccomp", "libseccomp")),
 )
 
+INDEPENDENT_2_CATALOG = (
+    CatalogItem("libmagic1t64", "libmagic.so.1", ("magic", "libmagic")),
+    CatalogItem("libcap2", "libcap.so.2", ("cap", "libcap")),
+    CatalogItem("libattr1", "libattr.so.1", ("attr", "libattr")),
+    CatalogItem("libacl1", "libacl.so.1", ("acl", "libacl")),
+    CatalogItem("libltdl7", "libltdl.so.7", ("ltdl", "libltdl")),
+    CatalogItem("libgpgme45", "libgpgme.so.45", ("gpgme", "libgpgme")),
+    CatalogItem("libassuan9", "libassuan.so.9", ("assuan", "libassuan")),
+    CatalogItem("libksba8", "libksba.so.8", ("ksba", "libksba")),
+    CatalogItem("libnpth0t64", "libnpth.so.0", ("npth", "libnpth")),
+    CatalogItem("libpopt0", "libpopt.so.0", ("popt", "libpopt")),
+    CatalogItem("libaudit1", "libaudit.so.1", ("audit", "libaudit")),
+    CatalogItem("libselinux1", "libselinux.so.1", ("selinux", "libselinux")),
+    CatalogItem(
+        "libdevmapper1.02.1",
+        "libdevmapper.so.1.02.1",
+        ("devmapper", "libdevmapper"),
+    ),
+    CatalogItem("libfuse3-4", "libfuse3.so.4", ("fuse3", "libfuse3")),
+    CatalogItem("libapparmor1", "libapparmor.so.1", ("apparmor", "libapparmor")),
+    CatalogItem("libgdbm6t64", "libgdbm.so.6", ("gdbm", "libgdbm")),
+    CatalogItem("libreadline8t64", "libreadline.so.8", ("readline", "libreadline")),
+    CatalogItem("libedit2", "libedit.so.2", ("edit", "libedit")),
+    CatalogItem("liblcms2-2", "liblcms2.so.2", ("lcms2", "liblcms2")),
+    CatalogItem("libidn12", "libidn.so.12", ("idn", "libidn")),
+)
+
 _OVERRIDES = {
     "libevent-2.1-7t64": "2.1.12-stable",
     "libjpeg62-turbo": "3.1.3",
-    "libmagic1t64": "5.46",
     "libgmp10": "6.3.0",
     "zlib1g": "1.3.1",
 }
@@ -156,6 +182,7 @@ def package_version(package: str) -> str:
 def package_library(
     package: str,
     soname: str,
+    package_release: str,
     *,
     download_dir: Path | None = None,
     extract_dir: Path | None = None,
@@ -172,9 +199,11 @@ def package_library(
         result_lines = result.stdout.splitlines()
     for line in result_lines:
         if Path(line).name == soname and Path(line).exists():
-            return Path(line).resolve(), "installed"
+            path = Path(line).resolve()
+            if _path_owned_by_package(path, package):
+                return path, "installed"
     fallback = COMMON_LIB / soname
-    if fallback.exists():
+    if fallback.exists() and _path_owned_by_package(fallback.resolve(), package):
         return fallback.resolve(), "installed"
     if download_dir is None or extract_dir is None:
         return None, "missing"
@@ -182,18 +211,33 @@ def package_library(
     download_dir.mkdir(parents=True, exist_ok=True)
     package_extract = extract_dir / package
     package_extract.mkdir(parents=True, exist_ok=True)
-    existing = sorted(download_dir.glob(f"{package}_*.deb"))
-    if not existing:
-        subprocess.run(
-            ["apt-get", "download", package],
+    download = subprocess.run(
+        ["apt-get", "download", f"{package}={package_release}"],
+        check=False,
+        cwd=download_dir,
+        capture_output=True,
+        text=True,
+    )
+    if download.returncode:
+        return None, "missing"
+    existing = sorted(
+        download_dir.glob(f"{package}_*.deb"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    if existing:
+        archive = existing[0]
+        metadata = subprocess.run(
+            ["dpkg-deb", "-f", str(archive), "Package", "Version"],
             check=False,
-            cwd=download_dir,
             capture_output=True,
             text=True,
         )
-        existing = sorted(download_dir.glob(f"{package}_*.deb"))
-    if existing:
-        archive = existing[-1]
+        if metadata.returncode:
+            return None, "missing"
+        values = dict(line.split(": ", 1) for line in metadata.stdout.splitlines() if ": " in line)
+        if values.get("Package") != package or values.get("Version") != package_release:
+            return None, "missing"
         subprocess.run(
             ["dpkg-deb", "-x", str(archive), str(package_extract)],
             check=False,
@@ -206,6 +250,23 @@ def package_library(
     return None, "missing"
 
 
+def _path_owned_by_package(path: Path, package: str) -> bool:
+    result = subprocess.run(
+        ["dpkg-query", "-S", str(path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode:
+        return False
+    owners = {
+        line.rsplit(": ", 1)[0].split(":", 1)[0].split(",")[0]
+        for line in result.stdout.splitlines()
+        if ": " in line
+    }
+    return package in owners
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -215,11 +276,14 @@ def _sha256(path: Path) -> str:
 
 
 def _state(component) -> str:
-    return next((
-        str(prop.get("value", ""))
-        for prop in component.properties
-        if prop.get("name") == "firmware:version:resolution-state"
-    ), "")
+    return next(
+        (
+            str(prop.get("value", ""))
+            for prop in component.properties
+            if prop.get("name") == "firmware:version:resolution-state"
+        ),
+        "",
+    )
 
 
 def evaluate_library(
@@ -232,11 +296,7 @@ def evaluate_library(
 
     components = inventory.extract(path.read_bytes(), item.library, str(path))
     aliases = {identity_key(alias) for alias in item.aliases}
-    candidates = [
-        component
-        for component in components
-        if identity_key(component.name) in aliases
-    ]
+    candidates = [component for component in components if identity_key(component.name) in aliases]
     versions = [
         {
             "name": component.name,
@@ -245,24 +305,16 @@ def evaluate_library(
         }
         for component in candidates
     ]
-    exact = next((
-        component
+    exact_versions = {
+        component.resolved_version
         for component in candidates
-        if component.resolved_version == expected_version
-        and _state(component) == "exact"
-    ), None)
-    estimated = next((
-        component
+        if component.resolved_version and _state(component) == "exact"
+    }
+    estimated_versions = {
+        component.resolved_version
         for component in candidates
         if component.resolved_version and _state(component) == "estimated"
-    ), None)
-    wrong = next((
-        component
-        for component in candidates
-        if component.resolved_version
-        and _state(component) == "exact"
-        and component.resolved_version != expected_version
-    ), None)
+    }
     return {
         "package": item.package,
         "library": item.library,
@@ -271,23 +323,27 @@ def evaluate_library(
         "expected_version": expected_version,
         "catalog_identity_matched": bool(candidates),
         "versions": versions,
-        "outcome": (
-            "exact" if exact else
-            "estimated" if estimated else
-            "wrong" if wrong else
-            "unknown"
-        ),
+        "outcome": _classify_outcome(exact_versions, estimated_versions, expected_version),
     }
 
 
 def _metrics(records: list[dict]) -> dict:
     counts = {
         outcome: sum(record["outcome"] == outcome for record in records)
-        for outcome in ("exact", "estimated", "wrong", "unknown")
+        for outcome in (
+            "exact",
+            "estimated",
+            "adjacent",
+            "wrong",
+            "wrong_estimate",
+            "unknown",
+        )
     }
     total = len(records)
     recognized = sum(record["catalog_identity_matched"] for record in records)
-    usable = counts["exact"] + counts["estimated"]
+    usable = counts["exact"] + counts["estimated"] + counts["adjacent"]
+    incorrect = counts["wrong"] + counts["wrong_estimate"]
+    claimed = usable + incorrect
     return {
         "total": total,
         "catalog_identity_matched": recognized,
@@ -296,11 +352,44 @@ def _metrics(records: list[dict]) -> dict:
         "usable_versions": usable,
         "usable_coverage": usable / total if total else 0.0,
         "exact_coverage": counts["exact"] / total if total else 0.0,
-        "precision_among_version_claims": (
-            counts["exact"] / (counts["exact"] + counts["wrong"])
-            if counts["exact"] + counts["wrong"] else 0.0
-        ),
+        "precision_among_version_claims": (usable / claimed if claimed else 0.0),
     }
+
+
+def _adjacent(actual: str, expected: str) -> bool:
+    for pattern, prefix_length in (
+        (r"(\d+)\.(\d+)", 1),
+        (r"(\d+)\.(\d+)\.(\d+)", 2),
+    ):
+        actual_match = re.fullmatch(pattern, actual)
+        expected_match = re.fullmatch(pattern, expected)
+        if actual_match is None or expected_match is None:
+            continue
+        actual_parts = tuple(map(int, actual_match.groups()))
+        expected_parts = tuple(map(int, expected_match.groups()))
+        return (
+            actual_parts[:prefix_length] == expected_parts[:prefix_length]
+            and abs(actual_parts[-1] - expected_parts[-1]) == 1
+        )
+    return False
+
+
+def _classify_outcome(
+    exact_versions: set[str],
+    estimated_versions: set[str],
+    expected: str,
+) -> str:
+    if exact_versions:
+        if expected in exact_versions and exact_versions == {expected}:
+            return "exact"
+        return "wrong"
+    if expected in estimated_versions:
+        return "estimated"
+    if estimated_versions and all(_adjacent(version, expected) for version in estimated_versions):
+        return "adjacent"
+    if estimated_versions:
+        return "wrong_estimate"
+    return "unknown"
 
 
 def run(output: Path, catalog=CATALOG) -> dict:
@@ -318,6 +407,7 @@ def run(output: Path, catalog=CATALOG) -> dict:
         path, acquisition = package_library(
             item.package,
             item.library,
+            version,
             download_dir=output / "debs",
             extract_dir=output / "extracted",
         )
@@ -334,11 +424,13 @@ def run(output: Path, catalog=CATALOG) -> dict:
             text=True,
         )
         if result.returncode:
-            skipped.append({
-                "package": item.package,
-                "library": item.library,
-                "error": f"strip failed: {result.stderr.strip()}",
-            })
+            skipped.append(
+                {
+                    "package": item.package,
+                    "library": item.library,
+                    "error": f"strip failed: {result.stderr.strip()}",
+                }
+            )
             continue
         record = evaluate_library(inventory, stripped, item, expected)
         record["package_version"] = version
@@ -376,18 +468,28 @@ def main() -> int:
     )
     parser.add_argument(
         "--suite",
-        choices=("development", "independent"),
+        choices=("development", "independent", "independent2"),
         default="development",
     )
     args = parser.parse_args()
-    catalog = INDEPENDENT_CATALOG if args.suite == "independent" else CATALOG
+    catalogs = {
+        "development": CATALOG,
+        "independent": INDEPENDENT_CATALOG,
+        "independent2": INDEPENDENT_2_CATALOG,
+    }
+    catalog = catalogs[args.suite]
     report = run(args.output, catalog)
-    print(json.dumps({
-        "output": str(args.output),
-        "scanner_version": report["scanner_version"],
-        "metrics": report["metrics"],
-        "skipped": len(report["skipped"]),
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "output": str(args.output),
+                "scanner_version": report["scanner_version"],
+                "metrics": report["metrics"],
+                "skipped": len(report["skipped"]),
+            },
+            indent=2,
+        )
+    )
     return 0
 
 

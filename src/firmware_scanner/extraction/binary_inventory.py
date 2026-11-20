@@ -149,6 +149,9 @@ class BinaryInventory:
         from .amr_wb_version import extract_amr_wb_version
         for hit in extract_amr_wb_version(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
+        from .public_version import extract_public_versions
+        for hit in extract_public_versions(data):
+            claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
         from .structured_version import extract_structured_versions
         for hit in extract_structured_versions(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
@@ -359,12 +362,16 @@ class BinaryInventory:
         for identity, version, confidence, method, evidence, source in matches:
             if version:
                 observed.add(version)
-                if method == ExtractionMethod.DISASSEMBLY and evidence.startswith('{'):
+                if evidence.startswith('{'):
                     try:
                         metadata = json.loads(evidence)
                         if metadata.get('encoding'):
                             numeric_api_values.add(version)
-                        if metadata.get('version_kind') in ('vendor-build', 'runtime'):
+                        if metadata.get('version_kind') in (
+                            'vendor-build',
+                            'runtime',
+                            'interface',
+                        ):
                             explicit_kinds.add(metadata['version_kind'])
                     except (ValueError, TypeError, AttributeError):
                         pass
@@ -388,6 +395,7 @@ class BinaryInventory:
         if version:
             kind = ('vendor-build' if explicit_kinds == {'vendor-build'} else
                     'runtime' if explicit_kinds == {'runtime'} else
+                    'interface' if explicit_kinds == {'interface'} else
                     'development' if _DEVELOPMENT.search(version) else 'observed-release')
             properties.append({'name': 'firmware:version:kind', 'value': kind})
         if not versions:
