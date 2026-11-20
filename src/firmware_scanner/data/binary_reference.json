@@ -1048,6 +1048,62 @@
       "banner_regex": "speex-([0-9]+\\.[0-9]+(?:beta[0-9]+|rc[0-9]+|[A-Za-z0-9._+\\-]*))(?=\\x00|\\s)",
       "required_literal": "speex-",
       "filename_patterns": ["speex"]
+    },
+    {
+      "name": "mDNSResponder",
+      "source": "https://github.com/apple-oss-distributions/mDNSResponder",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "DNSServiceProcessResult",
+          "DNSServiceRefDeallocate",
+          "DNSServiceBrowse"
+        ]
+      ],
+      "filename_patterns": ["mdnssd", "dns_sd"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "Sonivox",
+      "source": "https://android.googlesource.com/platform/external/sonivox/",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "EAS_OpenJETStream",
+          "JET_Init",
+          "JET_Process"
+        ]
+      ],
+      "filename_patterns": ["sonivox"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "Tremolo",
+      "source": "https://gitlab.xiph.org/xiph/tremolo",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "vorbis_dsp_synthesis",
+          "vorbis_book_decode",
+          "ogg_sync_pageout"
+        ]
+      ],
+      "filename_patterns": ["vorbisidec"],
+      "require_filename_hint": true
+    },
+    {
+      "name": "TinyALSA",
+      "source": "https://github.com/tinyalsa/tinyalsa",
+      "version_policy": "identity_only",
+      "identity_symbols": [
+        [
+          "pcm_open",
+          "pcm_params_get",
+          "pcm_close"
+        ]
+      ],
+      "filename_patterns": ["tinyalsa"],
+      "require_filename_hint": true
     }
   ]
 }

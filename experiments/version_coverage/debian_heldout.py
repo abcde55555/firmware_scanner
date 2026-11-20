@@ -462,6 +462,7 @@ def _run_provenance() -> dict:
         "src/firmware_scanner/extraction/semantic_version.py",
         "src/firmware_scanner/extraction/public_version.py",
         "src/firmware_scanner/extraction/filename_release.py",
+        "src/firmware_scanner/extraction/webrtc_audio_modules.py",
         "src/firmware_scanner/data/binary_reference.json",
         "src/firmware_scanner/data/rules.lock.json",
     )

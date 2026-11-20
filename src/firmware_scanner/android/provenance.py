@@ -194,6 +194,22 @@ def apply_component_taxonomy(components: list[Component]) -> None:
                 "blintdb-confirmed-identity",
             )
             continue
+        source_evidence = {
+            str(prop.get("value", "")).strip()
+            for prop in component.properties
+            if prop.get("name") == "firmware:evidence:source"
+            and str(prop.get("value", "")).startswith("https://")
+        }
+        if source_evidence and not source_evidence.issubset(
+            {"https://github.com/e-m-b-a/emba"}
+        ):
+            _append_unique(component.properties, "firmware:taxonomy", "third-party-oss")
+            _append_unique(
+                component.properties,
+                "firmware:taxonomy:evidence",
+                "upstream-source-evidence",
+            )
+            continue
         purl = component.purl.casefold()
         if any(purl.startswith(f"pkg:{scheme}/") for scheme in external_schemes):
             _append_unique(component.properties, "firmware:taxonomy", "third-party-oss")

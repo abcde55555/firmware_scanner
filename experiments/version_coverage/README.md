@@ -177,6 +177,21 @@ form. The product results remain Allwinner 194/582 (native 57/312) and Modern
 786/1,129 (native 622/774). See
 `docs/version-0.21-heldout-and-roadmap-results-2026-11-20.md`.
 
+Version 0.22.0 moved the next expansion back to components present in the
+supplied firmware. Allwinner now exposes six exact WebRTC audio-module versions
+and four additional third-party identities. Its BOM grows from 599 to 607
+components and its explicit third-party OSS taxonomy grows from 18 to 51.
+Modern has no new component rows but its explicit third-party taxonomy grows
+from 245 to 272. The historical fixed denominators remain unchanged at
+Allwinner 194/582 (native 57/312) and Modern 786/1,129 (native 622/774).
+
+The database report now includes identity-confirmation, reference-version
+agreement and exact-file match rates. BLintDB confirms 4/5 reviewed Allwinner
+components and 9/9 reviewed Modern components; its reference-version agreement
+rate is 0% on both images. NSRL has zero exact-file matches. These databases are
+retained as identity or exact-file evidence and never overwrite target versions.
+See `docs/version-0.22-target-derived-components-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

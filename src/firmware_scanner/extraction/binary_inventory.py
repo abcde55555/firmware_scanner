@@ -133,6 +133,22 @@ class BinaryInventory:
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
         for hit in self._semantic.extract(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))
+        from .webrtc_audio_modules import extract_webrtc_audio_modules
+        for hit in extract_webrtc_audio_modules(data):
+            try:
+                source = str(json.loads(hit.evidence).get("source", ""))
+            except (ValueError, TypeError, AttributeError):
+                source = ""
+            claims.append(
+                (
+                    hit.name,
+                    hit.version,
+                    hit.confidence,
+                    ExtractionMethod.SYMBOL_TABLE,
+                    hit.evidence,
+                    source,
+                )
+            )
         from .protobuf_version import extract_protobuf_versions
         for hit in extract_protobuf_versions(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.DISASSEMBLY, hit.evidence, ''))

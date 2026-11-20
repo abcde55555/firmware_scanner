@@ -27,6 +27,7 @@ htmlcov/
 unpacked/
 reports/
 output/
+work/
 *.log
 
 # IDE / OS

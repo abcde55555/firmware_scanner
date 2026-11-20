@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-11-20
+
+### Added
+- Recognize six versioned WebRTC audio-processing modules from documented
+  getters, peer API symbol sets and embedded module release literals
+- Attribute mDNSResponder, Sonivox, Tremolo and TinyALSA identities only when
+  their specific filename and multi-symbol evidence agree
+- Classify components with explicit upstream source evidence as third-party OSS
+  without treating the EMBA rule repository as a component source
+- Report BLintDB identity/reference-version rates and NSRL exact-file rates for
+  operational database effectiveness
+
+### Changed
+- Advance the packaged rule lock to `builtin-2026.11.20.7`
+
 ## [0.21.0] - 2026-11-20
 
 ### Added

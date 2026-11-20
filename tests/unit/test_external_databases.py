@@ -14,7 +14,7 @@ from firmware_scanner.core.config import AnalysisConfig
 from firmware_scanner.databases import blintdb as blintdb_module
 from firmware_scanner.databases import manifest as manifest_module
 from firmware_scanner.databases.blintdb import BLintDatabase
-from firmware_scanner.databases.enricher import DatabaseEnricher
+from firmware_scanner.databases.enricher import DatabaseEnricher, DatabaseStats
 from firmware_scanner.databases.manifest import DatabaseManifest, packaged_manifests
 from firmware_scanner.databases.nsrl import NSRLDatabase
 from firmware_scanner.extraction.binary_inventory import BinaryInventory
@@ -37,6 +37,23 @@ def manifest(kind: str, digest: str = "0" * 64) -> DatabaseManifest:
             "architecture": "all",
         }
     )
+
+
+def test_database_stats_report_commercial_effectiveness_rates():
+    stats = DatabaseStats(
+        nsrl_queried_files=100,
+        nsrl_matched_files=3,
+        blint_reviewed_components=10,
+        blint_identity_confirmations=7,
+        blint_reference_version_agreements=2,
+        blint_reference_version_mismatches=3,
+    )
+
+    payload = stats.as_dict()
+
+    assert payload["blint_identity_confirmation_rate"] == 0.7
+    assert payload["blint_reference_version_agreement_rate"] == 0.4
+    assert payload["nsrl_exact_file_match_rate"] == 0.03
 
 
 def make_nsrl(path):

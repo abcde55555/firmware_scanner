@@ -37,6 +37,10 @@ class DatabaseStats:
     errors: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
+        blint_comparable = (
+            self.blint_reference_version_agreements
+            + self.blint_reference_version_mismatches
+        )
         return {
             "files_queried": self.files_queried,
             "nsrl_queried_files": self.nsrl_queried_files,
@@ -55,6 +59,21 @@ class DatabaseStats:
             "blint_reference_version_agreements": self.blint_reference_version_agreements,
             "blint_reference_version_mismatches": self.blint_reference_version_mismatches,
             "blint_reference_version_not_comparable": (self.blint_reference_version_not_comparable),
+            "blint_identity_confirmation_rate": (
+                self.blint_identity_confirmations / self.blint_reviewed_components
+                if self.blint_reviewed_components
+                else 0.0
+            ),
+            "blint_reference_version_agreement_rate": (
+                self.blint_reference_version_agreements / blint_comparable
+                if blint_comparable
+                else 0.0
+            ),
+            "nsrl_exact_file_match_rate": (
+                self.nsrl_matched_files / self.nsrl_queried_files
+                if self.nsrl_queried_files
+                else 0.0
+            ),
             "database_provenance": dict(self.database_provenance),
             "self_checks": dict(self.self_checks),
             "errors": list(self.errors),

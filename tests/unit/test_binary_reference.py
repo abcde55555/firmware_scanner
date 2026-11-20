@@ -205,6 +205,12 @@ def test_catalog_identifies_additional_native_libraries_from_defined_symbols(tmp
         ("zip_open", "zip_fopen"),
         ("libraw_init", "libraw_open_file"),
         ("TIFFOpen", "TIFFReadDirectory"),
+        ("DNSServiceProcessResult", "DNSServiceRefDeallocate"),
+        ("DNSServiceBrowse", "pcm_close"),
+        ("EAS_OpenJETStream", "JET_Init"),
+        ("JET_Process", "vorbis_dsp_synthesis"),
+        ("vorbis_book_decode", "ogg_sync_pageout"),
+        ("pcm_open", "pcm_params_get"),
     ]
     source = tmp_path / "catalog-fixture.c"
     source.write_text(
@@ -300,3 +306,45 @@ def test_android_44_speex_and_stlport_identities_require_specific_apis():
         )
         == []
     )
+
+
+@pytest.mark.parametrize(
+    ("filename", "symbols", "expected"),
+    [
+        (
+            "libmdnssd.so",
+            {"DNSServiceProcessResult", "DNSServiceRefDeallocate", "DNSServiceBrowse"},
+            "mDNSResponder",
+        ),
+        (
+            "libsonivox.so",
+            {"EAS_OpenJETStream", "JET_Init", "JET_Process"},
+            "Sonivox",
+        ),
+        (
+            "libvorbisidec.so",
+            {"vorbis_dsp_synthesis", "vorbis_book_decode", "ogg_sync_pageout"},
+            "Tremolo",
+        ),
+        (
+            "libtinyalsa.so",
+            {"pcm_open", "pcm_params_get", "pcm_close"},
+            "TinyALSA",
+        ),
+    ],
+)
+def test_android_audio_identities_require_exact_filename_and_symbol_set(
+    filename,
+    symbols,
+    expected,
+):
+    matcher = BinaryReferenceMatcher()
+
+    matches = matcher.match(b"\x7fELF", filename, defined_symbols=symbols)
+
+    assert [(match.name, match.version) for match in matches] == [(expected, "")]
+    assert matcher.match(
+        b"\x7fELF",
+        "libunrelated.so",
+        defined_symbols=symbols,
+    ) == []

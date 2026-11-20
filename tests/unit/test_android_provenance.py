@@ -215,6 +215,34 @@ def test_platform_build_scope_accepts_only_system_or_partition_root_framework(
     assert bool(framework.resolved_version) is expected
 
 
+def test_upstream_source_evidence_marks_third_party_oss_without_guessing():
+    component = native("WebRTC AEC", "/lib/libwebrtc_audio_preprocessing.so")
+    component.properties.append(
+        {
+            "name": "firmware:evidence:source",
+            "value": (
+                "https://android.googlesource.com/platform/external/webrtc/"
+                "+/4b6dc1ec58105d17dc8c2f550124cc0621dc93b7/"
+            ),
+        }
+    )
+    emba_component = native("RuleOnly", "/lib/libunknown.so")
+    emba_component.properties.append(
+        {"name": "firmware:evidence:source", "value": "https://github.com/e-m-b-a/emba"}
+    )
+
+    apply_component_taxonomy([component, emba_component])
+
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "third-party-oss",
+    } in component.properties
+    assert not any(
+        prop.get("name") == "firmware:taxonomy"
+        for prop in emba_component.properties
+    )
+
+
 @pytest.mark.parametrize(
     ("filename", "identity", "expected_version", "project_path"),
     [
