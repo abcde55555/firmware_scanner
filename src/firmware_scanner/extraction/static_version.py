@@ -124,6 +124,9 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "mpc_get_version": ("MPC", "direct"),
     "Pa_GetVersionText": ("PortAudio", "portaudio"),
     "ffado_get_version": ("libffado", "prefixed"),
+    "GeoIP_lib_version": ("GeoIP", "direct"),
+    "hid_version_str": ("libhidapi-hidraw", "direct"),
+    "ub_version": ("libunbound", "direct"),
 }
 _INTEGER_GETTERS: dict[str, tuple[str, tuple[int, int, int], str]] = {
     "yajl_version": (
@@ -145,6 +148,13 @@ _VERSION_DEFINITION_RULES: dict[
             }
         ),
         "https://github.com/SELinuxProject/selinux/blob/3.11/libsepol/src/libsepol.map.in",
+    ),
+}
+_STRING_OBJECT_RULES: dict[str, tuple[str, frozenset[str], str]] = {
+    "SLang_Version_String": (
+        "libslang",
+        frozenset({"SLang_init_tty", "SLsmg_init_smg"}),
+        "https://github.com/jedsoft/slang/blob/master/src/slversion.c",
     ),
 }
 _SUPPORT_SYMBOLS = {
@@ -223,7 +233,12 @@ class StaticVersionExtractor:
             or data[:4] != b"\x7fELF"
         ):
             return []
-        getter_names = {*_GETTERS, *_INTEGER_GETTERS, *_VERSION_DEFINITION_RULES}
+        getter_names = {
+            *_GETTERS,
+            *_INTEGER_GETTERS,
+            *_VERSION_DEFINITION_RULES,
+            *_STRING_OBJECT_RULES,
+        }
         if not any(name.encode("ascii") in data for name in getter_names):
             return []
         try:
@@ -254,6 +269,7 @@ class StaticVersionExtractor:
                 if segment["p_type"] == "PT_LOAD"
             ]
             functions: dict[str, tuple[int, int, bool]] = {}
+            objects: dict[str, tuple[int, int]] = {}
             defined_functions: set[str] = set()
             defined_versions: set[str] = set()
             version_definition = elf.get_section_by_name(".gnu.version_d")
@@ -264,7 +280,15 @@ class StaticVersionExtractor:
                 if not isinstance(section, SymbolTableSection):
                     continue
                 for symbol in section.iter_symbols():
-                    if symbol["st_info"]["type"] != "STT_FUNC":
+                    symbol_type = symbol["st_info"]["type"]
+                    if symbol_type == "STT_OBJECT":
+                        if symbol.name in _STRING_OBJECT_RULES:
+                            objects.setdefault(
+                                symbol.name,
+                                (int(symbol["st_value"]), int(symbol["st_size"])),
+                            )
+                        continue
+                    if symbol_type != "STT_FUNC":
                         continue
                     if not symbol["st_shndx"] or symbol["st_shndx"] == "SHN_UNDEF":
                         continue
@@ -298,6 +322,57 @@ class StaticVersionExtractor:
                             f"symbols {sorted(required_symbols)} are present; source {source}"
                         ),
                         0.93,
+                    )
+                )
+            for object_name, (
+                component,
+                required_symbols,
+                source,
+            ) in _STRING_OBJECT_RULES.items():
+                if (
+                    object_name not in objects
+                    or not required_symbols.issubset(defined_functions)
+                ):
+                    continue
+                object_address, _object_size = objects[object_name]
+                pointer_size = 8 if elf.elfclass == 64 else 4
+                object_offset = _vaddr_to_offset(
+                    load_segments,
+                    object_address,
+                    pointer_size,
+                )
+                if object_offset is None or object_offset + pointer_size > len(data):
+                    continue
+                string_address = int.from_bytes(
+                    data[object_offset : object_offset + pointer_size],
+                    "little",
+                )
+                text = self._read_c_string(data, load_segments, string_address)
+                if text is None:
+                    continue
+                version = _version_from_text(component, "direct", text)
+                if version is None:
+                    continue
+                string_offset = _vaddr_to_offset(
+                    load_segments,
+                    string_address,
+                    len(text) + 1,
+                    readonly=True,
+                )
+                if string_offset is None:
+                    continue
+                matches.append(
+                    StaticVersionMatch(
+                        component,
+                        version,
+                        (
+                            f"exported pointer object {object_name} at VA "
+                            f"0x{object_address:x} points to {text!r} at VA "
+                            f"0x{string_address:x} (file offset 0x{string_offset:x}); "
+                            f"required symbols {sorted(required_symbols)} are present; "
+                            f"source {source}"
+                        ),
+                        0.92,
                     )
                 )
             for getter, (address, size, thumb) in functions.items():

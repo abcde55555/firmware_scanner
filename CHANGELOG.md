@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-11-20
+
+### Added
+- Add an untouched 20-library Independent-8 Debian held-out suite
+- Extract documented releases for GeoIP, HIDAPI and Unbound, plus the exported
+  S-Lang version-string object
+
+### Changed
+- Publish Independent-8 at 2/20 exact before tuning and 6/20 exact with zero
+  wrong claims after rule expansion
+
 ## [0.30.0] - 2026-11-20
 
 ### Added

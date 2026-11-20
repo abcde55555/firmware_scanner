@@ -267,6 +267,13 @@ Independent-7 regression now reaches **10/20 exact, zero wrong and ten explicit
 unknowns**, or 50% exact coverage with 100% precision among emitted claims. See
 `docs/version-0.30-libsepol-version-namespace-2026-11-20.md`.
 
+Version 0.31.0 adds Independent-8, a separate 20-library Debian suite. Its
+untouched blind run was **2/20 exact** with zero wrong claims. Documented getters
+and the S-Lang version object raised the tuned regression to **6/20 exact, zero
+wrong and 14 explicit unknowns**. This lower second-suite result is retained to
+prevent the 50% Independent-7 result from being presented as universal coverage.
+See `docs/version-0.31-independent8-generalization-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

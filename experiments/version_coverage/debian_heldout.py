@@ -329,6 +329,41 @@ INDEPENDENT_7_CATALOG = (
     CatalogItem("libsepol2", "libsepol.so.2", ("sepol", "libsepol")),
 )
 
+INDEPENDENT_8_CATALOG = (
+    CatalogItem("libargon2-1", "libargon2.so.1", ("argon2", "libargon2")),
+    CatalogItem("libbsd0", "libbsd.so.0", ("bsd", "libbsd")),
+    CatalogItem("libbytesize1", "libbytesize.so.1", ("bytesize", "libbytesize")),
+    CatalogItem("libcap-ng0", "libcap-ng.so.0", ("cap-ng", "libcap-ng")),
+    CatalogItem("libgeoip1t64", "libGeoIP.so.1", ("geoip", "libgeoip")),
+    CatalogItem("libgpm2", "libgpm.so.2", ("gpm", "libgpm")),
+    CatalogItem(
+        "libhidapi-hidraw0",
+        "libhidapi-hidraw.so.0",
+        ("hidapi-hidraw", "libhidapi-hidraw"),
+    ),
+    CatalogItem(
+        "libmaxminddb0",
+        "libmaxminddb.so.0",
+        ("maxminddb", "libmaxminddb"),
+    ),
+    CatalogItem("libmd0", "libmd.so.0", ("md", "libmd")),
+    CatalogItem("libmnl0", "libmnl.so.0", ("mnl", "libmnl")),
+    CatalogItem(
+        "libnetfilter-conntrack3",
+        "libnetfilter_conntrack.so.3",
+        ("netfilter-conntrack", "libnetfilter-conntrack"),
+    ),
+    CatalogItem("libnewt0.52", "libnewt.so.0.52", ("newt", "libnewt")),
+    CatalogItem("libnfnetlink0", "libnfnetlink.so.0", ("nfnetlink", "libnfnetlink")),
+    CatalogItem("libpam0g", "libpam.so.0", ("pam", "libpam")),
+    CatalogItem("libpci3", "libpci.so.3", ("pci", "libpci")),
+    CatalogItem("libpipeline1", "libpipeline.so.1", ("pipeline", "libpipeline")),
+    CatalogItem("libslang2", "libslang.so.2", ("slang", "libslang")),
+    CatalogItem("libsodium23", "libsodium.so.23", ("sodium", "libsodium")),
+    CatalogItem("libtirpc3t64", "libtirpc.so.3", ("tirpc", "libtirpc")),
+    CatalogItem("libunbound8", "libunbound.so.8", ("unbound", "libunbound")),
+)
+
 _OVERRIDES = {
     "libevent-2.1-7t64": "2.1.12-stable",
     "libjpeg62-turbo": "3.1.3",
@@ -722,6 +757,7 @@ def main() -> int:
             "independent5",
             "independent6",
             "independent7",
+            "independent8",
         ),
         default="development",
     )
@@ -733,6 +769,7 @@ def main() -> int:
         "independent5": INDEPENDENT_5_CATALOG,
         "independent6": INDEPENDENT_6_CATALOG,
         "independent7": INDEPENDENT_7_CATALOG,
+        "independent8": INDEPENDENT_8_CATALOG,
     }
     catalog = catalogs[args.suite]
     report = run(args.output, catalog)
