@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "catalogs": [
+    {
+      "android_version": "4.4.4",
+      "build_ids": [
+        "KTU84Q"
+      ],
+      "aosp_tag": "android-4.4.4_r2",
+      "manifest_revision": "64f4f353b72203e5225b03fd3432f0825345f6bb",
+      "manifest_url": "https://android.googlesource.com/platform/manifest/+/64f4f353b72203e5225b03fd3432f0825345f6bb/default.xml?format=TEXT",
+      "projects": [
+        {
+          "path": "external/bluetooth/bluedroid",
+          "name": "platform/external/bluetooth/bluedroid",
+          "revision": "7dab6592721a74e5e32daac266779ecd4463773f"
+        },
+        {
+          "path": "external/chromium",
+          "name": "platform/external/chromium",
+          "revision": "3f6640e94b9354397c8dce53c91f54589360e00f"
+        },
+        {
+          "path": "external/chromium-libpac",
+          "name": "platform/external/chromium-libpac",
+          "revision": "99cacbdb705554d9a611a548eb515dedb61ff7b1"
+        },
+        {
+          "path": "external/compiler-rt",
+          "name": "platform/external/compiler-rt",
+          "revision": "f6ad106035fcae4909b7ef6d903cb67b8a89b4f3"
+        },
+        {
+          "path": "external/neven",
+          "name": "platform/external/neven",
+          "revision": "3fd3838250aa8de71932028ae1bbf5b4e7e79459"
+        },
+        {
+          "path": "external/protobuf",
+          "name": "platform/external/protobuf",
+          "revision": "43dbe57e80e4ab1d8661cd4a9749b238e07ed857"
+        },
+        {
+          "path": "external/skia",
+          "name": "platform/external/skia",
+          "revision": "65b06b7302197ce8ad4234d9cbac9f90c2121308"
+        },
+        {
+          "path": "external/tinyxml2",
+          "name": "platform/external/tinyxml2",
+          "revision": "9982eb1324390b01c9a9b1e43871415bc3f3c14a"
+        },
+        {
+          "path": "external/v8",
+          "name": "platform/external/v8",
+          "revision": "5b3c8d4a3d91a25ffc5257519d459d4b2e8f429e"
+        },
+        {
+          "path": "external/webrtc",
+          "name": "platform/external/webrtc",
+          "revision": "d4d54e6466f6c3d4ea41db3887eb5b285f2f92c6"
+        }
+      ]
+    }
+  ]
+}
