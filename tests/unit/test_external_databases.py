@@ -546,8 +546,23 @@ def test_enricher_paths_accept_cli_string_values(tmp_path, monkeypatch):
     )
     try:
         assert enricher.nsrl is not None
+        assert enricher.stats.self_checks["nsrl-exact-file"]["passed"] is True
     finally:
         enricher.close()
+
+
+def test_database_self_check_failure_blocks_a_scan(tmp_path):
+    path = tmp_path / "empty-nsrl.db"
+    make_nsrl(path)
+    connection = sqlite3.connect(path)
+    connection.execute("DELETE FROM FILE")
+    connection.commit()
+    connection.close()
+    nsrl = NSRLDatabase(path, manifest("nsrl"), verify_hash=False)
+    enricher = DatabaseEnricher(nsrl=nsrl)
+
+    with pytest.raises(RuntimeError, match="NSRL exact-file self-check failed"):
+        enricher.run_self_checks()
 
 
 def test_database_hash_verification_is_cached_by_immutable_file_metadata(tmp_path, monkeypatch):

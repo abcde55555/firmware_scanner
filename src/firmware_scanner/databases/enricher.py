@@ -30,6 +30,7 @@ class DatabaseStats:
     blint_reference_version_mismatches: int = 0
     blint_reference_version_not_comparable: int = 0
     database_provenance: dict = field(default_factory=dict)
+    self_checks: dict = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
@@ -49,6 +50,7 @@ class DatabaseStats:
             "blint_reference_version_mismatches": self.blint_reference_version_mismatches,
             "blint_reference_version_not_comparable": (self.blint_reference_version_not_comparable),
             "database_provenance": dict(self.database_provenance),
+            "self_checks": dict(self.self_checks),
             "errors": list(self.errors),
         }
 
@@ -117,7 +119,17 @@ class DatabaseEnricher:
                 verify_hash=False,
                 integrity_verified=verify_hash,
             )
-        return cls(blint=blint, nsrl=nsrl)
+        enricher = cls(blint=blint, nsrl=nsrl)
+        enricher.run_self_checks()
+        return enricher
+
+    def run_self_checks(self) -> None:
+        """Fail before scanning if the NSRL exact-query path is not operational."""
+        if self.nsrl is None:
+            return
+        self.stats.self_checks["nsrl-exact-file"] = self.nsrl.self_check()
+        if not self.stats.self_checks["nsrl-exact-file"].get("passed"):
+            raise RuntimeError("NSRL exact-file self-check failed")
 
     def enrich(
         self,

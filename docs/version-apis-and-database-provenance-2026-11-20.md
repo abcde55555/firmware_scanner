@@ -72,6 +72,11 @@ NSRL lookups now preserve:
 - database release and digest;
 - distribution-package version semantics.
 
+Opening an NSRL database runs the same exact-query path against one immutable
+control row. A failed control aborts the scan before component analysis; the
+control result is recorded in `database_stats.self_checks` and is not counted
+as a firmware hit.
+
 The scan report distinguishes a database being disabled, a failed lookup, zero
 matches, and a successful exact match. Neither database is allowed to write a
 component `resolved_version`.
