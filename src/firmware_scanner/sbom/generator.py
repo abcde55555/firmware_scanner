@@ -34,6 +34,9 @@ class SBOMGenerator:
         ):
             android_info = {
                 "database_stats": context.metadata.get("database_stats", {}),
+                "database_provenance": context.metadata.get(
+                    "database_provenance", {}
+                ),
                 "analysis_stats": context.metadata.get("analysis_stats", {}),
                 "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
                 "provenance_stats": context.metadata.get("provenance_stats", {}),
@@ -44,6 +47,7 @@ class SBOMGenerator:
             overlays = {
                 key: context.metadata[key]
                 for key in (
+                    "database_provenance",
                     "family_provenance_stats",
                     "provenance_stats",
                     "license_stats",

@@ -184,6 +184,34 @@ def test_cyclonedx_records_scan_analysis_stats_as_metadata():
     } in bom["metadata"]["properties"]
 
 
+def test_cyclonedx_metadata_carries_database_provenance():
+    generator = CycloneDXGenerator()
+    provenance = {
+        "schema_version": 1,
+        "databases": [
+            {
+                "kind": "nsrl",
+                "release": "2026.03.1",
+                "database_sha256": "b" * 64,
+            }
+        ],
+    }
+
+    bom = generator.generate(
+        [],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+        build_info={"database_provenance": provenance},
+    )
+
+    prop = next(
+        item
+        for item in bom["metadata"]["properties"]
+        if item["name"] == "firmware:database:provenance"
+    )
+    assert json.loads(prop["value"]) == provenance
+
+
 def test_sbom_generator_propagates_generic_database_stats_without_android_info():
     context = AnalysisContext(
         firmware_path=Path("firmware.bin"),
@@ -191,6 +219,10 @@ def test_sbom_generator_propagates_generic_database_stats_without_android_info()
         components=[],
         metadata={
             "database_stats": {"files_queried": 9},
+            "database_provenance": {
+                "schema_version": 1,
+                "databases": [{"kind": "blintdb", "release": "v4"}],
+            },
             "analysis_stats": {"content_cache_hits": 2},
             "family_provenance_stats": {"versions_inherited": 1},
             "provenance_stats": {"notice_license_attribution": {"components_licensed": 2}},
@@ -204,6 +236,10 @@ def test_sbom_generator_propagates_generic_database_stats_without_android_info()
     bom = json.loads(SBOMGenerator().generate_cyclonedx(context, spec_version="1.6"))
     properties = {item["name"]: item["value"] for item in bom["metadata"]["properties"]}
     assert properties["firmware:database:stats"] == '{"files_queried": 9}'
+    assert json.loads(properties["firmware:database:provenance"]) == {
+        "schema_version": 1,
+        "databases": [{"kind": "blintdb", "release": "v4"}],
+    }
     assert properties["firmware:analysis:stats"] == '{"content_cache_hits": 2}'
     assert properties["firmware:family-provenance:stats"] == '{"versions_inherited": 1}'
     assert properties["firmware:provenance:stats"] == (

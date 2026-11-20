@@ -913,7 +913,11 @@ def _run_analysis(
                                    files_analyzed=len(all_files),
                                    components_found=len(smart_components))
             if generic_database_enricher is not None:
-                context.metadata["database_stats"] = smart.database_stats
+                database_stats = smart.database_stats
+                context.metadata["database_stats"] = database_stats
+                context.metadata["database_provenance"] = database_stats.get(
+                    "database_provenance", {}
+                )
                 context.metadata["analysis_stats"] = smart.analysis_stats
 
         # Run EMBA rules on extracted binary files (catches versions in decompressed content)
@@ -988,7 +992,11 @@ def _run_analysis(
 
     if generic_database_enricher is not None:
         generic_database_enricher.reconcile(components)
-        context.metadata["database_stats"] = generic_database_enricher.stats.as_dict()
+        database_stats = generic_database_enricher.stats.as_dict()
+        context.metadata["database_stats"] = database_stats
+        context.metadata["database_provenance"] = database_stats.get(
+            "database_provenance", {}
+        )
     context.metadata["family_provenance_stats"] = apply_family_version_provenance(components)
     apply_component_taxonomy(components)
     total_before_dedup = len(components)
@@ -1675,6 +1683,9 @@ def _store_android_build_info(context: AnalysisContext, result) -> None:
     }
     if result.database_stats:
         context.metadata["database_stats"] = result.database_stats
+        context.metadata["database_provenance"] = result.database_stats.get(
+            "database_provenance", {}
+        )
     if result.analysis_stats:
         context.metadata["analysis_stats"] = result.analysis_stats
     if result.provenance_stats:
@@ -1791,6 +1802,7 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
     """Output full analysis as JSON (not SBOM format)."""
     import json
 
+    database_stats = context.metadata.get("database_stats", {})
     report = {
         "firmware": {
             "path": str(context.firmware_path),
@@ -1804,7 +1816,9 @@ def _output_json_report(context: AnalysisContext, output: Optional[Path]):
             "name": context.detected_rtos,
             "confidence": context.rtos_confidence,
         },
-        "database_stats": context.metadata.get("database_stats", {}),
+        "database_stats": database_stats,
+        "database_provenance": context.metadata.get("database_provenance")
+        or database_stats.get("database_provenance", {}),
         "analysis_stats": context.metadata.get("analysis_stats", {}),
         "family_provenance_stats": context.metadata.get("family_provenance_stats", {}),
         "provenance_stats": context.metadata.get("provenance_stats", {}),

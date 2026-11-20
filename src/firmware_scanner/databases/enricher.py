@@ -19,6 +19,8 @@ class DatabaseStats:
     nsrl_queried_files: int = 0
     nsrl_matched_files: int = 0
     nsrl_distribution_rows: int = 0
+    nsrl_total_distribution_rows: int = 0
+    nsrl_truncated_files: int = 0
     blint_queried_files: int = 0
     blint_candidate_files: int = 0
     blint_candidate_rows: int = 0
@@ -27,6 +29,7 @@ class DatabaseStats:
     blint_reference_version_agreements: int = 0
     blint_reference_version_mismatches: int = 0
     blint_reference_version_not_comparable: int = 0
+    database_provenance: dict = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
@@ -35,6 +38,8 @@ class DatabaseStats:
             "nsrl_queried_files": self.nsrl_queried_files,
             "nsrl_matched_files": self.nsrl_matched_files,
             "nsrl_distribution_rows": self.nsrl_distribution_rows,
+            "nsrl_total_distribution_rows": self.nsrl_total_distribution_rows,
+            "nsrl_truncated_files": self.nsrl_truncated_files,
             "blint_queried_files": self.blint_queried_files,
             "blint_candidate_files": self.blint_candidate_files,
             "blint_candidate_rows": self.blint_candidate_rows,
@@ -43,6 +48,7 @@ class DatabaseStats:
             "blint_reference_version_agreements": self.blint_reference_version_agreements,
             "blint_reference_version_mismatches": self.blint_reference_version_mismatches,
             "blint_reference_version_not_comparable": (self.blint_reference_version_not_comparable),
+            "database_provenance": dict(self.database_provenance),
             "errors": list(self.errors),
         }
 
@@ -57,6 +63,23 @@ class DatabaseEnricher:
         self.blint = blint
         self.nsrl = nsrl
         self.stats = DatabaseStats()
+        self.stats.database_provenance = self.provenance()
+
+    def provenance(self) -> dict:
+        databases = []
+        if self.blint is not None:
+            databases.append(
+                self.blint.manifest.provenance(
+                    integrity_verified=self.blint.integrity_verified
+                )
+            )
+        if self.nsrl is not None:
+            databases.append(
+                self.nsrl.manifest.provenance(
+                    integrity_verified=self.nsrl.integrity_verified
+                )
+            )
+        return {"schema_version": 1, "databases": databases}
 
     @classmethod
     def from_paths(
@@ -75,7 +98,12 @@ class DatabaseEnricher:
                 blint_path,
                 verify_hash=verify_hash,
             )
-            blint = BLintDatabase(blint_path, manifest, verify_hash=False)
+            blint = BLintDatabase(
+                blint_path,
+                manifest,
+                verify_hash=False,
+                integrity_verified=verify_hash,
+            )
         if nsrl_path:
             nsrl_path = Path(nsrl_path)
             manifest = load_database_manifest(
@@ -83,7 +111,12 @@ class DatabaseEnricher:
                 nsrl_path,
                 verify_hash=verify_hash,
             )
-            nsrl = NSRLDatabase(nsrl_path, manifest, verify_hash=False)
+            nsrl = NSRLDatabase(
+                nsrl_path,
+                manifest,
+                verify_hash=False,
+                integrity_verified=verify_hash,
+            )
         return cls(blint=blint, nsrl=nsrl)
 
     def enrich(
@@ -100,14 +133,24 @@ class DatabaseEnricher:
         if self.nsrl is not None:
             self.stats.nsrl_queried_files += 1
             try:
-                matches = self.nsrl.lookup(digest, len(data))
+                lookup = self.nsrl.lookup_with_metadata(digest, len(data))
             except Exception as exc:  # noqa: BLE001 - retain file-scoped DB evidence errors
                 self.stats.errors.append(f"NSRL lookup failed for {location}: {type(exc).__name__}")
             else:
+                matches = lookup["matches"]
                 if matches:
                     self.stats.nsrl_matched_files += 1
                     self.stats.nsrl_distribution_rows += len(matches)
+                    self.stats.nsrl_total_distribution_rows += int(
+                        lookup["total_matches"]
+                    )
+                    self.stats.nsrl_truncated_files += int(bool(lookup["truncated"]))
                     self._append_property(component, "firmware:nsrl:file-matched", "true")
+                    self._append_property(
+                        component,
+                        "firmware:nsrl:provenance-id",
+                        self._provenance_id(self.nsrl.manifest),
+                    )
                     self._append_property(
                         component, "firmware:nsrl:database-release", self.nsrl.manifest.release
                     )
@@ -115,6 +158,22 @@ class DatabaseEnricher:
                         component,
                         "firmware:nsrl:distributions",
                         json.dumps(matches[:20], sort_keys=True, ensure_ascii=False),
+                    )
+                    self._append_property(
+                        component,
+                        "firmware:nsrl:lookup-provenance",
+                        json.dumps(
+                            {
+                                "query_sha256": digest,
+                                "query_file_size": len(data),
+                                "returned_matches": int(lookup["returned_matches"]),
+                                "total_matches": int(lookup["total_matches"]),
+                                "truncated": bool(lookup["truncated"]),
+                                "database_release": self.nsrl.manifest.release,
+                                "database_sha256": self.nsrl.manifest.database_sha256,
+                            },
+                            sort_keys=True,
+                        ),
                     )
         if self.blint is not None:
             self.stats.blint_queried_files += 1
@@ -130,6 +189,11 @@ class DatabaseEnricher:
                     self.stats.blint_candidate_rows += len(candidates)
                     self._append_property(
                         component, "firmware:blintdb:candidate-count", str(len(candidates))
+                    )
+                    self._append_property(
+                        component,
+                        "firmware:blintdb:provenance-id",
+                        self._provenance_id(self.blint.manifest),
                     )
                     self._append_property(
                         component, "firmware:blintdb:database-release", self.blint.manifest.release
@@ -280,3 +344,7 @@ class DatabaseEnricher:
     def _set_property(component: Component, name: str, value: str) -> None:
         component.properties = [prop for prop in component.properties if prop.get("name") != name]
         component.properties.append({"name": name, "value": value})
+
+    @staticmethod
+    def _provenance_id(manifest) -> str:
+        return f"sha256:{manifest.database_sha256}"

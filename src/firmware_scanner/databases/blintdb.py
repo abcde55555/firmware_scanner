@@ -38,6 +38,7 @@ class BLintDatabase:
         manifest: DatabaseManifest,
         *,
         verify_hash: bool = True,
+        integrity_verified: bool | None = None,
     ):
         if manifest.kind != "blintdb":
             raise ValueError("BLintDatabase requires a blintdb manifest")
@@ -49,6 +50,9 @@ class BLintDatabase:
                 raise ValueError("BLintDB manifest changed during verification")
         self.path = path
         self.manifest = manifest
+        self.integrity_verified = (
+            bool(verify_hash) if integrity_verified is None else bool(integrity_verified)
+        )
         self._connection = self._connect()
         required = {"SchemaMeta", "Projects", "Builds", "Binaries", "Symbols"}
         tables = {

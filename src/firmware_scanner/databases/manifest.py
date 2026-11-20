@@ -23,6 +23,30 @@ class DatabaseManifest:
     architecture: str
     properties: dict
 
+    def provenance(self, *, integrity_verified: bool) -> dict:
+        """Return immutable scan-report provenance without exposing a local path."""
+        return {
+            "kind": self.kind,
+            "name": self.name,
+            "release": self.release,
+            "database_sha256": self.database_sha256,
+            "database_bytes": self.database_bytes,
+            "database_schema_version": self.database_schema_version,
+            "source_url": self.source_url,
+            "license": self.license,
+            "architecture": self.architecture,
+            "properties": dict(self.properties),
+            "integrity": {
+                "algorithm": "sha256",
+                "verified": integrity_verified,
+                "status": (
+                    "sha256-manifest-match"
+                    if integrity_verified
+                    else "size-manifest-match-hash-not-verified"
+                ),
+            },
+        }
+
     @classmethod
     def from_dict(cls, payload: dict) -> DatabaseManifest:
         required = {

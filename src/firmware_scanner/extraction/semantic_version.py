@@ -29,7 +29,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 
-from firmware_scanner.extraction.static_version import StaticVersionMatch
+from firmware_scanner.extraction.static_version import StaticVersionExtractor, StaticVersionMatch
 
 VERIFY = '_ZN6google8protobuf8internal13VerifyVersionEiiPKc'
 VERSION_STRING = '_ZN6google8protobuf8internal13VersionStringEi'
@@ -64,6 +64,20 @@ STRING_GETTERS = {
     'vpx_codec_version_str': ('libvpx', 'v'),
     'event_get_version': ('libevent', ''),
 }
+NULL_ARGUMENT_VERSION_GETTERS = {
+    'gnutls_check_version': (
+        'GnuTLS',
+        'https://gitlab.com/gnutls/gnutls/-/blob/master/lib/global.c',
+    ),
+    'idn2_check_version': (
+        'libidn2',
+        'https://gitlab.com/libidn/libidn2/-/blob/master/lib/version.c',
+    ),
+    'asn1_check_version': (
+        'libtasn1',
+        'https://gitlab.com/gnutls/libtasn1/-/blob/master/lib/version.c',
+    ),
+}
 X86_32_STRING_GETTERS = {
     'Cronet_Engine_GetVersionString': ('Cronet', ''),
     'event_get_version': ('libevent', ''),
@@ -95,6 +109,7 @@ class SemanticVersionExtractor:
     def extract(self, data: bytes) -> list[StaticVersionMatch]:
         if not data.startswith(b'\x7fELF') or not any(
             name.encode() in data for name in [VERIFY, *INTEGER_GETTERS, *STRING_GETTERS,
+                                                *NULL_ARGUMENT_VERSION_GETTERS,
                                                 *X86_32_STRING_GETTERS]
         ):
             return []
@@ -125,6 +140,10 @@ class SemanticVersionExtractor:
                         'instructions': image.format_instructions(instructions),
                     }
                     result.append(StaticVersionMatch(component, version, json.dumps(evidence), .94))
+            for name, (component, source) in NULL_ARGUMENT_VERSION_GETTERS.items():
+                hit = self._null_argument_version(image, name, component, source)
+                if hit is not None:
+                    result.append(hit)
             if image.machine == 'EM_ARM':
                 for name, (component, prefix) in STRING_GETTERS.items():
                     function = image.functions.get(name)
@@ -170,6 +189,146 @@ class SemanticVersionExtractor:
             return result
         except (ValueError, TypeError, KeyError, IndexError, OSError, ELFError, CsError, struct.error):
             return []
+
+    @staticmethod
+    def _null_argument_version(
+        image: ELFView,
+        symbol: str,
+        component: str,
+        source: str,
+    ) -> StaticVersionMatch | None:
+        """Prove that a zero argument takes a branch returning one release string."""
+        function = image.functions.get(symbol)
+        if function is None or not 0 < function[1] <= 256:
+            return None
+        instructions = image.instructions(*function)
+        if not instructions:
+            return None
+
+        target = None
+        null_test = None
+        branch = None
+        for index, insn in enumerate(instructions[:8]):
+            if image.machine == 'EM_X86_64':
+                if insn.mnemonic == 'test' and len(insn.operands) == 2:
+                    operands = insn.operands
+                    if (
+                        all(operand.type == X86_OP_REG for operand in operands)
+                        and insn.reg_name(operands[0].reg)
+                        == insn.reg_name(operands[1].reg)
+                        and insn.reg_name(operands[0].reg) in ('rdi', 'edi')
+                    ):
+                        null_test = insn
+                        continue
+                if (
+                    null_test is not None
+                    and insn.mnemonic in ('je', 'jz')
+                    and len(insn.operands) == 1
+                    and insn.operands[0].type == X86_OP_IMM
+                ):
+                    branch = insn
+                    target = int(insn.operands[0].imm)
+                    break
+            elif image.machine == 'EM_AARCH64':
+                if insn.mnemonic == 'cbz' and len(insn.operands) == 2:
+                    first, destination = insn.operands
+                    if (
+                        first.type == ARM64_OP_REG
+                        and insn.reg_name(first.reg) in ('x0', 'w0')
+                        and destination.type == ARM64_OP_IMM
+                    ):
+                        branch = insn
+                        target = int(destination.imm)
+                        break
+            elif image.machine == 'EM_ARM':
+                if insn.mnemonic != 'cbz' or len(insn.operands) != 2:
+                    continue
+                first, destination = insn.operands
+                if (
+                    first.type == ARM_OP_REG
+                    and insn.reg_name(first.reg) == 'r0'
+                    and destination.type == ARM_OP_IMM
+                ):
+                    branch = insn
+                    target = int(destination.imm)
+                    break
+
+        start = function[0] & ~1 if image.machine == 'EM_ARM' else function[0]
+        end = start + function[1]
+        if branch is None or target is None or not start < target < end:
+            return None
+        null_block = [insn for insn in instructions if insn.address >= target]
+        if not null_block:
+            return None
+        terminal_index = next(
+            (
+                index
+                for index, insn in enumerate(null_block)
+                if (
+                    insn.mnemonic == 'ret'
+                    or (
+                        image.machine == 'EM_ARM'
+                        and insn.mnemonic == 'bx'
+                        and len(insn.operands) == 1
+                        and insn.operands[0].type == ARM_OP_REG
+                        and insn.reg_name(insn.operands[0].reg) == 'lr'
+                    )
+                )
+            ),
+            None,
+        )
+        if terminal_index is None:
+            return None
+        null_block = null_block[: terminal_index + 1]
+
+        if image.machine == 'EM_X86_64':
+            returned = StaticVersionExtractor._x86_64_pointer(null_block)
+        elif image.machine == 'EM_AARCH64':
+            returned = StaticVersionExtractor._aarch64_pointer(null_block)
+        else:
+            code = image.read(
+                target,
+                null_block[-1].address + null_block[-1].size - target,
+                executable=True,
+            )
+            returned = (
+                StaticVersionExtractor._arm_pointer(null_block, code, target)
+                if code is not None
+                else None
+            )
+        if returned is None:
+            return None
+        pointer, is_literal = returned
+        if is_literal:
+            pointer_size = 8 if image.machine == 'EM_AARCH64' else 4
+            raw_pointer = image.read(pointer, pointer_size, readonly=True)
+            if raw_pointer is None:
+                return None
+            pointer = int.from_bytes(raw_pointer, 'little')
+        text = image.c_string(pointer, readonly=True)
+        if text is None:
+            return None
+        match = re.fullmatch(r'v?(\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)', text)
+        if match is None:
+            return None
+        version = match.group(1)
+        evidence = {
+            'prototype': 'null-argument-version-getter-v1',
+            'function': symbol,
+            'vaddr': hex(function[0] & ~1 if image.machine == 'EM_ARM' else function[0]),
+            'parameter': 'first argument',
+            'zero_test': image.format_instructions([null_test] if null_test else []),
+            'conditional_branch': image.format_instructions([branch]),
+            'null_return_block': image.format_instructions(null_block),
+            'returned_string': text,
+            'string_vaddr': hex(pointer),
+            'source': source,
+            'explanation': (
+                'the defined API returns the unique NUL-terminated release string '
+                'only on the proven zero-argument branch'
+            ),
+        }
+        return StaticVersionMatch(component, version, json.dumps(evidence, sort_keys=True), .96)
 
     @staticmethod
     def _constant_return(instructions) -> int | None:

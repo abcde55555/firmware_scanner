@@ -132,6 +132,7 @@ def main():
         "provenance_stats": result.provenance_stats,
         "family_provenance_stats": family_stats,
         "database_stats": result.database_stats,
+        "database_provenance": result.database_stats.get("database_provenance", {}),
         "analysis_stats": result.analysis_stats,
         "method": "Product AndroidSystemScanner and CLI dedup; frozen source; read-only ext4; no target execution",
     }
@@ -139,8 +140,23 @@ def main():
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
     )
     (output / "file-observations.json").write_text(json.dumps(observations, indent=2) + "\n")
+    sbom_build_info = dataclasses.asdict(result.build_info)
+    sbom_build_info.update(
+        {
+            "database_stats": result.database_stats,
+            "database_provenance": result.database_stats.get(
+                "database_provenance", {}
+            ),
+            "analysis_stats": result.analysis_stats,
+            "provenance_stats": result.provenance_stats,
+            "family_provenance_stats": family_stats,
+        }
+    )
     sbom = CycloneDXGenerator().generate(
-        components, firmware_path=str(args.image), firmware_hash_sha256=firmware["sha256"]
+        components,
+        firmware_path=str(args.image),
+        firmware_hash_sha256=firmware["sha256"],
+        build_info=sbom_build_info,
     )
     (output / "system_sbom.json").write_text(json.dumps(sbom, indent=2, ensure_ascii=False) + "\n")
     metrics = {

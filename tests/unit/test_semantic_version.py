@@ -74,6 +74,84 @@ def test_jxl_version_integer_uses_its_decimal_generation_encoding(tmp_path, cc):
     ]
 
 
+def test_null_argument_version_getters_require_a_zero_path_to_release_string(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "null_argument_getters",
+        """
+        extern int version_cmp(const char *);
+        const char *gnutls_check_version(const char *required) {
+            if (!required) return "3.8.13";
+            return version_cmp(required) ? "3.8.13" : 0;
+        }
+        const char *idn2_check_version(const char *required) {
+            if (!required) return "2.3.8";
+            return version_cmp(required) ? "2.3.8" : 0;
+        }
+        const char *asn1_check_version(const char *required) {
+            if (!required) return "4.21.0";
+            return version_cmp(required) ? "4.21.0" : 0;
+        }
+        """,
+        flags=("-O2", "-fno-stack-protector"),
+    )
+
+    matches = SemanticVersionExtractor().extract(data)
+
+    assert {(match.name, match.version, match.confidence) for match in matches} == {
+        ("GnuTLS", "3.8.13", 0.96),
+        ("libidn2", "2.3.8", 0.96),
+        ("libtasn1", "4.21.0", 0.96),
+    }
+    assert all(
+        json.loads(match.evidence)["prototype"] == "null-argument-version-getter-v1"
+        for match in matches
+    )
+
+
+def test_null_argument_getter_is_not_inferred_when_null_path_returns_no_version(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "null_argument_negative",
+        """
+        extern int version_cmp(const char *);
+        const char *gnutls_check_version(const char *required) {
+            if (required) return version_cmp(required) ? "3.8.13" : 0;
+            return 0;
+        }
+        """,
+        flags=("-O2", "-fno-stack-protector"),
+    )
+
+    assert SemanticVersionExtractor().extract(data) == []
+
+
+def test_aarch64_null_argument_getter_returns_release_string():
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+    from tests.unit.test_static_version import _aarch64_elf
+
+    elf = _aarch64_elf(
+        [
+            0xB4000020,  # cbz x0, #4
+            0xB0000000,  # adrp x0, #0x2000
+            0x91040000,  # add x0, x0, #0x100
+            0xD65F03C0,  # ret
+        ],
+        b"3.8.13",
+        symbol_name="gnutls_check_version",
+    )
+
+    assert [(match.name, match.version) for match in SemanticVersionExtractor().extract(elf)] == [
+        ("GnuTLS", "3.8.13")
+    ]
+
+
 def test_import_only_undefined_getter_is_not_treated_as_a_definition(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

@@ -127,6 +127,23 @@ def test_packaged_database_manifests_are_complete():
     assert all(len(item.database_sha256) == 64 for item in manifests)
 
 
+def test_database_manifest_provenance_separates_verified_and_size_only_modes():
+    manifest = packaged_manifests()[0]
+
+    verified = manifest.provenance(integrity_verified=True)
+    size_only = manifest.provenance(integrity_verified=False)
+
+    assert verified["database_sha256"] == manifest.database_sha256
+    assert verified["source_url"].startswith("https://")
+    assert verified["integrity"] == {
+        "algorithm": "sha256",
+        "verified": True,
+        "status": "sha256-manifest-match",
+    }
+    assert size_only["integrity"]["verified"] is False
+    assert size_only["integrity"]["status"] == "size-manifest-match-hash-not-verified"
+
+
 def test_nsrl_exact_lookup_keeps_distribution_semantics(tmp_path):
     path = tmp_path / "nsrl.db"
     make_nsrl(path)
@@ -135,6 +152,44 @@ def test_nsrl_exact_lookup_keeps_distribution_semantics(tmp_path):
     assert rows[0]["file_name"] == "libexact.so"
     assert rows[0]["package_name"] == "Example Android Image"
     assert rows[0]["version_semantics"] == "distribution-package-not-upstream-library"
+
+
+def test_nsrl_lookup_reports_total_and_truncation(tmp_path):
+    path = tmp_path / "nsrl.db"
+    make_nsrl(path)
+    connection = sqlite3.connect(path)
+    for index in range(100):
+        connection.execute(
+            "INSERT INTO FILE VALUES (?, '', '', '', ?, 1234, 1)",
+            ("a" * 64, f"libexact-{index:03}.so"),
+        )
+    connection.commit()
+    connection.close()
+    database = NSRLDatabase(
+        path,
+        manifest("nsrl"),
+        verify_hash=False,
+        integrity_verified=True,
+    )
+
+    lookup = database.lookup_with_metadata("a" * 64, 1234, limit=100)
+
+    assert lookup["returned_matches"] == 100
+    assert lookup["total_matches"] == 101
+    assert lookup["truncated"] is True
+
+
+def test_nsrl_positive_control_uses_the_production_exact_query(tmp_path):
+    path = tmp_path / "nsrl.db"
+    make_nsrl(path)
+    database = NSRLDatabase(path, manifest("nsrl"), verify_hash=False)
+
+    control = database.self_check()
+
+    assert control["passed"] is True
+    assert control["query_sha256"] == "a" * 64
+    assert control["query_file_size"] == 1234
+    assert control["total_matches"] == 1
 
 
 def test_nsrl_reuses_one_read_only_connection_for_repeated_lookups(tmp_path, monkeypatch):
@@ -219,6 +274,14 @@ def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, 
     blint_path = tmp_path / "blint.db"
     make_nsrl(nsrl_path)
     make_blint(blint_path)
+    payload = b"\x7fELF" + b"\0" * 10 + b"x" * 1234
+    connection = sqlite3.connect(nsrl_path)
+    connection.execute(
+        "UPDATE FILE SET sha256=?, file_size=?",
+        (hashlib.sha256(payload).hexdigest(), len(payload)),
+    )
+    connection.commit()
+    connection.close()
     nsrl = NSRLDatabase(nsrl_path, manifest("nsrl"), verify_hash=False)
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
@@ -230,7 +293,7 @@ def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, 
     enricher = DatabaseEnricher(blint=blint, nsrl=nsrl)
     enricher.enrich(
         component,
-        b"\x7fELF" + b"\0" * 10 + b"x" * 1234,
+        payload,
         "host.so",
         "/system/lib64/host.so",
     )
@@ -238,6 +301,13 @@ def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, 
     assert any(item["name"] == "firmware:blintdb:candidates" for item in component.properties)
     assert enricher.stats.blint_candidate_files == 1
     assert enricher.stats.nsrl_queried_files == 1
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert properties["firmware:blintdb:provenance-id"] == f"sha256:{'0' * 64}"
+    assert properties["firmware:nsrl:provenance-id"] == f"sha256:{'0' * 64}"
+    assert enricher.stats.database_provenance["schema_version"] == 1
+    assert {
+        database["kind"] for database in enricher.stats.database_provenance["databases"]
+    } == {"blintdb", "nsrl"}
 
 
 def test_enricher_queries_blint_identity_even_when_target_version_is_known(
@@ -655,7 +725,13 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
     context = AnalysisContext(
         firmware_path=tmp_path / "firmware.bin",
         metadata={
-            "database_stats": {"files_queried": 7},
+            "database_stats": {
+                "files_queried": 7,
+                "database_provenance": {
+                    "schema_version": 1,
+                    "databases": [{"kind": "nsrl", "release": "test"}],
+                },
+            },
             "analysis_stats": {"content_cache_hits": 3},
             "family_provenance_stats": {"versions_inherited": 1},
             "provenance_stats": {"notice_license_attribution": {"components_licensed": 2}},
@@ -669,7 +745,8 @@ def test_json_report_exposes_generic_database_and_cache_stats(tmp_path):
     output = tmp_path / "analysis.json"
     _output_json_report(context, output)
     report = json.loads(output.read_text())
-    assert report["database_stats"] == {"files_queried": 7}
+    assert report["database_stats"]["files_queried"] == 7
+    assert report["database_provenance"]["databases"][0]["kind"] == "nsrl"
     assert report["analysis_stats"] == {"content_cache_hits": 3}
     assert report["family_provenance_stats"] == {"versions_inherited": 1}
     assert report["provenance_stats"] == {"notice_license_attribution": {"components_licensed": 2}}

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-11-20
+
+### Added
+- Prove documented `check_version(NULL)` APIs that return a release string only
+  on the zero-argument branch, including x86-64, AArch64 and ARM paths
+- Persist scan-level database provenance with release, SHA-256, schema, source,
+  license, architecture and integrity status
+- Report NSRL total matches and truncation, with an exact-file self-check and
+  component provenance IDs
+
+### Changed
+- Preserve BLintDB version mismatches as diagnostic evidence and continue to
+  prevent reference builds from overwriting target versions
+
 ## [0.16.0] - 2026-11-20
 
 ### Added

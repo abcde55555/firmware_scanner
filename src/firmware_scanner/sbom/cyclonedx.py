@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Any
 
 from firmware_scanner import __version__
+
 from ..extraction.models import Component
-from .license_compliance import normalize_license, audit_firmware_licenses
+from .license_compliance import audit_firmware_licenses, normalize_license
 
 
 class CycloneDXGenerator:
@@ -211,6 +212,11 @@ class CycloneDXGenerator:
             props.append({
                 "name": "firmware:database:stats",
                 "value": json.dumps(info["database_stats"], sort_keys=True),
+            })
+        if info.get("database_provenance"):
+            props.append({
+                "name": "firmware:database:provenance",
+                "value": json.dumps(info["database_provenance"], sort_keys=True),
             })
         if info.get("analysis_stats"):
             props.append({
