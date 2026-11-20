@@ -9,7 +9,16 @@ from .static_version import StaticVersionMatch
 
 _BANNER_HEADER = b"LLVM (http://llvm.org/):"
 _MC_BANNER = b"llvm-mc (based on LLVM "
-_VERSION_RE = re.compile(rb"(?<![A-Za-z0-9.])(\d+\.\d+(?:\.\d+)?svn)(?![A-Za-z0-9.])")
+_MC_VERSION_RE = re.compile(
+    rb"llvm-mc \(based on LLVM "
+    rb"(\d+\.\d+(?:\.\d+)?(?:svn)?)(?![A-Za-z0-9.])"
+)
+_REPORT_VERSION_RE = re.compile(
+    rb"LLVM \(http://llvm\.org/\):.{0,512}?"
+    rb"version[\x00\s]*"
+    rb"(\d+\.\d+(?:\.\d+)?(?:svn)?)(?![A-Za-z0-9.])",
+    re.DOTALL,
+)
 _REQUIRED_API_MARKERS = (
     b"LLVMPassManagerBuilderCreate",
     b"LLVMLinkModules",
@@ -27,7 +36,13 @@ def extract_llvm_version(data: bytes) -> list[StaticVersionMatch]:
         or any(marker not in data for marker in _REQUIRED_API_MARKERS)
     ):
         return []
-    versions = sorted({match.group(1).decode("ascii") for match in _VERSION_RE.finditer(data)})
+    versions = sorted(
+        {
+            match.group(1).decode("ascii")
+            for pattern in (_MC_VERSION_RE, _REPORT_VERSION_RE)
+            for match in pattern.finditer(data)
+        }
+    )
     if len(versions) != 1:
         return []
     version = versions[0]

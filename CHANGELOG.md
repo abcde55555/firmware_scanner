@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-11-20
+
+### Added
+- Recognize Modern Android LLVM's numeric build banner only with the complete
+  LLVM banner and public API marker set
+- Recover the e2fsprogs or util-linux blkid release only when the referenced
+  version string provably flows into the documented version output pointer
+- Recognize documented NSS, NSPR, Z3, Poco and mimalloc release getters across
+  pointer, output-parameter and packed-integer encodings
+- Recover allowlisted full-release SONAMEs such as `libspdlog.so.1.15.3` as
+  explicitly estimated filename evidence while continuing to reject generic
+  ABI-only `.so.N` suffixes
+- Query BLintDB's architecture-scoped import hash as a conservative identity
+  candidate when at most ten reference binaries span at most three projects
+- Add a fifth, disjoint 20-library Debian black-box catalog
+
+### Changed
+- Keep weak function fingerprints and non-unique import hashes as diagnostics
+  rather than promoting them to component or version claims
+- Disable import-hash lookup explicitly when an older BLintDB lacks the required
+  columns
+- Record BLintDB import-hash candidate counts and match methods in scan evidence
+- Record the fifth suite as 0/20 on its untouched blind run and 14/20 after
+  documented rule expansion, with zero wrong version claims
+
 ## [0.19.0] - 2026-11-20
 
 ### Added

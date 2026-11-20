@@ -17,6 +17,22 @@ _PLAIN_RELEASE = re.compile(
     re.IGNORECASE,
 )
 _TWO_PART_DOTTED_RELEASES = {"libchrome"}
+_SONAME_FULL_RELEASE = re.compile(
+    r"^(?P<component>lib[A-Za-z][A-Za-z0-9_+-]*?)"
+    r"\.so\.(?P<version>\d+(?:\.\d+)+)$",
+    re.IGNORECASE,
+)
+_SONAME_RELEASE_COMPONENTS = {
+    "libcjson",
+    "libfmt",
+    "libhwy",
+    "libjsoncpp",
+    "libpugixml",
+    "libspdlog",
+    "libtinyxml2",
+    "libyaml-cpp",
+}
+_PLAIN_TWO_PART_RELEASES = {"libelf"}
 _NON_PRODUCT_MARKER = re.compile(
     r"(?:^|[_-])(?:abi|aidl|api|hal|hidl)(?:[_-]|$)", re.IGNORECASE
 )
@@ -35,6 +51,18 @@ def extract_filename_release(filename: str) -> tuple[str, str, str] | None:
     basename = filename.rsplit("/", 1)[-1]
     match = _MARKED_RELEASE.fullmatch(basename) or _PLAIN_RELEASE.fullmatch(basename)
     if match is None:
+        plain_two_part = re.fullmatch(
+            rf"(?P<component>lib[A-Za-z][A-Za-z0-9_+-]*?)[-_]v?"
+            rf"(?P<version>\d+\.\d+){_EXTENSION}",
+            basename,
+            re.IGNORECASE,
+        )
+        if (
+            plain_two_part is not None
+            and plain_two_part.group("component").lower() in _PLAIN_TWO_PART_RELEASES
+        ):
+            match = plain_two_part
+    if match is None:
         match = _DOTTED_RELEASE.fullmatch(basename)
         if (
             match is not None
@@ -42,6 +70,13 @@ def extract_filename_release(filename: str) -> tuple[str, str, str] | None:
             and match.group("component").lower() not in _TWO_PART_DOTTED_RELEASES
         ):
             return None
+    if match is None:
+        soname = _SONAME_FULL_RELEASE.fullmatch(basename)
+        if (
+            soname is not None
+            and soname.group("component").lower() in _SONAME_RELEASE_COMPONENTS
+        ):
+            match = soname
     if match is None:
         return None
 

@@ -49,6 +49,8 @@ INTEGER_GETTERS = {
     'vpx_codec_version': ('libvpx', 'packed8'),
     'JxlDecoderVersion': ('libjxl', 'decimal1000'),
     'archive_version_number': ('libarchive', 'decimal1000'),
+    '_ZN4Poco11Environment14libraryVersionEv': ('Poco', 'packed_bytes'),
+    'mi_version': ('mimalloc', 'decimal100'),
 }
 MAJOR_MINOR_GETTERS = {
     'liburing': (
@@ -121,6 +123,8 @@ def decode_integer(value: int, encoding: str) -> str | None:
         parts = value >> 16, value >> 8 & 255, value & 255
     elif encoding == 'brotli':
         parts = value >> 24, value >> 12 & 4095, value & 4095
+    elif encoding == 'packed_bytes':
+        parts = value >> 24, value >> 16 & 255, value >> 8 & 255
     else:
         return None
     if parts[0] > 99:

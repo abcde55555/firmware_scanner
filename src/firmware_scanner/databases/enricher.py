@@ -24,6 +24,9 @@ class DatabaseStats:
     blint_queried_files: int = 0
     blint_candidate_files: int = 0
     blint_candidate_rows: int = 0
+    blint_import_hash_candidate_files: int = 0
+    blint_import_hash_candidate_rows: int = 0
+    blint_import_hash_supported: bool = False
     blint_reviewed_components: int = 0
     blint_identity_confirmations: int = 0
     blint_reference_version_agreements: int = 0
@@ -44,6 +47,9 @@ class DatabaseStats:
             "blint_queried_files": self.blint_queried_files,
             "blint_candidate_files": self.blint_candidate_files,
             "blint_candidate_rows": self.blint_candidate_rows,
+            "blint_import_hash_candidate_files": self.blint_import_hash_candidate_files,
+            "blint_import_hash_candidate_rows": self.blint_import_hash_candidate_rows,
+            "blint_import_hash_supported": self.blint_import_hash_supported,
             "blint_reviewed_components": self.blint_reviewed_components,
             "blint_identity_confirmations": self.blint_identity_confirmations,
             "blint_reference_version_agreements": self.blint_reference_version_agreements,
@@ -65,6 +71,9 @@ class DatabaseEnricher:
         self.blint = blint
         self.nsrl = nsrl
         self.stats = DatabaseStats()
+        self.stats.blint_import_hash_supported = bool(
+            self.blint is not None and self.blint.import_hash_supported
+        )
         self.stats.database_provenance = self.provenance()
 
     def provenance(self) -> dict:
@@ -125,6 +134,16 @@ class DatabaseEnricher:
 
     def run_self_checks(self) -> None:
         """Fail before scanning if the NSRL exact-query path is not operational."""
+        if self.blint is not None:
+            self.stats.self_checks["blint-import-hash-schema"] = {
+                "passed": True,
+                "supported": self.blint.import_hash_supported,
+                "status": (
+                    "enabled"
+                    if self.blint.import_hash_supported
+                    else "schema-compatible-import-hash-disabled"
+                ),
+            }
         if self.nsrl is None:
             return
         self.stats.self_checks["nsrl-exact-file"] = self.nsrl.self_check()
@@ -199,6 +218,17 @@ class DatabaseEnricher:
                 if candidates:
                     self.stats.blint_candidate_files += 1
                     self.stats.blint_candidate_rows += len(candidates)
+                    import_hash_candidates = [
+                        candidate
+                        for candidate in candidates
+                        if isinstance(candidate, dict)
+                        and "import_hash" in candidate.get("match_methods", [])
+                    ]
+                    if import_hash_candidates:
+                        self.stats.blint_import_hash_candidate_files += 1
+                        self.stats.blint_import_hash_candidate_rows += len(
+                            import_hash_candidates
+                        )
                     self._append_property(
                         component, "firmware:blintdb:candidate-count", str(len(candidates))
                     )
@@ -215,6 +245,20 @@ class DatabaseEnricher:
                         "firmware:blintdb:candidates",
                         json.dumps(candidates, sort_keys=True, ensure_ascii=False),
                     )
+                    methods = sorted(
+                        {
+                            method
+                            for candidate in candidates
+                            if isinstance(candidate, dict)
+                            for method in candidate.get("match_methods", [])
+                        }
+                    )
+                    if methods:
+                        self._append_property(
+                            component,
+                            "firmware:blintdb:match-methods",
+                            ",".join(methods),
+                        )
 
     def reconcile(self, components: list[Component]) -> None:
         """Compare final component versions with BLint reference candidates."""

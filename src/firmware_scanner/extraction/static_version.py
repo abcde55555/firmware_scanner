@@ -106,6 +106,12 @@ _GETTERS: dict[str, tuple[str, str]] = {
     "MMDB_lib_version": ("libmaxminddb", "direct"),
     "orc_version_string": ("liborc", "direct"),
     "sodium_version_string": ("libsodium", "direct"),
+    "NSS_GetVersion": ("NSS", "direct"),
+    "PR_GetVersion": ("NSPR", "direct"),
+}
+_SUPPORT_SYMBOLS = {
+    "NSS_GetVersion": {"NSS_VersionCheck"},
+    "PR_GetVersion": {"PR_VersionCheck"},
 }
 _VERSION = re.compile(r"v?(\d+\.\d+(?:\.\d+)*[A-Za-z0-9.+_-]*)\Z")
 
@@ -205,13 +211,17 @@ class StaticVersionExtractor:
                 if segment["p_type"] == "PT_LOAD"
             ]
             functions: dict[str, tuple[int, int, bool]] = {}
+            defined_functions: set[str] = set()
             for section in elf.iter_sections():
                 if not isinstance(section, SymbolTableSection):
                     continue
                 for symbol in section.iter_symbols():
-                    if symbol.name not in _GETTERS or symbol["st_info"]["type"] != "STT_FUNC":
+                    if symbol["st_info"]["type"] != "STT_FUNC":
                         continue
                     if not symbol["st_shndx"] or symbol["st_shndx"] == "SHN_UNDEF":
+                        continue
+                    defined_functions.add(symbol.name)
+                    if symbol.name not in _GETTERS:
                         continue
                     address = int(symbol["st_value"])
                     size = int(symbol["st_size"])
@@ -221,6 +231,8 @@ class StaticVersionExtractor:
 
             matches: list[StaticVersionMatch] = []
             for getter, (address, size, thumb) in functions.items():
+                if not _SUPPORT_SYMBOLS.get(getter, set()).issubset(defined_functions):
+                    continue
                 component, style = _GETTERS[getter]
                 if architecture == "arm":
                     mode = CS_MODE_THUMB if thumb else CS_MODE_ARM

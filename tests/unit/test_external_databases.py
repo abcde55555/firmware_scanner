@@ -74,7 +74,10 @@ def make_blint(path):
         CREATE TABLE SchemaMeta (key TEXT, value TEXT);
         CREATE TABLE Projects (project_id INTEGER, name TEXT, purl TEXT);
         CREATE TABLE Builds (build_id INTEGER, project_id INTEGER, target_arch TEXT);
-        CREATE TABLE Binaries (binary_id INTEGER, build_id INTEGER, name TEXT);
+        CREATE TABLE Binaries (
+            binary_id INTEGER, build_id INTEGER, name TEXT,
+            machine_type TEXT, import_hash TEXT
+        );
         CREATE TABLE Symbols (
             binary_id INTEGER, source TEXT, name TEXT, is_imported INTEGER
         );
@@ -85,7 +88,7 @@ def make_blint(path):
         INSERT INTO SchemaMeta VALUES ('schema_version', '3');
         INSERT INTO Projects VALUES (1, 'libdemo', 'pkg:conan/libdemo@1.2.3');
         INSERT INTO Builds VALUES (1, 1, 'arm64');
-        INSERT INTO Binaries VALUES (1, 1, 'libdemo.so');
+        INSERT INTO Binaries VALUES (1, 1, 'libdemo.so', 'X86_64', '');
         INSERT INTO Dependencies VALUES (
             1, 'import_dependencies',
             '/tmp/blint/host/libdemo/1.2.3/shared-release/aarch64/lib/libdemo.so',
@@ -214,8 +217,11 @@ def test_blintdb_returns_reference_candidate_without_promoting_version(tmp_path,
     database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         database,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     candidates = database.candidates(b"ELF", "host.so")
     assert candidates[0]["unique_component_versions"] == [
@@ -233,8 +239,11 @@ def test_blintdb_reuses_one_read_only_connection_for_repeated_queries(tmp_path, 
     database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         database,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     assert database.candidates(b"ELF", "libdemo.so")
     original_connect = sqlite3.connect
@@ -256,8 +265,11 @@ def test_blintdb_filename_match_requires_informative_symbols(tmp_path, monkeypat
     database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         database,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     monkeypatch.setattr(
         database,
@@ -267,6 +279,136 @@ def test_blintdb_filename_match_requires_informative_symbols(tmp_path, monkeypat
         },
     )
     assert database.candidates(b"ELF", "libdemo.so") == []
+
+
+def test_blintdb_unique_import_hash_adds_identity_candidate_evidence(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    imports = {"memcpy", "strlen", "malloc", "free", "open"}
+    import_hash, _count = BLintDatabase._import_hash(imports)
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "UPDATE Binaries SET import_hash=? WHERE binary_id=1",
+            (import_hash,),
+        )
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({}, imports),
+    )
+    elf = bytearray(64)
+    elf[:4] = b"\x7fELF"
+    elf[5] = 1
+    elf[18:20] = (62).to_bytes(2, "little")
+
+    candidates = database.candidates(bytes(elf), "host.so")
+
+    assert len(candidates) == 1
+    assert candidates[0]["project_name"] == "libdemo"
+    assert candidates[0]["match_methods"] == ["import_hash"]
+    assert candidates[0]["import_hash"] == import_hash
+    assert candidates[0]["identity_symbol_count"] == 0
+    assert candidates[0]["unique_component_versions"] == [
+        {"name": "libdemo", "version": "1.2.3"}
+    ]
+
+
+def test_blintdb_ambiguous_import_hash_is_not_resolved_by_lexical_rank(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    imports = {"memcpy", "strlen", "malloc", "free", "open"}
+    import_hash, _count = BLintDatabase._import_hash(imports)
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "UPDATE Binaries SET import_hash=? WHERE binary_id=1",
+            (import_hash,),
+        )
+        connection.execute(
+            "INSERT INTO Projects VALUES (2, 'libother', 'pkg:conan/libother@9.9')"
+        )
+        connection.execute("INSERT INTO Builds VALUES (2, 2, 'X86_64')")
+        connection.execute(
+            "INSERT INTO Binaries VALUES (2, 2, 'libother.so', 'X86_64', ?)",
+            (import_hash,),
+        )
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({}, imports),
+    )
+    elf = bytearray(64)
+    elf[:4] = b"\x7fELF"
+    elf[5] = 1
+    elf[18:20] = (62).to_bytes(2, "little")
+
+    assert database.candidates(bytes(elf), "host.so") == []
+
+
+def test_blintdb_old_schema_disables_import_hash_without_query_errors(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "blint.db"
+    make_blint(path)
+    database = BLintDatabase(path, manifest("blintdb"), verify_hash=False)
+    database.import_hash_supported = False
+    monkeypatch.setattr(
+        database,
+        "_symbol_evidence",
+        lambda _data: ({}, {"memcpy", "strlen", "malloc", "free", "open"}),
+    )
+
+    assert database.candidates(b"\x7fELF" + b"\0" * 60, "host.so") == []
+
+
+def test_blint_import_hash_normalizes_elf_versions_and_decorations():
+    first, first_count = BLintDatabase._import_hash(
+        {"memcpy@@GLIBC_2.2.5", "__memcpy", "_strlen"}
+    )
+    second, second_count = BLintDatabase._import_hash({"memcpy", "strlen"})
+
+    assert (first, first_count) == (second, second_count)
+    assert BLintDatabase._import_hash({"memcpy"}) != (
+        BLintDatabase._import_hash({"strlen"})
+    )
+
+
+def test_enricher_reports_import_hash_candidate_without_promoting_version(
+    tmp_path,
+    monkeypatch,
+):
+    blint_path = tmp_path / "blint.db"
+    make_blint(blint_path)
+    imports = {"memcpy", "strlen", "malloc", "free", "open"}
+    import_hash, _count = BLintDatabase._import_hash(imports)
+    with sqlite3.connect(blint_path) as connection:
+        connection.execute(
+            "UPDATE Binaries SET import_hash=? WHERE binary_id=1",
+            (import_hash,),
+        )
+    blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
+    monkeypatch.setattr(blint, "_symbol_evidence", lambda _data: ({}, imports))
+    elf = bytearray(b"\x7fELF\0" + b"\0" * 58)
+    elf[5] = 1
+    elf[18:20] = (62).to_bytes(2, "little")
+    component = Component(name="host.so")
+    enricher = DatabaseEnricher(blint=blint)
+
+    enricher.enrich(component, bytes(elf), "host.so", "/lib/host.so")
+
+    properties = {item["name"]: item["value"] for item in component.properties}
+    assert component.resolved_version == ""
+    assert properties["firmware:blintdb:match-methods"] == "import_hash"
+    assert enricher.stats.blint_import_hash_candidate_files == 1
+    assert enricher.stats.blint_import_hash_candidate_rows == 1
 
 
 def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, monkeypatch):
@@ -286,8 +428,11 @@ def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, 
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         blint,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     component = Component(name="host.so")
     enricher = DatabaseEnricher(blint=blint, nsrl=nsrl)
@@ -304,6 +449,7 @@ def test_enricher_adds_evidence_properties_but_never_resolved_version(tmp_path, 
     properties = {item["name"]: item["value"] for item in component.properties}
     assert properties["firmware:blintdb:provenance-id"] == f"sha256:{'0' * 64}"
     assert properties["firmware:nsrl:provenance-id"] == f"sha256:{'0' * 64}"
+    assert enricher.stats.blint_import_hash_supported is True
     assert enricher.stats.database_provenance["schema_version"] == 1
     assert {
         database["kind"] for database in enricher.stats.database_provenance["databases"]
@@ -319,8 +465,11 @@ def test_enricher_queries_blint_identity_even_when_target_version_is_known(
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         blint,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     component = Component(
         name="libdemo.so",
@@ -354,8 +503,11 @@ def test_enricher_reconciles_blint_identity_without_overwriting_target_version(
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         blint,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     component = Component(name="libdemo.so")
     enricher = DatabaseEnricher(blint=blint)
@@ -399,8 +551,11 @@ def test_blint_does_not_compare_parent_package_version_to_reference_release(
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         blint,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     component = Component(name="libdemo.so")
     enricher = DatabaseEnricher(blint=blint)
@@ -462,8 +617,11 @@ def test_blint_does_not_compare_unrelated_dependency_versions(
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         blint,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     component = Component(name="libdemo.so")
     enricher = DatabaseEnricher(blint=blint)
@@ -501,8 +659,11 @@ def test_blint_identity_records_a_matching_component_from_an_aggregate_project(
     blint = BLintDatabase(blint_path, manifest("blintdb"), verify_hash=False)
     monkeypatch.setattr(
         blint,
-        "_symbol_sources",
-        lambda _data: {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+        "_symbol_evidence",
+        lambda _data: (
+            {"dynamic_symbols": {f"demo_identity_{index}" for index in range(35)}},
+            set(),
+        ),
     )
     component = Component(name="libdemo.so")
     enricher = DatabaseEnricher(blint=blint)

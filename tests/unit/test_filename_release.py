@@ -71,3 +71,27 @@ def test_inventory_keeps_filename_release_on_its_host_and_dependency_version_sep
     assert "filename release" in host.versions[-1].evidence
     dependency = next(component for component in result if component.name.lower() == "zstd")
     assert dependency.resolved_version == "1.5.6"
+
+
+@pytest.mark.parametrize(
+    ("filename", "expected"),
+    [
+        ("libelf-0.194.so", ("libelf", "0.194")),
+        ("libcjson.so.1.7.19", ("libcjson", "1.7.19")),
+        ("libfmt.so.10.1.0", ("libfmt", "10.1.0")),
+        ("libhwy.so.1.3.0", ("libhwy", "1.3.0")),
+        ("libjsoncpp.so.1.9.6", ("libjsoncpp", "1.9.6")),
+        ("libpugixml.so.1.16", ("libpugixml", "1.16")),
+        ("libspdlog.so.1.15.3", ("libspdlog", "1.15.3")),
+        ("libtinyxml2.so.11.0.0", ("libtinyxml2", "11.0.0")),
+        ("libyaml-cpp.so.0.8.0", ("libyaml-cpp", "0.8.0")),
+    ],
+)
+def test_release_soname_allowlist_recovers_named_upstream_versions(
+    filename,
+    expected,
+):
+    result = extract_filename_release(filename)
+
+    assert result is not None
+    assert (result[0], result[1]) == expected

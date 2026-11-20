@@ -171,6 +171,92 @@ def test_berkeley_db_output_parameters_and_returned_string_agree(tmp_path):
     ]
 
 
+def test_blkid_output_parameters_reference_the_official_version_string(tmp_path):
+    data = _compile(
+        tmp_path,
+        'static const char lib_version[] = "1.46.6";\n'
+        'static const char lib_date[] = "24-May-2022";\n'
+        "int blkid_parse_version_string(const char *value) {\n"
+        "  int version = 0;\n"
+        "  for (const char *p = value; *p; ++p) {\n"
+        "    if (*p == '.') continue;\n"
+        "    if (*p < '0' || *p > '9') break;\n"
+        "    version = version * 10 + (*p - '0');\n"
+        "  }\n"
+        "  return version;\n"
+        "}\n"
+        "int blkid_get_library_version(const char **version, const char **date) {\n"
+        "  if (version) *version = lib_version;\n"
+        "  if (date) *date = lib_date;\n"
+        "  return blkid_parse_version_string(lib_version);\n"
+        "}\n",
+        "libext2_blkid.so",
+    )
+
+    assert [
+        (hit.name, hit.version)
+        for hit in extract_public_versions(data, "libext2_blkid.so")
+    ] == [
+        ("e2fsprogs", "1.46.6")
+    ]
+
+
+def test_blkid_requires_both_the_getter_and_parse_api(tmp_path):
+    data = _compile(
+        tmp_path,
+        'const char *blkid_get_library_version(void) { return "1.46.6"; }\n',
+    )
+
+    assert extract_public_versions(data, "libext2_blkid.so") == []
+
+
+def test_blkid_rejects_an_unrelated_version_string_not_written_to_an_output(tmp_path):
+    data = _compile(
+        tmp_path,
+        'static const char unrelated[] = "1.46.6";\n'
+        "int blkid_parse_version_string(const char *value) { (void)value; return 0; }\n"
+        "int blkid_get_library_version(const char **version, const char **date) {\n"
+        "  (void)version; (void)date; (void)unrelated; return 0;\n"
+        "}\n",
+        "libext2_blkid.so",
+    )
+
+    assert extract_public_versions(data, "libext2_blkid.so") == []
+
+
+def test_blkid_uses_generic_identity_for_util_linux_soname(tmp_path):
+    data = _compile(
+        tmp_path,
+        'static const char lib_version[] = "2.41.1";\n'
+        "int blkid_parse_version_string(const char *value) { (void)value; return 0; }\n"
+        "int blkid_get_library_version(const char **version, const char **date) {\n"
+        "  (void)date; if (version) *version = lib_version;\n"
+        "  return blkid_parse_version_string(lib_version);\n"
+        "}\n",
+        "libblkid.so.1",
+    )
+
+    assert [
+        (hit.name, hit.version)
+        for hit in extract_public_versions(data, "libblkid.so.1")
+    ] == [("libblkid", "2.41.1")]
+
+
+def test_z3_output_parameters_recover_the_release_triplet(tmp_path):
+    data = _compile(
+        tmp_path,
+        "void Z3_get_version(unsigned *major, unsigned *minor,\n"
+        "                    unsigned *patch, unsigned *build) {\n"
+        "  *major = 4; *minor = 13; *patch = 3; *build = 0;\n"
+        "}\n"
+        'const char *Z3_get_full_version(void) { return "4.13.3"; }\n',
+    )
+
+    assert [(hit.name, hit.version) for hit in extract_public_versions(data)] == [
+        ("Z3", "4.13.3")
+    ]
+
+
 def test_jemalloc_git_release_description_requires_its_allocator_apis(tmp_path):
     data = _compile(
         tmp_path,

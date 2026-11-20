@@ -186,6 +186,38 @@ def test_libarchive_and_json_c_release_string_getters():
     }
 
 
+def test_nss_and_nspr_version_string_getters():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        const char *NSS_GetVersion(void) { return "3.121"; }
+        __attribute__((visibility("default"), noinline, used))
+        int NSS_VersionCheck(const char *value) { (void)value; return 1; }
+        __attribute__((visibility("default"), noinline, used))
+        const char *PR_GetVersion(void) { return "4.38.2"; }
+        __attribute__((visibility("default"), noinline, used))
+        int PR_VersionCheck(const char *value) { (void)value; return 1; }
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "nss.c"
+        elf_path = Path(temp_dir) / "libnss-combined.so"
+        source_path.write_text(source)
+        subprocess.run(
+            [compiler, "-shared", "-fPIC", "-O2", "-fno-stack-protector",
+             "-Wl,--build-id=none", "-o", str(elf_path), str(source_path)],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert {(match.name, match.version) for match in matches} == {
+        ("NSS", "3.121"),
+        ("NSPR", "4.38.2"),
+    }
+
+
 def test_additional_documented_string_version_getters():
     compiler = shutil.which("cc") or shutil.which("gcc")
     if compiler is None:

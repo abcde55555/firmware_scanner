@@ -7,6 +7,7 @@ import re
 import struct
 from dataclasses import dataclass
 from io import BytesIO
+from pathlib import Path
 
 from capstone import CS_ARCH_X86, CS_MODE_64, Cs, CsError
 from capstone.x86 import (
@@ -96,10 +97,12 @@ _PREFILTER = (
     b"$LuaVersion:",
     b"db_full_version",
     b"malloc_stats_print",
+    b"blkid_get_library_version",
+    b"Z3_get_version",
 )
 
 
-def extract_public_versions(data: bytes) -> list[StaticVersionMatch]:
+def extract_public_versions(data: bytes, filename: str = "") -> list[StaticVersionMatch]:
     """Extract only APIs whose release semantics are documented by the project."""
     if not data.startswith(b"\x7fELF") or not any(name in data for name in _PREFILTER):
         return []
@@ -145,10 +148,14 @@ def extract_public_versions(data: bytes) -> list[StaticVersionMatch]:
             _lcms2_version,
             _lua_version,
             _berkeley_db_version,
+            _z3_version,
         ):
             hit = extractor(data, image, symbols)
             if hit is not None:
                 matches.append(hit)
+        blkid = _blkid_version(data, image, symbols, filename)
+        if blkid is not None:
+            matches.append(blkid)
         return _deduplicate(matches)
     except (
         ELFError,
@@ -470,6 +477,150 @@ def _berkeley_db_version(data, image, symbols) -> StaticVersionMatch | None:
             source="https://github.com/berkeleydb/libdb",
         ),
         0.96,
+    )
+
+
+def _blkid_version(data, image, symbols, filename: str) -> StaticVersionMatch | None:
+    required = {"blkid_get_library_version", "blkid_parse_version_string"}
+    if not required.issubset(symbols) or image.header["e_machine"] != "EM_X86_64":
+        return None
+    basename = Path(filename).name.casefold()
+    if basename.startswith("libext2_blkid"):
+        component = "e2fsprogs"
+        source_url = "https://github.com/tytso/e2fsprogs/blob/master/lib/blkid/version.c"
+    elif basename.startswith("libblkid"):
+        component = "libblkid"
+        source_url = (
+            "https://github.com/util-linux/util-linux/blob/master/"
+            "libblkid/src/version.c"
+        )
+    else:
+        return None
+    function = _function_bytes(image, data, "blkid_get_library_version")
+    if function is None:
+        return None
+    code, function_offset = function
+    address = int(symbols["blkid_get_library_version"]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    register_strings = {}
+    output_pointer_origins = {"rdi": "rdi", "rsi": "rsi"}
+    output_strings = {}
+    for instruction in disassembler.disasm(code, address):
+        if instruction.id == X86_INS_MOV and len(instruction.operands) == 2:
+            destination, source = instruction.operands
+            if destination.type == X86_OP_REG and source.type == X86_OP_REG:
+                destination_name = instruction.reg_name(destination.reg)
+                source_name = instruction.reg_name(source.reg)
+                if source_name in output_pointer_origins:
+                    output_pointer_origins[destination_name] = output_pointer_origins[
+                        source_name
+                    ]
+                else:
+                    output_pointer_origins.pop(destination_name, None)
+                register_strings.pop(destination_name, None)
+        if instruction.id == X86_INS_LEA and len(instruction.operands) == 2:
+            destination, operand = instruction.operands
+            if (
+                destination.type == X86_OP_REG
+                and operand.type == X86_OP_MEM
+                and operand.mem.base == X86_REG_RIP
+            ):
+                destination_name = instruction.reg_name(destination.reg)
+                register_strings[destination_name] = (
+                    instruction.address
+                    + instruction.size
+                    + int(operand.mem.disp)
+                )
+                output_pointer_origins.pop(destination_name, None)
+            continue
+        if instruction.id != X86_INS_MOV or len(instruction.operands) != 2:
+            continue
+        destination, source = instruction.operands
+        if destination.type != X86_OP_MEM or source.type != X86_OP_REG:
+            continue
+        base_register = instruction.reg_name(destination.mem.base)
+        output_register = output_pointer_origins.get(base_register)
+        target = register_strings.get(instruction.reg_name(source.reg))
+        if output_register not in {"rdi", "rsi"} or target is None:
+            continue
+        value = _read_c_string(image, data, target)
+        offset = _object_offset(image, target, 1)
+        if value is not None and offset is not None:
+            output_strings[output_register] = (value, offset)
+    version_strings = {
+        value: offset
+        for value, offset in output_strings.values()
+        if re.fullmatch(r"\d+\.\d+\.\d+", value)
+    }
+    if len(version_strings) != 1:
+        return None
+    version, version_offset = next(iter(version_strings.items()))
+    return StaticVersionMatch(
+        component,
+        version,
+        _evidence(
+            "defined-output-parameter-version-getter",
+            version=version,
+            function="blkid_get_library_version",
+            function_file_offset=function_offset,
+            version_file_offset=version_offset,
+            output_strings={
+                register: value for register, (value, _offset) in output_strings.items()
+            },
+            supporting_api="blkid_parse_version_string",
+            source=source_url,
+        ),
+        0.97,
+    )
+
+
+def _z3_version(data, image, symbols) -> StaticVersionMatch | None:
+    required = {"Z3_get_version", "Z3_get_full_version"}
+    if not required.issubset(symbols) or image.header["e_machine"] != "EM_X86_64":
+        return None
+    function = _function_bytes(image, data, "Z3_get_version")
+    if function is None:
+        return None
+    code, function_offset = function
+    address = int(symbols["Z3_get_version"]["value"])
+    disassembler = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembler.detail = True
+    parts = {}
+    for instruction in disassembler.disasm(code, address):
+        if instruction.id != X86_INS_MOV or len(instruction.operands) != 2:
+            continue
+        destination, source = instruction.operands
+        if destination.type != X86_OP_MEM or source.type != X86_OP_IMM:
+            continue
+        base = instruction.reg_name(destination.mem.base)
+        if destination.mem.index or base not in {"rdi", "rsi", "rdx", "rcx"}:
+            continue
+        parts[base] = int(source.imm)
+    if set(parts) != {"rdi", "rsi", "rdx", "rcx"}:
+        return None
+    major, minor, patch = parts["rdi"], parts["rsi"], parts["rdx"]
+    if not (0 < major <= 99 and 0 <= minor <= 99 and 0 <= patch <= 99):
+        return None
+    version = f"{major}.{minor}.{patch}"
+    return StaticVersionMatch(
+        "Z3",
+        version,
+        _evidence(
+            "defined-output-parameter-version-getter",
+            version=version,
+            function="Z3_get_version",
+            function_file_offset=function_offset,
+            output_values={
+                "major": major,
+                "minor": minor,
+                "patch": patch,
+                "build": parts["rcx"],
+            },
+            supporting_api="Z3_get_full_version",
+            source="https://github.com/Z3Prover/z3/blob/master/src/api/api_util.cpp",
+        ),
+        0.97,
     )
 
 

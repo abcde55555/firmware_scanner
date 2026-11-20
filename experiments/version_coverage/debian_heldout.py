@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -133,6 +134,77 @@ INDEPENDENT_2_CATALOG = (
     CatalogItem("libedit2", "libedit.so.2", ("edit", "libedit")),
     CatalogItem("liblcms2-2", "liblcms2.so.2", ("lcms2", "liblcms2")),
     CatalogItem("libidn12", "libidn.so.12", ("idn", "libidn")),
+)
+
+INDEPENDENT_5_CATALOG = (
+    CatalogItem("libelf1t64", "libelf-0.194.so", ("elf", "libelf", "libelf-0.194.so")),
+    CatalogItem(
+        "libyaml-cpp0.8",
+        "libyaml-cpp.so.0.8.0",
+        ("yaml-cpp", "libyaml-cpp", "libyaml-cpp.so.0.8.0"),
+    ),
+    CatalogItem("libfmt10", "libfmt.so.10.1.0", ("fmt", "libfmt", "libfmt.so.10.1.0")),
+    CatalogItem(
+        "libspdlog1.15",
+        "libspdlog.so.1.15.3",
+        ("spdlog", "libspdlog", "libspdlog.so.1.15.3"),
+    ),
+    CatalogItem(
+        "libpocofoundation112",
+        "libPocoFoundation.so.112",
+        ("poco", "libpocofoundation", "libPocoFoundation.so.112"),
+    ),
+    CatalogItem("libre2-11", "libre2.so.11.0.0", ("re2", "libre2", "libre2.so.11.0.0")),
+    CatalogItem(
+        "libdouble-conversion3",
+        "libdouble-conversion.so.3.1",
+        ("double-conversion", "libdouble-conversion", "libdouble-conversion.so.3.1"),
+    ),
+    CatalogItem(
+        "libjsoncpp26",
+        "libjsoncpp.so.1.9.6",
+        ("jsoncpp", "libjsoncpp", "libjsoncpp.so.1.9.6"),
+    ),
+    CatalogItem(
+        "libpugixml1v5",
+        "libpugixml.so.1.16",
+        ("pugixml", "libpugixml", "libpugixml.so.1.16"),
+    ),
+    CatalogItem(
+        "libtinyxml2-11",
+        "libtinyxml2.so.11.0.0",
+        ("tinyxml2", "libtinyxml2", "libtinyxml2.so.11.0.0"),
+    ),
+    CatalogItem(
+        "libcjson1",
+        "libcjson.so.1.7.19",
+        ("cjson", "libcjson", "libcjson.so.1.7.19"),
+    ),
+    CatalogItem("libz3-4", "libz3.so.4", ("z3", "libz3", "libz3.so.4")),
+    CatalogItem("libnss3", "libnss3.so", ("nss", "nss3", "libnss3.so")),
+    CatalogItem("libnspr4", "libnspr4.so", ("nspr", "nspr4", "libnspr4.so")),
+    CatalogItem(
+        "libduktape207",
+        "libduktape.so.207",
+        ("duktape", "libduktape", "libduktape.so.207"),
+    ),
+    CatalogItem(
+        "libsleef3",
+        "libsleef.so.3.9.0",
+        ("sleef", "libsleef", "libsleef.so.3.9.0"),
+    ),
+    CatalogItem("libjq1", "libjq.so.1.0.4", ("jq", "libjq", "libjq.so.1.0.4")),
+    CatalogItem("libhwy1t64", "libhwy.so.1.3.0", ("hwy", "libhwy", "libhwy.so.1.3.0")),
+    CatalogItem(
+        "libmimalloc3",
+        "libmimalloc.so.3.5",
+        ("mimalloc", "libmimalloc", "libmimalloc.so.3.5"),
+    ),
+    CatalogItem(
+        "libsimdjson33",
+        "libsimdjson.so.33.0.0",
+        ("simdjson", "libsimdjson", "libsimdjson.so.33.0.0"),
+    ),
 )
 
 _OVERRIDES = {
@@ -275,6 +347,44 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _git(*args: str) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def _run_provenance() -> dict:
+    rules_lock = ROOT / "src/firmware_scanner/data/rules.lock.json"
+    source_paths = (
+        "src/firmware_scanner/extraction/static_version.py",
+        "src/firmware_scanner/extraction/semantic_version.py",
+        "src/firmware_scanner/extraction/public_version.py",
+        "src/firmware_scanner/extraction/filename_release.py",
+        "src/firmware_scanner/data/binary_reference.json",
+        "src/firmware_scanner/data/rules.lock.json",
+    )
+    return {
+        "git_head": _git("rev-parse", "HEAD"),
+        "workspace_clean": not bool(_git("status", "--porcelain")),
+        "rules_release": (
+            json.loads(rules_lock.read_text()).get("release")
+            if rules_lock.is_file()
+            else None
+        ),
+        "rules_lock_sha256": _sha256(rules_lock) if rules_lock.is_file() else "",
+        "source_sha256": {
+            relative: _sha256(ROOT / relative)
+            for relative in source_paths
+            if (ROOT / relative).is_file()
+        },
+    }
+
+
 def _state(component) -> str:
     return next(
         (
@@ -396,6 +506,8 @@ def run(output: Path, catalog=CATALOG) -> dict:
     from firmware_scanner import __version__
     from firmware_scanner.extraction.binary_inventory import BinaryInventory
 
+    started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    provenance = _run_provenance()
     output.mkdir(parents=True, exist_ok=True)
     stripped_dir = output / "stripped"
     stripped_dir.mkdir(exist_ok=True)
@@ -440,6 +552,9 @@ def run(output: Path, catalog=CATALOG) -> dict:
     report = {
         "schema_version": 1,
         "scanner_version": __version__,
+        "started_at": started_at,
+        "finished_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "run_provenance": provenance,
         "method": (
             "Debian package metadata is truth; one explicitly mapped upstream library per "
             "package; copied and strip --strip-all; static scan only; no target execution. "
@@ -468,7 +583,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--suite",
-        choices=("development", "independent", "independent2"),
+        choices=("development", "independent", "independent2", "independent5"),
         default="development",
     )
     args = parser.parse_args()
@@ -476,6 +591,7 @@ def main() -> int:
         "development": CATALOG,
         "independent": INDEPENDENT_CATALOG,
         "independent2": INDEPENDENT_2_CATALOG,
+        "independent5": INDEPENDENT_5_CATALOG,
     }
     catalog = catalogs[args.suite]
     report = run(args.output, catalog)

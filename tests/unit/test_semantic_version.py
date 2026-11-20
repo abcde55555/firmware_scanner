@@ -58,6 +58,28 @@ def test_c_compiled_constant_getters_return_static_version_matches(tmp_path, cc)
     assert all(json.loads(match.evidence)["prototype"] == "function-version-semantics-v1" for match in matches)
 
 
+def test_packed_byte_and_decimal_integer_getters(tmp_path, cc):
+    from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
+
+    data = _compile_shared(
+        tmp_path,
+        cc,
+        "packed_integer_getters",
+        """
+        int poco_library_version(void)
+            __asm__("_ZN4Poco11Environment14libraryVersionEv");
+        int poco_library_version(void) { return 0x010E0200; }
+        int mi_version(void) { return 30500; }
+        """,
+        flags=("-O2",),
+    )
+
+    assert {(match.name, match.version) for match in SemanticVersionExtractor().extract(data)} == {
+        ("Poco", "1.14.2"),
+        ("mimalloc", "3.5.0"),
+    }
+
+
 def test_jxl_version_integer_uses_its_decimal_generation_encoding(tmp_path, cc):
     from firmware_scanner.extraction.semantic_version import SemanticVersionExtractor
 

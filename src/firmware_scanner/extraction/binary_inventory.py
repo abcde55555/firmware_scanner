@@ -42,6 +42,10 @@ def identity_key(name: str) -> str:
         'speexwrapper': 'speex',
         'pcre28': 'pcre2', 'pcre216': 'pcre2', 'pcre232': 'pcre2',
         'yaml0': 'yaml',
+        'llvmandroid': 'llvm',
+        'nss3': 'nss',
+        'nspr4': 'nspr',
+        'pocofoundation': 'poco',
     }.get(name, name)
 
 
@@ -179,7 +183,7 @@ class BinaryInventory:
                 )
             )
         from .public_version import extract_public_versions
-        for hit in extract_public_versions(data):
+        for hit in extract_public_versions(data, filename):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
         from .structured_version import extract_structured_versions
         for hit in extract_structured_versions(data):
