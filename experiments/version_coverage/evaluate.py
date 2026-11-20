@@ -144,16 +144,23 @@ def _version_kind(value: str) -> str:
     return "exact"
 
 
-def _output_kind(record: dict[str, Any]) -> str:
-    """A single selected estimate is usable without becoming an observed release."""
-    value = _version(record)
+def _resolution_state(record: dict[str, Any]) -> str:
     properties = record.get("properties", [])
-    state = next((
+    if not isinstance(properties, list):
+        return ""
+    return next((
         str(prop.get("value", ""))
         for prop in properties
         if isinstance(prop, dict)
         and prop.get("name") == "firmware:version:resolution-state"
-    ), "") if isinstance(properties, list) else ""
+    ), "")
+
+
+def _output_kind(record: dict[str, Any]) -> str:
+    """A single selected estimate is usable without becoming an observed release."""
+    value = _version(record)
+    properties = record.get("properties", [])
+    state = _resolution_state(record)
     if state == "estimated" or state.startswith("estimated-"):
         return "estimated"
     if state == "conflict-unresolved":
@@ -268,6 +275,7 @@ def _match(baseline: list[dict[str, Any]], current: list[dict[str, Any]]) -> dic
 def _metrics(indices: list[int], baseline: list[dict[str, Any]], current: list[dict[str, Any]],
              matches: dict[int, int], verified_by_index: dict[int, str]) -> dict[str, Any]:
     exact = estimated = unknown = ranges = independently_verified = correct = errors = adjacent = 0
+    estimated_by_state: Counter[str] = Counter()
     for bi in indices:
         ci = matches.get(bi)
         if ci is None:
@@ -278,6 +286,7 @@ def _metrics(indices: list[int], baseline: list[dict[str, Any]], current: list[d
             exact += 1
         elif kind == "estimated":
             estimated += 1
+            estimated_by_state[_resolution_state(current[ci]) or "unspecified-estimate"] += 1
         elif kind == "range":
             ranges += 1
         else:
@@ -298,6 +307,7 @@ def _metrics(indices: list[int], baseline: list[dict[str, Any]], current: list[d
         "uncovered": denominator - sum(index in matches for index in indices),
         "exact_versions": exact,
         "estimated_versions": estimated,
+        "estimated_by_state": dict(sorted(estimated_by_state.items())),
         "usable_versions": exact + estimated,
         "usable_coverage": (exact + estimated) / denominator if denominator else 0.0,
         "usable_target_50_percent": ("NOT_APPLICABLE" if not denominator else

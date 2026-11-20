@@ -185,6 +185,171 @@ def test_framework_components_use_a_scoped_platform_build_baseline():
     } in framework.properties
 
 
+def test_aosp_source_attributed_native_component_uses_platform_build_baseline():
+    component = native("libstagefright.so", "/lib/libstagefright.so")
+    component.properties.append(
+        {
+            "name": "firmware:source:path-prefix-evidence",
+            "value": json.dumps(
+                {
+                    "project_path": "frameworks/av",
+                    "source_path": "frameworks/av/media/libstagefright/ACodec.c",
+                    "file_offset": 784378,
+                }
+            ),
+        }
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+    )
+
+    assert stats["platform_build_versions_applied"] == 1
+    assert stats["platform_source_build_versions_applied"] == 1
+    assert stats["framework_platform_build_versions_applied"] == 0
+    assert component.resolved_version == "4.4.4-KTU84Q-20180511"
+    assert {
+        "name": "firmware:version:kind",
+        "value": "estimated-android-platform-build",
+    } in component.properties
+    assert {
+        "name": "firmware:version:scope",
+        "value": "platform-build-not-upstream-release",
+    } in component.properties
+    assert {
+        "name": "firmware:version:evidence-tier",
+        "value": "platform-build-with-aosp-source-path",
+    } in component.properties
+    assert {
+        "name": "firmware:taxonomy",
+        "value": "platform-first-party",
+    } in component.properties
+
+
+@pytest.mark.parametrize(
+    "project_paths",
+    [
+        ("external/skia",),
+        ("vendor/google",),
+        ("frameworks/av", "vendor/google"),
+        ("frameworks/av", "external/protobuf"),
+    ],
+)
+def test_platform_build_requires_exclusively_aosp_first_party_source_evidence(
+    project_paths: tuple[str, ...],
+):
+    component = native("libmixed.so", "/lib/libmixed.so")
+    for index, project_path in enumerate(project_paths):
+        component.properties.append(
+            {
+                "name": "firmware:source:path-prefix-evidence",
+                "value": json.dumps(
+                    {
+                        "project_path": project_path,
+                        "source_path": f"{project_path}/source-{index}.c",
+                        "file_offset": 128 + index,
+                    }
+                ),
+            }
+        )
+
+    stats = apply_android_provenance(
+        [component],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+    )
+
+    assert stats["platform_build_versions_applied"] == 0
+    assert component.resolved_version == ""
+    assert not any(
+        prop.get("name") == "firmware:version:resolution-state"
+        and prop.get("value") == "estimated-platform-build"
+        for prop in component.properties
+    )
+
+
+def test_embedded_component_does_not_receive_container_platform_build_version():
+    location = "/lib/librtp_jni.so"
+    host = native("librtp_jni.so", location)
+    host.properties.append(
+        {
+            "name": "firmware:source:path-prefix-evidence",
+            "value": json.dumps(
+                {
+                    "project_path": "frameworks/av",
+                    "source_path": "frameworks/av/media/libstagefright/codecs/amrnb/dec/SoftAMR.c",
+                    "file_offset": 61022,
+                }
+            ),
+        }
+    )
+    contained = native("opencore-amr", location)
+    contained.properties.extend(
+        [
+            {"name": "firmware:evidence:container", "value": "librtp_jni.so"},
+            {"name": "firmware:relationship", "value": "contains-evidence-for"},
+            {"name": "firmware:identity", "value": "opencore-amr"},
+            {
+                "name": "firmware:source:path-prefix-evidence",
+                "value": host.properties[-1]["value"],
+            },
+        ]
+    )
+
+    stats = apply_android_provenance(
+        [host, contained],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+    )
+
+    assert stats["platform_build_versions_applied"] == 1
+    assert host.resolved_version == "4.4.4-KTU84Q-20180511"
+    assert contained.resolved_version == ""
+
+
+def test_image_matched_source_revision_precedes_platform_build_fallback():
+    revision = "17db49fe6b4b3cca376fb943701f1224ed325f43"
+    component = native("libstagefright.so", "/lib/libstagefright.so")
+    component.properties.append(
+        {
+            "name": "firmware:source:path-prefix-evidence",
+            "value": json.dumps(
+                {
+                    "project_path": "frameworks/av",
+                    "source_path": "frameworks/av/media/libstagefright/ACodec.c",
+                    "file_offset": 784378,
+                }
+            ),
+        }
+    )
+
+    stats = apply_android_provenance(
+        [component],
+        notice_attributions={"/lib/libstagefright.so": {"frameworks/av"}},
+        source_manifest={
+            "projects": [
+                {
+                    "path": "frameworks/av",
+                    "name": "LineageOS/android_frameworks_av",
+                    "revision": revision,
+                }
+            ]
+        },
+        source_project_rules=[
+            {
+                "pattern": "^libstagefright\\.so$",
+                "project_path": "frameworks/av",
+                "confidence": 0.9,
+                "evidence": "test image-matched platform source revision",
+            }
+        ],
+        platform_baseline="4.4.4-KTU84Q-20180511",
+    )
+
+    assert component.resolved_version == f"git:{revision}"
+    assert stats["source_revisions_applied"] == 1
+    assert stats["platform_build_versions_applied"] == 0
+
+
 @pytest.mark.parametrize(
     ("path", "expected"),
     [
@@ -213,6 +378,8 @@ def test_platform_build_scope_accepts_only_system_or_partition_root_framework(
     )
 
     assert stats["platform_build_versions_applied"] == int(expected)
+    assert stats["framework_platform_build_versions_applied"] == int(expected)
+    assert stats["platform_source_build_versions_applied"] == 0
     assert bool(framework.resolved_version) is expected
 
 

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.0] - 2026-11-20
+
+### Added
+- Attach an Android platform build baseline to ELF components only when every
+  embedded source project is classified as AOSP first-party
+- Separate framework and AOSP-source platform build counts in provenance stats
+- Report estimated-version coverage by explicit resolution state
+
+### Changed
+- Prefer an image-matched source revision over a platform-build fallback
+- Keep embedded third-party components, vendor source paths and mixed project
+  evidence ineligible for platform-build attribution
+
 ## [0.34.0] - 2026-11-20
 
 ### Fixed
