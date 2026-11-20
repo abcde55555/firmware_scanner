@@ -264,7 +264,6 @@ def test_aosp_release_project_estimates_require_exact_build_and_identity(
     [
         ("libmtp.so", "1.0.1", "external/libmtp"),
         ("libvorbisidec.so", "0.07", "external/tremolo"),
-        ("libstagefright_soft_vorbisdec.so", "0.07", "external/tremolo"),
         ("libwebviewchromium.so", "33.0.1750.166", "external/chromium_org"),
     ],
 )
@@ -299,6 +298,22 @@ def test_aosp_filename_only_estimates_require_exact_build_and_soname(
 
 def test_aosp_filename_only_estimate_does_not_match_a_suffix_collision():
     component = native("vendor-libmtp.so", "/lib/vendor-libmtp.so")
+
+    stats = apply_android_provenance(
+        [component],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 0
+    assert component.resolved_version == ""
+
+
+def test_aosp_embedded_library_version_is_not_assigned_to_its_host_wrapper():
+    component = native(
+        "libstagefright_soft_vorbisdec.so",
+        "/lib/libstagefright_soft_vorbisdec.so",
+    )
 
     stats = apply_android_provenance(
         [component],

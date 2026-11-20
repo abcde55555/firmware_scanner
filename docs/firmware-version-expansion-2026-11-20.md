@@ -88,25 +88,24 @@ Allwinner 固件仍使用同一镜像 SHA-256 和固定基线。新增 0.16.0 �
 
 | 切片 | 0.15.0 usable | 0.16.0 usable | 增量 |
 |---|---:|---:|---:|
-| 全部组件 | 190/582, 32.65% | **194/582, 33.33%** | +4 |
-| 原生库 | 53/312, 16.99% | **57/312, 18.27%** | +4 |
+| 全部组件 | 190/582, 32.65% | **193/582, 33.16%** | +3 |
+| 原生库 | 53/312, 16.99% | **56/312, 17.95%** | +3 |
 | exact | 119 | 119 | 0 |
-| estimated | 71 | 75 | +4 |
+| estimated | 71 | 74 | +3 |
 | independent verified | 5 correct / 0 error | 5 correct / 0 error | 不变 |
 
 0.16.0 在提交 `2831fe4` 上的全量扫描耗时 63.048 秒，峰值 RSS 872,592 KiB；输入分区 SHA-256
 保持 `87c2d561464ec8144f2c580ce5f781262f0506f57a506d534e652e96099f0cf2`。
 
-四个新增条目均为 explicit estimate：
+三个新增条目均为 explicit estimate：
 
 - `libmtp` 1.0.1，来自 `android-4.4.4_r2` 的 `configure.ac AC_INIT`；
 - `libvorbisidec.so` 0.07，来自同 tag 的 Tremolo README；
-- `libstagefright_soft_vorbisdec.so` 0.07，来自同 tag 的 Tremolo README；
 - `libwebviewchromium.so` 33.0.1750.166，来自同 tag 的 `chrome/VERSION`。
 
 所有规则同时要求固件 `ro.build.version.release=4.4.4`、build ID
 `KTU84Q`、精确 SONAME 和唯一 source tag。版本仍可能受 OEM patch 影响，
-因此 4 项都保留 estimate 语义，不能作为单点上游 CVE 结论。
+因此 3 项都保留 estimate 语义，不能作为单点上游 CVE 结论。
 
 ## 仍需解决
 

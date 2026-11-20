@@ -93,8 +93,7 @@
           "project_path": "external/tremolo",
           "filename_only": true,
           "filename_patterns": [
-            "libvorbisidec.so",
-            "libstagefright_soft_vorbisdec.so"
+            "libvorbisidec.so"
           ],
           "filename_match": "exact",
           "component_name": "Tremolo",
