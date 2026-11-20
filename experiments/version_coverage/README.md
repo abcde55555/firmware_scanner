@@ -261,6 +261,12 @@ zero wrong and 11 explicit unknowns**. The supplied firmware results remain
 unchanged because none of these components are currently recognized in them.
 See `docs/version-0.29-runtime-getters-and-heldout7-2026-11-20.md`.
 
+Version 0.30.0 adds a targeted libsepol extractor for the official
+`LIBSEPOL_3.11` ELF version definition plus release-specific symbols. The tuned
+Independent-7 regression now reaches **10/20 exact, zero wrong and ten explicit
+unknowns**, or 50% exact coverage with 100% precision among emitted claims. See
+`docs/version-0.30-libsepol-version-namespace-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 

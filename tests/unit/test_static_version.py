@@ -237,6 +237,50 @@ def test_mpfr_mpc_portaudio_and_ffado_release_string_getters():
     }
 
 
+def test_libsepol_release_requires_version_definition_and_identity_symbols():
+    compiler = shutil.which("cc") or shutil.which("gcc")
+    if compiler is None:
+        raise unittest.SkipTest("host C compiler unavailable")
+    source = '''
+        __attribute__((visibility("default"), noinline, used))
+        void cil_check_neverallows_against_pdb(void) {}
+        __attribute__((visibility("default"), noinline, used))
+        void sepol_kernel_policydb_decls_to_cil(void) {}
+    '''
+    version_script = '''
+        LIBSEPOL_3.11 {
+          global:
+            cil_check_neverallows_against_pdb;
+            sepol_kernel_policydb_decls_to_cil;
+        };
+    '''
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source_path = Path(temp_dir) / "libsepol.c"
+        version_path = Path(temp_dir) / "libsepol.map"
+        elf_path = Path(temp_dir) / "libsepol.so.2"
+        source_path.write_text(source)
+        version_path.write_text(version_script)
+        subprocess.run(
+            [
+                compiler,
+                "-shared",
+                "-fPIC",
+                "-O2",
+                "-fno-stack-protector",
+                "-Wl,--build-id=none",
+                f"-Wl,--version-script={version_path}",
+                "-o",
+                str(elf_path),
+                str(source_path),
+            ],
+            check=True,
+        )
+
+        matches = StaticVersionExtractor().extract(elf_path.read_bytes())
+
+    assert [(match.name, match.version) for match in matches] == [("libsepol", "3.11")]
+
+
 def test_nss_and_nspr_version_string_getters():
     compiler = shutil.which("cc") or shutil.which("gcc")
     if compiler is None:

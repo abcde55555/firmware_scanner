@@ -53,6 +53,7 @@ from capstone.x86 import (
     X86_OP_REG,
 )
 from elftools.elf.constants import P_FLAGS
+from elftools.elf.gnuversions import GNUVerDefSection
 
 try:
     from elftools.common.exceptions import ELFError
@@ -131,6 +132,21 @@ _INTEGER_GETTERS: dict[str, tuple[str, tuple[int, int, int], str]] = {
         "https://github.com/lloyd/yajl/blob/master/src/api/yajl_version.c",
     ),
 }
+_VERSION_DEFINITION_RULES: dict[
+    str, tuple[str, str, frozenset[str], str]
+] = {
+    "LIBSEPOL_3.11": (
+        "libsepol",
+        "3.11",
+        frozenset(
+            {
+                "cil_check_neverallows_against_pdb",
+                "sepol_kernel_policydb_decls_to_cil",
+            }
+        ),
+        "https://github.com/SELinuxProject/selinux/blob/3.11/libsepol/src/libsepol.map.in",
+    ),
+}
 _SUPPORT_SYMBOLS = {
     "NSS_GetVersion": {"NSS_VersionCheck"},
     "PR_GetVersion": {"PR_VersionCheck"},
@@ -207,7 +223,7 @@ class StaticVersionExtractor:
             or data[:4] != b"\x7fELF"
         ):
             return []
-        getter_names = {*_GETTERS, *_INTEGER_GETTERS}
+        getter_names = {*_GETTERS, *_INTEGER_GETTERS, *_VERSION_DEFINITION_RULES}
         if not any(name.encode("ascii") in data for name in getter_names):
             return []
         try:
@@ -239,6 +255,11 @@ class StaticVersionExtractor:
             ]
             functions: dict[str, tuple[int, int, bool]] = {}
             defined_functions: set[str] = set()
+            defined_versions: set[str] = set()
+            version_definition = elf.get_section_by_name(".gnu.version_d")
+            if isinstance(version_definition, GNUVerDefSection):
+                for _version, auxiliaries in version_definition.iter_versions():
+                    defined_versions.update(auxiliary.name for auxiliary in auxiliaries)
             for section in elf.iter_sections():
                 if not isinstance(section, SymbolTableSection):
                     continue
@@ -257,6 +278,28 @@ class StaticVersionExtractor:
                         functions.setdefault(symbol.name, (address, size, thumb))
 
             matches: list[StaticVersionMatch] = []
+            for version_name, (
+                component,
+                release,
+                required_symbols,
+                source,
+            ) in _VERSION_DEFINITION_RULES.items():
+                if (
+                    version_name not in defined_versions
+                    or not required_symbols.issubset(defined_functions)
+                ):
+                    continue
+                matches.append(
+                    StaticVersionMatch(
+                        component,
+                        release,
+                        (
+                            f"ELF version definition {version_name!r} and required "
+                            f"symbols {sorted(required_symbols)} are present; source {source}"
+                        ),
+                        0.93,
+                    )
+                )
             for getter, (address, size, thumb) in functions.items():
                 if not _SUPPORT_SYMBOLS.get(getter, set()).issubset(defined_functions):
                     continue
