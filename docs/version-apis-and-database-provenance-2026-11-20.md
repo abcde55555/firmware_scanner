@@ -135,7 +135,7 @@ NSRL still has zero exact-file matches on the two target firmware images.
 BLintDB remains useful for identity confirmation and mismatch diagnostics, but
 does not directly increase verified version coverage in these samples.
 
-The final Allwinner 0.17.0 scan at commit `a2a7e63` revalidated the full path:
+The final Allwinner 0.17.0 scan at commit `d442eb0` revalidated the full path:
 
 | Metric | Result |
 |---|---:|
@@ -152,8 +152,13 @@ The final Allwinner 0.17.0 scan at commit `a2a7e63` revalidated the full path:
 | NSRL positive control | passed |
 | CycloneDX 1.6 schema | valid |
 
-The scan duration was 162.392 seconds under heavy host I/O contention and is not
-used as a performance-regression result.
+The final scan also recovers `libevent 1.4.13-stable` from the adjacent upstream
+identity banner in four Chromium containers. This record was not in the frozen
+582-item baseline, so it does not change the fixed-cohort metric; it is counted
+as a new full-BOM exact component.
+
+The final scan duration was 260.322 seconds under heavy host I/O contention and
+is not used as a performance-regression result.
 
 ## Artifacts
 
@@ -163,8 +168,8 @@ used as a performance-regression result.
 - `reports/heldout-debian-independent3-20261120-forwarded-getter/heldout-report.json`
 - `reports/version-coverage-getters-20261120/database-positive-controls-20261120.json`
 - `reports/version-coverage-getters-20261120/database-integration-positive-control-20261120.json`
-- `reports/version-coverage-getters-20261120/database-evidence-allwinner-a2a7e63/evaluation-fixed.json`
-- `reports/version-coverage-getters-20261120/database-evidence-allwinner-a2a7e63/schema-validation.json`
+- `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/evaluation-fixed.json`
+- `reports/version-coverage-getters-20261120/database-evidence-allwinner-d442eb0/schema-validation.json`
 - `src/firmware_scanner/extraction/semantic_version.py`
 - `src/firmware_scanner/databases/manifest.py`
 - `src/firmware_scanner/databases/enricher.py`
