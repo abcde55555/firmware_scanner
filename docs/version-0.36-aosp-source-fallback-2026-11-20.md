@@ -1,8 +1,8 @@
-# Version 0.36.0: AOSP build-ID source fallback
+# Version 0.36: AOSP build-ID source fallback
 
 Date: 2026-11-20
 
-Scanner: 0.36.0
+Scanner: 0.36.0 (calibration release 0.36.1)
 
 Rule release: `builtin-2026.11.20.14`
 
@@ -39,6 +39,22 @@ Fixed cohort: 582 total rows, 312 native rows.
 
 The all-component 50% coverage target is met at 50.17%. Native coverage remains
 44.23% and is not described as a 50% native result.
+
+### Independent calibration check
+
+The v0.36.1 calibration map binds the 15 new observations to official
+`android-4.4.4_r2` manifest project revisions or the exact target image build
+baseline.
+
+| Metric | Result |
+|---|---:|
+| Independently verified new observations | 15 |
+| Correct | **15** |
+| Errors | **0** |
+| Adjacent-only matches | **0** |
+
+This is a source-verified calibration slice that informed the rules. It is not
+an untouched whole-image holdout.
 
 The eight build-ID source fallbacks are:
 
@@ -115,9 +131,11 @@ remains distinct from component absence.
 - Real source snapshots: 178/178 files match; zero changed, missing or
   unexpected source files for both firmware scans.
 - CycloneDX 1.6: both SBOMs valid with zero schema errors.
-- Fresh wheel: `firmware_scanner-0.36.0-py3-none-any.whl`, SHA-256
-  `ab4a1201b8914d836e3c783cc4e12aa2b7db347401abce0f63f2abcd6904b8ff`.
-- Isolated wheel verification reports module/distribution version `0.36.0`,
+- The Allwinner calibration evaluation reports 15/15 new observations correct
+  with zero adjacent-only matches and zero verification warnings.
+- Fresh wheel: `firmware_scanner-0.36.1-py3-none-any.whl`, SHA-256
+  `9ff073282f7ca7bcb76e86e9b56bcafc31131edbd10e8ed657de1c2042039de2`.
+- Isolated wheel verification reports module/distribution version `0.36.1`,
   verifies all 16 rule files and exercises both the Skia source fallback and an
   AOSP platform component rule.
 
@@ -126,8 +144,9 @@ remains distinct from component absence.
 - `reports/version-coverage-getters-20261120/version-0.36.0-allwinner-source-fallback/`
 - `reports/version-coverage-getters-20261120/version-0.36.0-modern-source-fallback/`
 - `reports/version-coverage-getters-20261120/version-0.36.0-database-audit.json`
-- `reports/version-coverage-getters-20261120/version-0.36.0-final-summary.json`
-- `reports/version-coverage-getters-20261120/wheel-0.36.0-final/wheel-verification.json`
+- `reports/version-coverage-getters-20261120/version-0.36.1-final-summary.json`
+- `reports/version-coverage-getters-20261120/wheel-0.36.1-final/wheel-verification.json`
+- `experiments/version_coverage/verified/allwinner-ktu84q-aosp-provenance-0.36.json`
 
 ## Boundaries
 
