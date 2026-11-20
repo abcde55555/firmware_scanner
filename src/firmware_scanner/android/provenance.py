@@ -12,6 +12,7 @@ from importlib.resources import files
 from pathlib import Path
 from urllib.parse import quote
 
+from ..extraction.binary_inventory import identity_key
 from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 
 _APEX_PATH_RE = re.compile(r"(/[^!\s]+\.(?:apex|capex))!")
@@ -602,6 +603,107 @@ def _component_identities(component: Component) -> set[str]:
     }
 
 
+def _embedded_source_prefixes(component: Component) -> dict[str, dict]:
+    evidence: dict[str, dict] = {}
+    for prop in component.properties:
+        if prop.get("name") != "firmware:source:path-prefix-evidence":
+            continue
+        try:
+            item = json.loads(str(prop.get("value", "")))
+        except (TypeError, ValueError):
+            continue
+        if not (
+            isinstance(item, dict)
+            and isinstance(item.get("project_path"), str)
+            and isinstance(item.get("source_path"), str)
+            and isinstance(item.get("file_offset"), int)
+        ):
+            continue
+        evidence.setdefault(item["project_path"], item)
+    return evidence
+
+
+def _contained_release_component(
+    component: Component,
+    *,
+    rule: dict,
+    evidence: dict,
+) -> Component:
+    version = str(rule["version"])
+    name = str(rule["component_name"])
+    source_path = str(evidence["source_path"])
+    source_offset = int(evidence["file_offset"])
+    location = next(iter(_locations(component)), component.name)
+    contained = Component(
+        name=name,
+        vendor=str(rule.get("vendor", "")),
+        resolved_version=version,
+        component_type="library",
+        purl=(
+            f"pkg:generic/{quote(name, safe='._-')}"
+            f"@{quote(version, safe='._-+')}"
+        ),
+        description=(
+            f"Embedded component inferred from source-path evidence in {component.name}"
+        ),
+        versions=[
+            VersionConfidence(
+                version=version,
+                confidence=0.8,
+                method=ExtractionMethod.VERSION_ESTIMATE,
+                evidence=(
+                    f"{component.name} embeds {source_path!r} at file offset "
+                    f"0x{source_offset:x}; AOSP tag {rule['aosp_tag']} declares "
+                    f"{version} in {rule.get('version_authority', 'its source tree')} "
+                    f"at {rule.get('source_url', '')}. This is source provenance, "
+                    "not a version string emitted by the target binary."
+                ),
+            )
+        ],
+        properties=[
+            {"name": "firmware:evidence:location", "value": location},
+            {"name": "firmware:evidence:container", "value": component.name},
+            {"name": "firmware:relationship", "value": "contains-evidence-for"},
+            {"name": "firmware:version:kind", "value": "estimated-android-source-release"},
+            {
+                "name": "firmware:version:resolution-state",
+                "value": "estimated-aosp-release",
+            },
+            {
+                "name": "firmware:version:scope",
+                "value": "aosp-source-path-derived-not-binary-self-version",
+            },
+            {"name": "firmware:source:project", "value": str(rule["project_path"])},
+            {"name": "firmware:source:aosp-tag", "value": str(rule["aosp_tag"])},
+            {
+                "name": "firmware:source:embedded-path",
+                "value": source_path,
+            },
+            {
+                "name": "firmware:source:embedded-path-offset",
+                "value": f"0x{source_offset:x}",
+            },
+            {
+                "name": "firmware:source:version-authority",
+                "value": str(rule.get("version_authority", "")),
+            },
+            {
+                "name": "firmware:source:version-evidence",
+                "value": str(rule.get("source_url", "")),
+            },
+        ],
+    )
+    taxonomy = classify_source_project(str(rule["project_path"]))
+    if taxonomy != "unknown":
+        contained.properties.extend(
+            [
+                {"name": "firmware:taxonomy", "value": taxonomy},
+                {"name": "firmware:taxonomy:evidence", "value": "source-project-path"},
+            ]
+        )
+    return contained
+
+
 def _android_release_project_versions(
     components: list[Component],
     *,
@@ -634,11 +736,16 @@ def _android_release_project_versions(
             for location in _locations(component):
                 contained_identities[location].update(identities)
     rows = []
+    existing_components = {
+        (
+            identity_key(component.name),
+            tuple(_locations(component)),
+        )
+        for component in components
+    }
+    contained_components: list[Component] = []
     for component in components:
-        if component.resolved_version or any(
-            prop.get("name") == "firmware:version:conflict" for prop in component.properties
-        ):
-            continue
+        source_prefixes = _embedded_source_prefixes(component)
         identities = set(_component_identities(component))
         for location in _locations(component):
             identities.update(contained_identities.get(location, ()))
@@ -658,6 +765,37 @@ def _android_release_project_versions(
             if any(
                 component_properties.get(name) != value
                 for name, value in required_properties.items()
+            ):
+                continue
+            project_evidence = source_prefixes.get(str(rule["project_path"]))
+            if project_evidence is not None and bool(rule.get("embedded_source_version")):
+                pair = (
+                    identity_key(str(rule["component_name"])),
+                    tuple(_locations(component)),
+                )
+                if pair not in existing_components:
+                    contained = _contained_release_component(
+                        component,
+                        rule=rule,
+                        evidence=project_evidence,
+                    )
+                    contained_components.append(contained)
+                    existing_components.add(pair)
+                    rows.append(
+                        {
+                            "name": str(rule["component_name"]),
+                            "version": str(rule["version"]),
+                            "project_path": rule["project_path"],
+                            "aosp_tag": rule["aosp_tag"],
+                            "source_url": rule.get("source_url", ""),
+                            "source_path": project_evidence["source_path"],
+                            "container": component.name,
+                        }
+                    )
+                continue
+            if component.resolved_version or any(
+                prop.get("name") == "firmware:version:conflict"
+                for prop in component.properties
             ):
                 continue
             if (
@@ -743,6 +881,7 @@ def _android_release_project_versions(
                 }
             )
             break
+    components.extend(contained_components)
     return rows
 
 

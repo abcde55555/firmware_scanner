@@ -89,6 +89,11 @@ class BinaryInventory:
             {'name': 'firmware:evidence:location', 'value': location},
             {'name': 'firmware:binary:sha256', 'value': digest},
         ]
+        for evidence in self._source_path_prefix_evidence(data):
+            properties.append({
+                'name': 'firmware:source:path-prefix-evidence',
+                'value': json.dumps(evidence, sort_keys=True),
+            })
         if self._source_project_paths:
             for evidence in self._source_project_evidence(data):
                 properties.append({
@@ -149,6 +154,30 @@ class BinaryInventory:
         from .amr_wb_version import extract_amr_wb_version
         for hit in extract_amr_wb_version(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
+        from .webrtc_voice_engine import extract_webrtc_voice_engine
+        for hit in extract_webrtc_voice_engine(data):
+            claims.append(
+                (
+                    hit.name,
+                    hit.version,
+                    hit.confidence,
+                    ExtractionMethod.BINARY_SIGNATURE,
+                    hit.evidence,
+                    "",
+                )
+            )
+        from .llvm_version import extract_llvm_version
+        for hit in extract_llvm_version(data):
+            claims.append(
+                (
+                    hit.name,
+                    hit.version,
+                    hit.confidence,
+                    ExtractionMethod.BINARY_SIGNATURE,
+                    hit.evidence,
+                    "",
+                )
+            )
         from .public_version import extract_public_versions
         for hit in extract_public_versions(data):
             claims.append((hit.name, hit.version, hit.confidence, ExtractionMethod.SYMBOL_TABLE, hit.evidence, ''))
@@ -287,6 +316,25 @@ class BinaryInventory:
                 component.model_copy(deep=True) for component in components
             ]
         return components
+
+    @staticmethod
+    def _source_path_prefix_evidence(data: bytes) -> list[dict]:
+        """Keep one auditable source-path example for each top-level project."""
+        prefixes: dict[str, dict] = {}
+        for match in _SOURCE_PATH.finditer(data):
+            source_path = match.group(0).decode("ascii", errors="ignore").lstrip("./")
+            parts = source_path.split("/")
+            if len(parts) < 2:
+                continue
+            prefix = "/".join(parts[:2])
+            prefixes.setdefault(prefix, {
+                "project_path": prefix,
+                "source_path": source_path,
+                "file_offset": match.start(),
+            })
+            if len(prefixes) >= 64:
+                break
+        return [prefixes[prefix] for prefix in sorted(prefixes)]
 
     def _source_project_evidence(self, data: bytes) -> list[dict]:
         """Map embedded source-file paths to the longest manifest project."""

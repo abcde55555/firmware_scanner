@@ -112,6 +112,62 @@
           "version": "33.0.1750.166",
           "source_url": "https://android.googlesource.com/platform/external/chromium_org/+/refs/tags/android-4.4.4_r2/chrome/VERSION",
           "version_authority": "MAJOR, MINOR, BUILD and PATCH"
+        },
+        {
+          "project_path": "external/protobuf",
+          "embedded_source_version": true,
+          "component_name": "Protobuf",
+          "version": "2.3.0",
+          "source_url": "https://android.googlesource.com/platform/external/protobuf/+/refs/tags/android-4.4.4_r2/src/google/protobuf/stubs/common.h",
+          "version_authority": "GOOGLE_PROTOBUF_VERSION"
+        },
+        {
+          "project_path": "external/llvm",
+          "embedded_source_version": true,
+          "component_name": "LLVM",
+          "version": "3.4svn",
+          "source_url": "https://android.googlesource.com/platform/external/llvm/+/refs/tags/android-4.4.4_r2/CMakeLists.txt",
+          "version_authority": "LLVM_VERSION_MAJOR, LLVM_VERSION_MINOR and PACKAGE_VERSION"
+        },
+        {
+          "project_path": "external/v8",
+          "embedded_source_version": true,
+          "component_name": "V8",
+          "version": "3.9.24.30",
+          "source_url": "https://android.googlesource.com/platform/external/v8/+/refs/tags/android-4.4.4_r2/src/version.cc",
+          "version_authority": "MAJOR_VERSION, MINOR_VERSION, BUILD_NUMBER and PATCH_LEVEL"
+        },
+        {
+          "project_path": "external/opencv",
+          "embedded_source_version": true,
+          "component_name": "OpenCV",
+          "version": "1.1.0",
+          "source_url": "https://android.googlesource.com/platform/external/opencv/+/refs/tags/android-4.4.4_r2/cxcore/include/cvver.h",
+          "version_authority": "CV_MAJOR_VERSION, CV_MINOR_VERSION and CV_SUBMINOR_VERSION"
+        },
+        {
+          "project_path": "external/marisa-trie",
+          "embedded_source_version": true,
+          "component_name": "marisa-trie",
+          "version": "0.1.5",
+          "source_url": "https://android.googlesource.com/platform/external/marisa-trie/+/refs/tags/android-4.4.4_r2/v0_1_5",
+          "version_authority": "release directory v0_1_5"
+        },
+        {
+          "project_path": "external/regex-re2",
+          "embedded_source_version": true,
+          "component_name": "RE2",
+          "version": "20130115",
+          "source_url": "https://android.googlesource.com/platform/external/regex-re2/+/refs/tags/android-4.4.4_r2/README.android",
+          "version_authority": "re2-20130115 source archive"
+        },
+        {
+          "project_path": "external/chromium",
+          "embedded_source_version": true,
+          "component_name": "Chromium",
+          "version": "12.0.742.130",
+          "source_url": "https://android.googlesource.com/platform/external/chromium/+/refs/tags/android-4.4.4_r2/CHROMIUM_MERGE_REVISION",
+          "version_authority": "pinned Chromium release DEPS URL"
         }
       ]
     }

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-11-20
+
+### Added
+- Preserve embedded `external/*` source-path evidence even when an image has no
+  exact source manifest
+- Attribute AOSP Android 4.4.4 projects with source declarations as separate
+  contained components for Protobuf, V8, OpenCV, RE2, marisa-trie and Chromium
+- Recognize LLVM's own development banner only with LLVM public API markers
+- Recognize WebRTC VoiceEngine 4.1.0 only with its banner, source path and API
+  markers
+
+### Changed
+- Keep wrapper libraries such as AppDataSearch and Google TTS unknown while
+  reporting the embedded upstream project separately
+- Advance the packaged rule lock to `builtin-2026.11.20.5`
+
 ## [0.18.0] - 2026-11-20
 
 ### Added

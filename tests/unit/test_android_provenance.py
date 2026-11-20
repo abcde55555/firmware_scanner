@@ -13,7 +13,7 @@ from firmware_scanner.android.provenance import (
 )
 from firmware_scanner.android.system_scanner import AndroidScanResult, AndroidSystemScanner
 from firmware_scanner.extraction.binary_inventory import BinaryInventory
-from firmware_scanner.extraction.models import Component, VersionConfidence
+from firmware_scanner.extraction.models import Component, ExtractionMethod, VersionConfidence
 from firmware_scanner.vuln.matcher import _is_scannable
 
 
@@ -323,6 +323,44 @@ def test_aosp_embedded_library_version_is_not_assigned_to_its_host_wrapper():
 
     assert stats["aosp_release_versions_applied"] == 0
     assert component.resolved_version == ""
+
+
+def test_aosp_source_path_emits_a_separate_contained_release_component():
+    host = native("libAppDataSearch.so", "/lib/libAppDataSearch.so")
+    host.properties.append(
+        {
+            "name": "firmware:source:path-prefix-evidence",
+            "value": json.dumps(
+                {
+                    "project_path": "external/protobuf",
+                    "source_path": "external/protobuf/src/google/protobuf/message_lite.c",
+                    "file_offset": 0x1234,
+                }
+            ),
+        }
+    )
+    components = [host]
+
+    stats = apply_android_provenance(
+        components,
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert stats["aosp_release_versions_applied"] == 1
+    assert host.resolved_version == ""
+    contained = next(component for component in components if component.name == "Protobuf")
+    assert contained.resolved_version == "2.3.0"
+    assert contained.purl == "pkg:generic/Protobuf@2.3.0"
+    assert {
+        "name": "firmware:relationship",
+        "value": "contains-evidence-for",
+    } in contained.properties
+    assert {
+        "name": "firmware:version:resolution-state",
+        "value": "estimated-aosp-release",
+    } in contained.properties
+    assert contained.versions[0].method == ExtractionMethod.VERSION_ESTIMATE
 
 
 def test_aosp_release_estimate_can_version_an_identified_resampler_host():
