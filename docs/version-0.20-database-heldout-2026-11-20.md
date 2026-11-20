@@ -145,7 +145,7 @@ its distribution package version is never promoted to a component release.
 ## Artifacts
 
 - `reports/heldout-debian-independent5-20261120-blind-v2/heldout-report.json`
-- `reports/heldout-debian-independent5-20261120-tuned3/heldout-report.json`
+- `reports/heldout-debian-independent5-20261120-tuned-final/heldout-report.json`
 - `reports/version-coverage-getters-20261120/blint-import-hash-census-20261120.json`
 - `reports/version-coverage-getters-20261120/version-0.20.0-final-summary.json`
 - `reports/version-coverage-getters-20261120/version-0.20.0-source-tree-match.json`
