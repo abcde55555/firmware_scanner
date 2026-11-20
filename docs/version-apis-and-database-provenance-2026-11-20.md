@@ -222,6 +222,7 @@ self-check paths do not alter component or version decisions. Runtime was
 - `reports/version-coverage-getters-20261120/database-evidence-modern-acd45c3/evaluation-fixed.json`
 - `reports/version-coverage-getters-20261120/database-evidence-modern-acd45c3/schema-validation.json`
 - `reports/version-coverage-getters-20261120/wheel-0.17.0/wheel-verification.json`
+- `reports/version-coverage-getters-20261120/wheel-0.18.0/wheel-verification.json`
 - `src/firmware_scanner/extraction/semantic_version.py`
 - `src/firmware_scanner/databases/manifest.py`
 - `src/firmware_scanner/databases/enricher.py`
