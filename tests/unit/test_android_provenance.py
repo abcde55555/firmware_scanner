@@ -326,6 +326,29 @@ def test_source_pin_does_not_replace_an_unrelated_exact_version():
     assert not _pinned_version_extends("9.0", "9.1p1")
 
 
+def test_contained_identity_uses_location_filename_for_aosp_release_rule():
+    location = "/lib/libvorbisidec.so"
+    host = native("libvorbisidec.so", location)
+    contained = native("Tremolo", location)
+    contained.properties.extend(
+        [
+            {"name": "firmware:evidence:container", "value": "libvorbisidec.so"},
+            {"name": "firmware:relationship", "value": "contains-evidence-for"},
+            {"name": "firmware:identity", "value": "Tremolo"},
+        ]
+    )
+
+    stats = apply_android_provenance(
+        [host, contained],
+        android_version="4.4.4",
+        android_build_id="KTU84Q",
+    )
+
+    assert host.resolved_version == "0.07"
+    assert contained.resolved_version == "0.07"
+    assert stats["aosp_release_versions_applied"] == 2
+
+
 @pytest.mark.parametrize(
     ("filename", "identity", "expected_version", "project_path"),
     [

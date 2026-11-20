@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "release": "builtin-2026.11.20.9",
+  "release": "builtin-2026.11.20.10",
   "files": [
     {
       "path": "binary_reference.json",

@@ -796,7 +796,16 @@ def _android_release_project_versions(
         identities = set(_component_identities(component))
         for location in _locations(component):
             identities.update(contained_identities.get(location, ()))
-        filename = Path(component.name).name.casefold()
+        filenames = {
+            Path(component.name).name.casefold(),
+            *(Path(location).name.casefold() for location in _locations(component)),
+            *(
+                Path(str(prop.get("value", ""))).name.casefold()
+                for prop in component.properties
+                if prop.get("name") == "firmware:evidence:container"
+                and prop.get("value")
+            ),
+        }
         for rule in rules:
             rule_identities = {str(identity).casefold() for identity in rule.get("identities", [])}
             filename_patterns = [
@@ -852,9 +861,13 @@ def _android_release_project_versions(
                 continue
             if filename_patterns:
                 if rule.get("filename_match") == "exact":
-                    if filename not in filename_patterns:
+                    if not filenames.intersection(filename_patterns):
                         continue
-                elif not any(pattern in filename for pattern in filename_patterns):
+                elif not any(
+                    pattern in filename
+                    for pattern in filename_patterns
+                    for filename in filenames
+                ):
                     continue
             version = str(rule.get("version", ""))
             if not version:

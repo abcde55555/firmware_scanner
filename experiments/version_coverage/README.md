@@ -208,6 +208,14 @@ parent-version consolidation. No new source rule is applied to Allwinner, which
 has no matching source manifest. See
 `docs/version-0.24-source-declared-releases-2026-11-20.md`.
 
+Version 0.25.0 matches Android release filename rules against real component
+locations and evidence containers. Allwinner's canonical Tremolo component now
+inherits the same explicit `0.07` AOSP estimate as its
+`libvorbisidec.so` host. The frozen aggregate is unchanged because the host was
+already counted; the BOM no longer contains a paired resolved host and
+unresolved canonical subcomponent. See
+`docs/version-0.25-component-location-releases-2026-11-20.md`.
+
 The section comparison extends this finite experiment to the nine indexed target
 locations, without Ghidra or target execution:
 
