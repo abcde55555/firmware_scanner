@@ -94,4 +94,4 @@ Luna 审查曾发现第一版 Protobuf 原型跨互斥块累计格式化调用�
 - [输入哈希](../reports/function-version-experiment-20261118/input-manifest.json)、[冻结代码哈希](../reports/function-version-experiment-20261118/source-manifest.json)、[Luna 路由核对](../reports/function-version-experiment-20261118/agent-routing.json)。
 - [语义控制](../reports/function-version-experiment-20261118/controls/results.json)、[ICU 控制](../reports/function-version-experiment-20261118/controls/icu-results.json)、[独立审查与修复复核](../reports/function-version-experiment-20261118/probe-review.md)、[ARM 独立核验](../reports/function-version-experiment-20261118/scout/REPORT.md)。
 
-复现命令与依赖见[实验 README](../experiments/function_versions/README.md)。本轮已取得真实扫描的正向收益；总体精确率、全组件真值覆盖、任意无符号代码、完整 CLI 及设备执行仍未验收。
+原型代码在结论和反例验证完成后已从仓库移除，避免继续维护未进入产品流程的独立实现；保留下来的结论、证据口径和验证边界以本文为准。本轮已取得真实扫描的正向收益；总体精确率、全组件真值覆盖、任意无符号代码、完整 CLI 及设备执行仍未验收。
