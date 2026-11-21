@@ -12,6 +12,21 @@ from ..extraction.models import Component
 from .license_compliance import audit_firmware_licenses, normalize_license
 
 
+def _compact_stats(stats: dict[str, Any]) -> dict[str, Any]:
+    """Keep bounded counters in BOM metadata and drop detailed evidence rows."""
+    compact: dict[str, Any] = {}
+    for key, value in stats.items():
+        if value is None:
+            continue
+        if isinstance(value, (str, int, float, bool)):
+            compact[key] = value
+        elif key == "errors" and isinstance(value, list):
+            compact["error_count"] = len(value)
+        elif key == "notice_license_attribution" and isinstance(value, dict):
+            compact[key] = _compact_stats(value)
+    return compact
+
+
 class CycloneDXGenerator:
     DEFAULT_SPEC_VERSION = "1.6"
 
@@ -211,7 +226,10 @@ class CycloneDXGenerator:
         if info.get("database_stats"):
             props.append({
                 "name": "firmware:database:stats",
-                "value": json.dumps(info["database_stats"], sort_keys=True),
+                "value": json.dumps(
+                    _compact_stats(info["database_stats"]),
+                    sort_keys=True,
+                ),
             })
         if info.get("database_provenance"):
             props.append({
@@ -221,22 +239,34 @@ class CycloneDXGenerator:
         if info.get("analysis_stats"):
             props.append({
                 "name": "firmware:analysis:stats",
-                "value": json.dumps(info["analysis_stats"], sort_keys=True),
+                "value": json.dumps(
+                    _compact_stats(info["analysis_stats"]),
+                    sort_keys=True,
+                ),
             })
         if info.get("family_provenance_stats"):
             props.append({
                 "name": "firmware:family-provenance:stats",
-                "value": json.dumps(info["family_provenance_stats"], sort_keys=True),
+                "value": json.dumps(
+                    _compact_stats(info["family_provenance_stats"]),
+                    sort_keys=True,
+                ),
             })
         if info.get("provenance_stats"):
             props.append({
                 "name": "firmware:provenance:stats",
-                "value": json.dumps(info["provenance_stats"], sort_keys=True),
+                "value": json.dumps(
+                    _compact_stats(info["provenance_stats"]),
+                    sort_keys=True,
+                ),
             })
         if info.get("license_stats"):
             props.append({
                 "name": "firmware:license:stats",
-                "value": json.dumps(info["license_stats"], sort_keys=True),
+                "value": json.dumps(
+                    _compact_stats(info["license_stats"]),
+                    sort_keys=True,
+                ),
             })
         rules = info.get("rules")
         if rules:

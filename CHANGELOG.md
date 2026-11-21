@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.1] - 2026-11-21
+
+### Changed
+- Compact CycloneDX metadata statistics to bounded counters, rates, scope and
+  concise notice-license attribution
+- Keep detailed provenance and database rows in the raw JSON analysis output
+  instead of embedding them as a single oversized BOM property
+- Remove duplicated database provenance and database self-check payloads from
+  `firmware:database:stats`
+
 ## [0.37.0] - 2026-11-21
 
 ### Added

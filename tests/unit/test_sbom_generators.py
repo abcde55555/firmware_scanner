@@ -218,14 +218,34 @@ def test_sbom_generator_propagates_generic_database_stats_without_android_info()
         file_hash_sha256="a" * 64,
         components=[],
         metadata={
-            "database_stats": {"files_queried": 9},
+            "database_stats": {
+                "files_queried": 9,
+                "database_provenance": {"databases": [{"kind": "nsrl"}]},
+                "self_checks": {"nsrl-exact-file": {"passed": True}},
+                "errors": [],
+            },
             "database_provenance": {
                 "schema_version": 1,
                 "databases": [{"kind": "blintdb", "release": "v4"}],
             },
             "analysis_stats": {"content_cache_hits": 2},
-            "family_provenance_stats": {"versions_inherited": 1},
-            "provenance_stats": {"notice_license_attribution": {"components_licensed": 2}},
+            "family_provenance_stats": {
+                "versions_inherited": 1,
+                "rows": [{"name": "libexample.so", "version": "1.2.3"}],
+            },
+            "provenance_stats": {
+                "framework_platform_build_versions_applied": 39,
+                "platform_build_rows": [
+                    {"name": f"framework/module-{index}"} for index in range(100)
+                ],
+                "parent_package_rows": [{"name": "libexample.so"}],
+                "scope": "build provenance",
+                "notice_license_attribution": {
+                    "components_licensed": 2,
+                    "existing_licenses_preserved": 1,
+                    "notice_files_matched": 3,
+                },
+            },
             "license_stats": {"licensed_components": 2, "total_components": 3},
             "rules": {
                 "release": "builtin-test",
@@ -235,16 +255,24 @@ def test_sbom_generator_propagates_generic_database_stats_without_android_info()
     )
     bom = json.loads(SBOMGenerator().generate_cyclonedx(context, spec_version="1.6"))
     properties = {item["name"]: item["value"] for item in bom["metadata"]["properties"]}
-    assert properties["firmware:database:stats"] == '{"files_queried": 9}'
+    assert properties["firmware:database:stats"] == '{"error_count": 0, "files_queried": 9}'
     assert json.loads(properties["firmware:database:provenance"]) == {
         "schema_version": 1,
         "databases": [{"kind": "blintdb", "release": "v4"}],
     }
     assert properties["firmware:analysis:stats"] == '{"content_cache_hits": 2}'
     assert properties["firmware:family-provenance:stats"] == '{"versions_inherited": 1}'
-    assert properties["firmware:provenance:stats"] == (
-        '{"notice_license_attribution": {"components_licensed": 2}}'
-    )
+    provenance_stats = json.loads(properties["firmware:provenance:stats"])
+    assert provenance_stats["framework_platform_build_versions_applied"] == 39
+    assert provenance_stats["notice_license_attribution"] == {
+        "components_licensed": 2,
+        "existing_licenses_preserved": 1,
+        "notice_files_matched": 3,
+    }
+    assert "platform_build_rows" not in provenance_stats
+    assert "parent_package_rows" not in provenance_stats
+    assert len(properties["firmware:provenance:stats"]) < 1000
+    assert "rows" not in json.loads(properties["firmware:family-provenance:stats"])
     assert properties["firmware:license:stats"] == (
         '{"licensed_components": 2, "total_components": 3}'
     )
