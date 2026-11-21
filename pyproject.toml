@@ -4,11 +4,37 @@ build-backend = "hatchling.build"
 
 [project]
 name = "firmware-scanner"
-version = "0.36.1"
+version = "0.37.0"
 description = "Firmware security analysis, recursive unpacking, component extraction, and SBOM generation"
+readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Firmware Security Team" }]
+keywords = [
+    "firmware",
+    "sbom",
+    "security",
+    "sca",
+    "cyclonedx",
+    "spdx",
+    "vulnerability",
+    "embedded",
+    "rtos",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
     "typer>=0.9.0",
     "rich>=13.0.0",
@@ -19,6 +45,13 @@ dependencies = [
     "intelhex>=2.3.0",
     "packageurl-python>=0.11.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/abcde55555/firmware_scanner"
+Documentation = "https://github.com/abcde55555/firmware_scanner/tree/main/docs"
+Repository = "https://github.com/abcde55555/firmware_scanner"
+Releases = "https://github.com/abcde55555/firmware_scanner/releases"
+Issues = "https://github.com/abcde55555/firmware_scanner/issues"
 
 [project.optional-dependencies]
 radare2 = ["r2pipe>=1.8.0"]
@@ -61,6 +94,20 @@ manifest_scanner = "firmware_scanner.extraction.extractors.manifest_scanner:Mani
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/firmware_scanner"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/firmware_scanner",
+  "/tests",
+  "/docs",
+  "/scripts",
+  "/.github",
+  "/README.md",
+  "/LICENSE",
+  "/CHANGELOG.md",
+  "/pyproject.toml",
+  "/firmware_scanner.spec",
+]
 
 [tool.ruff]
 target-version = "py310"

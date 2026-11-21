@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.0] - 2026-11-21
+
+### Added
+- Add a GitHub Actions release pipeline for Linux, Windows, and macOS
+  standalone executables
+- Publish universal wheel, source distribution, SHA-256 checksums, and a
+  machine-readable release manifest
+- Add a PyInstaller specification that bundles rule packs, package metadata,
+  README, and license data
+- Add release installation and release-process documentation
+
 ## [0.36.1] - 2026-11-20
 
 ### Added

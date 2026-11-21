@@ -60,6 +60,20 @@ to the evidence that supports it.
 
 ## Quick Start
 
+### Download a prebuilt executable
+
+Linux, Windows, and macOS standalone builds are published on the
+[latest release](https://github.com/abcde55555/firmware_scanner/releases/latest).
+Verify the downloaded archive against `SHA256SUMS`, extract it, and run:
+
+```bash
+./firmware-scanner --help
+```
+
+On Windows, run `firmware-scanner.exe`. Standalone builds contain the core
+static analyzer and built-in rule packs; install from source when using optional
+radare2 or Ghidra Python integrations.
+
 ### Install from source
 
 ```bash
@@ -337,6 +351,7 @@ python3 -m pip install -e ".[full]"
 - [Installation](docs/INSTALL.md)
 - [Architecture and development](docs/DEVELOPMENT.md)
 - [Extension guide](docs/EXTENSION_GUIDE.md)
+- [Release process](docs/RELEASING.md)
 - [Technical principles](docs/TECHNICAL_PRINCIPLES.md)
 - [Product requirements](docs/PRD.md)
 - [Roadmap](docs/ROADMAP.md)
