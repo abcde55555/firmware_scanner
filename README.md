@@ -1,354 +1,358 @@
-# Firmware Scanner
+<p align="center">
+  <img src="docs/assets/firmware-scanner-banner.svg" alt="Firmware Scanner: evidence-aware firmware SBOM and vulnerability analysis" width="100%">
+</p>
 
-Firmware Scanner is a Python CLI tool for firmware security analysis. It loads and unpacks embedded/IoT firmware images, detects CPU architecture and RTOS families, extracts embedded software components and versions, and generates CycloneDX SBOM plus optional HTML/JSON reports.
+<div align="center">
 
-> Intended use: defensive security research, firmware inventory, supply-chain review, and compliance workflows for firmware you are authorized to analyze.
+**Static-first firmware SBOM, component recovery, and vulnerability analysis.**
 
-## Features
+[![CI](https://github.com/abcde55555/firmware_scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/abcde55555/firmware_scanner/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/abcde55555/firmware_scanner?style=flat-square)](https://github.com/abcde55555/firmware_scanner/releases)
+[![Python](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/github/license/abcde55555/firmware_scanner?style=flat-square)](LICENSE)
+[![CycloneDX](https://img.shields.io/badge/CycloneDX-1.6-0b7285?style=flat-square)](https://cyclonedx.org/)
+[![SPDX](https://img.shields.io/badge/SPDX-3.0.1-2563eb?style=flat-square)](https://spdx.dev/)
 
-- **Firmware input handling**
-  - ELF binaries
-  - Raw `.bin`, `.img`, `.fw` images
-  - Intel HEX
-  - Motorola S-Record
-  - ESP-IDF images
-  - Compressed/container formats through built-in unpackers and recursive unpacking
-- **Architecture detection**
-  - ARM, MIPS, RISC-V, Xtensa and related metadata
-  - Endianness, word size, file type, and confidence scoring
-- **RTOS detection**
-  - FreeRTOS, Zephyr, RT-Thread, ESP-IDF, VxWorks, ThreadX/Azure RTOS, NuttX, LiteOS, uC/OS
-- **Component extraction**
-  - String and version pattern matching
-  - ELF symbol analysis
-  - Binary signatures
-  - Capstone-based instruction probing
-  - Optional radare2 and Ghidra integrations
-  - Deep per-section scanning with a signature database
-- **Reports**
-  - CycloneDX 1.5 JSON SBOM
-  - Standalone HTML report
-  - Raw JSON analysis output
-- **Vulnerability scanning**
-  - CVE vulnerability matching via OSV (Google Open Source Vulnerabilities) database
-  - Supports scanning from firmware directly or from existing SBOM files
-  - Local caching with 24h TTL for fast repeated scans
-  - Detailed JSON and HTML vulnerability reports
-- **Extensibility**
-  - Custom plugin directory
-  - JSON-based signatures
-  - Python entry points for RTOS plugins and extractors
+[Quick start](#quick-start) ·
+[How it works](#how-it-works) ·
+[Version evidence](#version-evidence) ·
+[Reference databases](#reference-databases) ·
+[Results](#reference-evaluations) ·
+[Documentation](#documentation)
 
-## Requirements
+</div>
 
-- Python 3.10+
-- Supported OS: Windows, Linux, macOS
+Firmware Scanner inspects firmware without executing binaries from the target.
+It recursively unpacks images, identifies architectures and RTOS families,
+inventories components and versions, records evidence, and exports CycloneDX,
+SPDX, HTML, JSON, and vulnerability reports.
 
-Core Python dependencies are declared in `pyproject.toml` and include Typer, Rich, Pydantic, Capstone, LIEF, IntelHex, and packageurl-python.
+> [!NOTE]
+> Use Firmware Scanner only with firmware and artifacts you are authorized to
+> inspect. The tool performs read-only static analysis and does not emulate or
+> run target binaries.
 
-Optional tools:
+## Why Firmware Scanner?
 
-- `radare2` + `r2pipe` for deeper binary analysis
-- Ghidra + `pyhidra` for decompiler-assisted analysis
+Firmware rarely includes source manifests, lockfiles, or a reliable package
+database. File names alone are not enough for a defensible SBOM. Firmware
+Scanner combines independent observations and keeps each version claim scoped
+to the evidence that supports it.
 
-## Installation
+| Capability | What it does |
+|---|---|
+| **Firmware-aware unpacking** | Handles Android, embedded Linux, RTOS images, U-Boot/FIT, archives, compressed containers, and nested artifacts |
+| **Static component recovery** | Uses ELF symbols, imports, version APIs, read-only objects, source paths, language metadata, binary signatures, and package archives |
+| **Evidence-aware versions** | Distinguishes exact releases, estimates, source revisions, parent-package versions, platform builds, conflicts, and unknown |
+| **Reference database support** | Integrates pinned BLintDB identity candidates and NIST NSRL exact-file evidence without overwriting target versions |
+| **Reproducible output** | Presents CycloneDX 1.6, SPDX 3.0.1, raw JSON, HTML, VEX, input hashes, rule lock hashes, and database provenance |
+| **Extensible analysis** | Adds firmware formats, extractors, RTOS plugins, external rule packs, and optional radare2/Ghidra analysis |
 
-### From source
+## At a Glance
+
+| Inputs and formats | Analysis | Outputs |
+|---|---|---|
+| Raw images, ELF, Intel HEX, S-Record | Architecture and endianness detection | CycloneDX 1.6 |
+| Android system, `super.img`, APEX, APK, OTA | RTOS and platform identification | SPDX 3.0.1 |
+| Allwinner IMAGEWTY, FIT/U-Boot, ESP-IDF | Component and dependency inventory | Standalone HTML |
+| Compressed/archive containers | Evidence-scoped version resolution | Raw JSON and VEX |
+| Embedded filesystems and nested files | OSV vulnerability matching | Operator dashboard and scan logs |
+
+## Quick Start
+
+### Install from source
 
 ```bash
 git clone https://github.com/abcde55555/firmware_scanner.git
 cd firmware_scanner
-python -m pip install -e .
+python3 -m pip install -e .
 ```
 
-For optional integrations:
+For Android images, include the Android extra:
 
 ```bash
-python -m pip install -e ".[radare2]"
-python -m pip install -e ".[ghidra]"
-python -m pip install -e ".[full]"
+python3 -m pip install -e ".[android]"
 ```
 
-For development tools:
-
-```bash
-python -m pip install -e ".[dev]"
-```
-
-## Quick Start
-
-Show CLI help:
+Verify the installation:
 
 ```bash
 firmware-scanner --help
-```
-
-Analyze firmware and write a CycloneDX SBOM:
-
-```bash
-firmware-scanner analyze firmware.bin -o sbom.json
-```
-
-Generate all report formats into a directory:
-
-```bash
-firmware-scanner analyze firmware.bin -f all -o reports/
-```
-
-Detect architecture and RTOS only:
-
-```bash
-firmware-scanner detect firmware.bin
-```
-
-Unpack firmware sections:
-
-```bash
-firmware-scanner unpack firmware.bin -o unpacked/
-```
-
-List available RTOS plugins and extractors:
-
-```bash
-firmware-scanner plugins
-```
-
-Check optional dependency availability:
-
-```bash
 firmware-scanner check-deps
 ```
 
-Create the user configuration file:
+### Generate an SBOM
 
 ```bash
-firmware-scanner init
+firmware-scanner analyze firmware.img -f all -o reports/
 ```
 
-Scan firmware for known CVE vulnerabilities:
+The output directory contains CycloneDX, SPDX, HTML, and raw JSON reports.
+Choose a single format when integrating with another pipeline:
 
 ```bash
-firmware-scanner vuln-scan firmware.bin -o vuln_report.html
+firmware-scanner analyze firmware.img -f sbom -o firmware.cdx.json
+firmware-scanner analyze firmware.img -f spdx -o firmware.spdx.json
 ```
 
-Scan an existing SBOM for vulnerabilities:
+### Inspect or unpack before analysis
 
 ```bash
-firmware-scanner vuln-scan sbom.json -f vuln-json -o vulns.json
+# Architecture, hashes, and likely RTOS
+firmware-scanner detect firmware.img -v
+
+# Extract detected top-level sections
+firmware-scanner unpack firmware.img -o unpacked/
 ```
 
-You can also run the package module directly:
+### Attach reference databases
 
 ```bash
-python -m firmware_scanner --help
+firmware-scanner analyze system.img -f all -o reports/ \
+  --blint-db /path/to/blint.db \
+  --nsrl-db /path/to/android_minimal.db
 ```
 
-## CLI Commands
-
-### `analyze`
-
-Runs the full analysis pipeline:
-
-1. Load firmware and compute hashes
-2. Unpack the image
-3. Detect architecture
-4. Detect RTOS
-5. Run extractors and deep scanner
-6. Recursively unpack nested files
-7. Deduplicate components
-8. Export reports
-
-Common options:
+Validate database release, size, SHA-256, schema, and production query paths:
 
 ```bash
-firmware-scanner analyze <firmware> \
-  -o <output-file-or-directory> \
-  -f sbom -f html -f json \
-  --rtos freertos \
-  --arch arm \
-  --plugin-dir ./plugins \
-  --timeout 300 \
-  --deep \
-  -v
+firmware-scanner database-audit \
+  --blint-db /path/to/blint.db \
+  --nsrl-db /path/to/android_minimal.db \
+  --verify-database-integrity \
+  -o database-audit.json
 ```
 
-Optional external reference databases can be attached to Android filesystem
-scans and generic firmware section scans:
+### Scan for known vulnerabilities
 
 ```bash
-firmware-scanner analyze system.img -f json -f sbom -o reports/ \
-  --blint-db reports/existing-databases-20261119/blint.db \
-  --nsrl-db reports/existing-databases-20261119/nsrl/android_minimal.db
+# Analyze a firmware image, query OSV, and write a VEX-enabled SBOM
+firmware-scanner vuln-scan firmware.img -f vex -o firmware.vex.cdx.json
+
+# Reuse an existing CycloneDX or SPDX SBOM
+firmware-scanner vuln-scan firmware.cdx.json -f all -o vulnerability-reports/
 ```
 
-Database files are selected through packaged, immutable manifests containing
-their expected byte size, SHA-256, schema and release. Integrity verification is
-enabled by default and cached by inode, size, mtime and ctime. Use
-`--skip-database-integrity` only for a known file that was verified separately;
-the schema checks remain enabled.
+Vulnerability lookup uses OSV and a local 24-hour cache. Exact upstream
+queries are issued only for compatible, non-conflicting versions. Source
+revision, parent-package, and platform-build estimates remain non-exact.
 
-Built-in binary, provenance, signature and database-manifest data are verified
-against `rules.lock.json` at scan startup. The JSON analysis and CycloneDX
-metadata record the rules release and lock SHA-256.
+## How It Works
 
-BLintDB contributes identity and reference-build candidates. NSRL contributes
-exact-file and distribution-package evidence. Neither source promotes a
-reference or distribution version into the target library version field.
-
-Output formats:
-
-- `sbom` / `cyclonedx` - CycloneDX JSON SBOM
-- `html` / `report` - standalone HTML report
-- `json` - raw analysis data
-- `all` - all formats
-
-### `detect`
-
-Prints firmware size, hashes, architecture details, and likely RTOS matches.
-
-```bash
-firmware-scanner detect firmware.elf -v
+```mermaid
+flowchart LR
+    A[Firmware image] --> B[Format routing]
+    B --> C[Recursive unpack]
+    C --> D[Architecture + RTOS]
+    C --> E[ELF / APK / APEX / archives / metadata]
+    E --> F[Identity evidence]
+    E --> G[Version evidence]
+    F --> H[Evidence resolver]
+    G --> H
+    I[Rule lock] --> H
+    J[BLintDB / NSRL] --> H
+    H --> K[Component inventory]
+    K --> L[CycloneDX / SPDX / HTML / JSON]
+    K --> M[OSV / VEX]
 ```
 
-### `vuln-scan`
+The analysis pipeline is:
 
-Scans for known CVE vulnerabilities using the OSV database. Accepts either a firmware binary or a CycloneDX SBOM JSON file — the input type is auto-detected.
+1. Load the image and compute content hashes.
+2. Detect and recursively unpack supported containers.
+3. Identify CPU architecture, endianness, and RTOS/platform family.
+4. Recover component identity from symbols, signatures, metadata, source paths,
+   package definitions, and optional reference databases.
+5. Resolve versions with the strongest available evidence and explicit
+   abstention when evidence conflicts or is incomplete.
+6. Deduplicate findings while preserving locations and provenance.
+7. Generate standards-based reports and machine-readable operator artifacts.
 
-```bash
-# Scan firmware directly (extracts components, then queries CVE database)
-firmware-scanner vuln-scan firmware.bin -o vuln_report.html
+## Version Evidence
 
-# Scan an existing SBOM for vulnerabilities
-firmware-scanner vuln-scan sbom.json -o vulns.json
+“Version present” is not the same as “version proven.” Firmware Scanner keeps
+the evidence tier and resolution scope attached to each component.
 
-# Output both JSON and HTML reports
-firmware-scanner vuln-scan firmware.bin -f all -o reports/
+| State | Meaning |
+|---|---|
+| `exact` | A defensible release claim supported by target or build evidence |
+| `estimated-source-revision` | A source snapshot is known, but no upstream release was proven |
+| `estimated-aosp-source-revision` | An official AOSP manifest project revision was selected through source-path evidence |
+| `estimated-aosp-release` | A source tree declares a release, but the target binary is not independently proven |
+| `estimated-platform-build` | The component belongs to an Android image build; this is not an upstream library release |
+| `estimated-parent-package` | The version belongs to a containing APK, APEX, or package |
+| `equivalence-class` | Multiple releases cannot be distinguished from the available evidence |
+| `conflict-unresolved` | Contradictory evidence was retained and no version was selected |
+| `unknown` | The component is identified but no target release can be claimed |
 
-# Use a proxy for network access
-firmware-scanner vuln-scan firmware.bin --proxy http://127.0.0.1:7890 -o vulns.json
-```
+Outputs also retain source paths, file offsets, symbol sets, hashes, component
+relationships, rule versions, and database digests where available.
 
-Output formats:
+## Reference Databases
 
-- `vuln-json` / `json` - detailed JSON vulnerability report
-- `vuln-html` / `html` - standalone HTML vulnerability report
-- `all` - both formats
+External databases are treated as evidence sources, not version truth.
 
-The vulnerability cache is stored in `~/.firmware-scanner/vuln-cache/` with a 24-hour TTL. On each scan the cache freshness is checked; stale entries are automatically refreshed from OSV. If the network is unavailable, cached data is used with a warning.
+| Database | Used for | Important boundary |
+|---|---|---|
+| [BLintDB](https://github.com/AppThreat/blint-db) | Project identity candidates from symbols, imports, and fingerprints | A reference build version is not automatically the target version |
+| [NIST NSRL](https://www.nist.gov/itl/csd/secure-systems-and-applications/national-software-reference-library-nsrl/nsrl-download-0) | Exact file hashes and distribution provenance | Rebuilt or OEM-modified files usually do not match, and package versions are not always upstream library versions |
 
-### `vuln-update`
+Database releases are pinned through immutable manifests containing release,
+size, SHA-256, schema, source URL, license, architecture, and evidence
+semantics. Integrity verification is enabled by default.
 
-Independently update or manage the local vulnerability cache.
+## Supported Coverage
 
-```bash
-# Refresh all cached entries from OSV
-firmware-scanner vuln-update
+<details>
+<summary><strong>Firmware and container formats</strong></summary>
 
-# Refresh via proxy
-firmware-scanner vuln-update --proxy http://127.0.0.1:7890
+- Raw `.bin`, `.img`, and `.fw`
+- ELF images
+- Intel HEX and Motorola S-Record
+- Android system images, `super.img`, OTA, APEX, and APK
+- Allwinner PhoenixSuit/LiveSuite images
+- FIT and U-Boot-oriented containers
+- ESP-IDF images
+- Compressed images and archive containers
+- CramFS, JFFS2, and related embedded filesystem extraction paths
 
-# Clear all cached entries
-firmware-scanner vuln-update --clear
-```
+</details>
 
-### `unpack`
+<details>
+<summary><strong>Architectures and platforms</strong></summary>
 
-Extracts detected sections/files from the input image.
+- ARM and AArch64
+- MIPS
+- RISC-V
+- x86 and x86-64
+- Xtensa
+- Android and embedded Linux
+- FreeRTOS, Zephyr, RT-Thread, ESP-IDF, VxWorks, ThreadX/Azure RTOS,
+  NuttX, LiteOS, uC/OS, Mbed, RIOT, and Linux-family plugins
 
-```bash
-firmware-scanner unpack firmware.hex --output-dir unpacked/
-```
+</details>
 
-### `plugins`
+<details>
+<summary><strong>Component evidence</strong></summary>
 
-Shows built-in RTOS plugins and extractor availability.
+- ELF symbols and imported dependencies
+- Documented version getters, structs, objects, and exported strings
+- Go build metadata
+- Rust crate paths, audits, and source-location candidates
+- Java/Maven, Python, Node.js, and Android metadata
+- Package archives and package-manager/manifest records
+- Filename releases under restrictive product-version rules
+- Android source paths, source manifests, build IDs, APEX, and NOTICE data
+- Exact-file and symbol/import candidates from reference databases
 
-### `check-deps`
+</details>
 
-Reports whether optional external dependencies are installed and discoverable.
+## Reference Evaluations
 
-### `init`
+These results come from authorized local firmware corpora and are not a
+market-wide benchmark. They measure usable version-field coverage, not the
+proportion of a whole image with independently established truth.
 
-Creates a user configuration file for tool paths such as radare2, Ghidra, and binwalk.
+| Corpus | All component coverage | Native-library coverage | Exact-version rows |
+|---|---:|---:|---:|
+| Android 4.4 / ARM32 embedded image | **292/582, 50.17%** | **138/312, 44.23%** | 120 |
+| Android 16 / x86-64 system image | **866/1,129, 76.71%** | **654/774, 84.50%** | 230 |
 
-## Project Structure
+For the Android 4.4 evaluation, 15 newly recovered AOSP source/platform
+observations matched an independently prepared calibration map:
+**15 correct, 0 errors, 0 adjacent-only matches**. The calibration set informed
+the rules and is not an untouched held-out set.
 
-```text
-src/firmware_scanner/
-├── cli/             # Typer CLI application
-├── core/            # Config, context, pipeline, plugin management
-├── firmware/        # Loading, format handlers, unpacking, recursive unpacking
-├── arch/            # CPU architecture detection strategies
-├── rtos/            # RTOS plugin registry and built-in RTOS analyzers
-├── extraction/      # Component extractors, deep scanner, smart analyzer
-├── sbom/            # CycloneDX and HTML report generation
-├── vuln/            # CVE vulnerability scanning (OSV API, caching, reports)
-└── utils/           # Binary utility helpers
+See:
 
-data/
-├── signatures/      # Built-in RTOS/component signatures
-└── patterns/        # Version and function signature patterns
+- [v0.36 provenance release notes](docs/version-0.36-aosp-source-fallback-2026-11-20.md)
+- [Version evidence research](docs/version-evidence-hardening-2026-11-20.md)
+- [Database and Rust validation](docs/database-and-rust-version-validation-2026-11-20.md)
 
-docs/                # Product, install, extension, and development docs
-tests/               # Fixtures and generated sample outputs
-```
+## Safety and Limits
 
-## Analysis Pipeline
+- Firmware Scanner does not execute target binaries.
+- Parsers use bounded reads and explicit coverage warnings for oversized or
+  unsupported artifacts.
+- Network access is required only for OSV vulnerability queries; cached results
+  can be reused when available.
+- A missing version is a valid result. Static evidence can be stripped, patched,
+  inlined, or shared across multiple releases.
+- Vendor backports may make an upstream version alone insufficient for
+  vulnerability status.
+- BLintDB reference versions and NSRL distribution versions do not overwrite
+  target component versions.
+- VEX and vulnerability results are candidates until reachability, patch state,
+  vendor configuration, and applicability are independently assessed.
 
-```text
-Load → Unpack → Architecture Detection → RTOS Detection → Component Extraction → SBOM/Reports
-                                                                                 ↓
-                                                                          vuln-scan → CVE Matching (OSV) → Vulnerability Reports
-```
+## CLI
 
-The deep scanner analyzes unpacked sections and raw firmware data with component signatures, version regexes, proximity search, global version search, and C-style version define detection. Recursive unpacking then inspects nested artifacts such as archives, compressed images, and application packages where supported.
+| Command | Purpose |
+|---|---|
+| `analyze` | Full unpacking, component analysis, SBOM, and report generation |
+| `detect` | Architecture, hashes, and likely RTOS detection |
+| `unpack` | Extract detected top-level sections |
+| `vuln-scan` | OSV matching from firmware or an existing SBOM |
+| `vuln-update` | Refresh or clear the local OSV cache |
+| `database-audit` | Verify external database integrity, schema, and query controls |
+| `plugins` | List RTOS plugins and extractor availability |
+| `check-deps` | Report optional external-tool availability |
+| `init` | Create a local configuration file |
+
+Run `firmware-scanner <command> --help` for all options.
 
 ## Extending Firmware Scanner
 
-The project is designed around extension points:
+Custom rules and integrations are ordinary versioned inputs:
 
-- Add firmware format handlers under `src/firmware_scanner/firmware/formats/`.
-- Add RTOS analyzers under `src/firmware_scanner/rtos/plugins/`.
-- Add component extractors under `src/firmware_scanner/extraction/extractors/`.
-- Register third-party plugins through `pyproject.toml` entry points:
-  - `firmware_scanner.rtos_plugins`
-  - `firmware_scanner.extractors`
+- Firmware format handlers: `src/firmware_scanner/firmware/formats/`
+- RTOS analyzers: `src/firmware_scanner/rtos/plugins/`
+- Component extractors: `src/firmware_scanner/extraction/extractors/`
+- Signature and provenance packs: `src/firmware_scanner/data/`
 
-See `docs/EXTENSION_GUIDE.md` and `docs/DEVELOPMENT.md` for implementation details.
+Third-party plugins can register through the
+`firmware_scanner.rtos_plugins` and `firmware_scanner.extractors` entry-point
+groups. Every built-in JSON data pack is protected by `rules.lock.json`, so
+reports can identify the exact rule release and SHA-256 used for a scan.
 
 ## Development
 
-Install development dependencies:
-
 ```bash
-python -m pip install -e ".[dev]"
-```
-
-Run tests when test modules are present:
-
-```bash
+python3 -m pip install -e ".[dev]"
 pytest
-```
-
-Run static checks:
-
-```bash
 ruff check src tests
 mypy src
 ```
 
+Optional integrations:
+
+```bash
+python3 -m pip install -e ".[radare2]"
+python3 -m pip install -e ".[ghidra]"
+python3 -m pip install -e ".[full]"
+```
+
 ## Documentation
 
-Additional documentation is available in `docs/`:
+- [Installation](docs/INSTALL.md)
+- [Architecture and development](docs/DEVELOPMENT.md)
+- [Extension guide](docs/EXTENSION_GUIDE.md)
+- [Technical principles](docs/TECHNICAL_PRINCIPLES.md)
+- [Product requirements](docs/PRD.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Test report](docs/TEST_REPORT.md)
+- [Versioned release notes](docs/)
 
-- `docs/INSTALL.md` - detailed installation and dependency setup
-- `docs/DEVELOPMENT.md` - architecture and development guide
-- `docs/EXTENSION_GUIDE.md` - plugin and format extension guide
-- `docs/PRD.md` - product requirements and coverage
-- `docs/ROADMAP.md` - completed and planned work
-- `docs/TECHNICAL_PRINCIPLES.md` - technical principles and detection strategy
-- `docs/TEST_REPORT.md` - testing notes and observed results
+## Contributing
+
+Issues and focused pull requests are welcome. When reporting a detection
+problem, include the scanner version, rule lock hash, component location,
+relevant evidence, and a sanitized reproducer where possible. Do not upload
+confidential firmware or unrelated proprietary artifacts to a public issue.
+
+For security-sensitive reports, avoid public disclosure until a private
+maintainer channel is agreed.
 
 ## License
 
-MIT License. See `pyproject.toml` for package metadata.
+Firmware Scanner is released under the [MIT License](LICENSE).
