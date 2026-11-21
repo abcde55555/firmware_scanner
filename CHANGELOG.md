@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.2] - 2026-11-21
+
+### Fixed
+- Stop serializing internal `git:<sha>` source-revision identifiers into
+  CycloneDX and SPDX release-version fields
+- Omit non-release component versions from CycloneDX 1.6 and SPDX 3.0.1, or
+  use `unknown` for CycloneDX 1.5 compatibility
+- Remove `git:` sentinels from emitted package URLs and BOM references while
+  preserving source project, commit, scope and evidence properties
+
 ## [0.37.1] - 2026-11-21
 
 ### Changed

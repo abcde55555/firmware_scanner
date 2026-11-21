@@ -10,6 +10,7 @@ from firmware_scanner import __version__
 
 from ..extraction.models import Component
 from .license_compliance import audit_firmware_licenses, normalize_license
+from .version_semantics import component_package_url, component_release_version
 
 
 def _compact_stats(stats: dict[str, Any]) -> dict[str, Any]:
@@ -289,8 +290,9 @@ class CycloneDXGenerator:
     def _component_to_cdx(self, comp: Component, spec_version: str = "1.5") -> dict[str, Any]:
         cdx_type = self._map_component_type(comp.component_type, spec_version=spec_version)
 
-        ver = comp.resolved_version or ""
-        bom_ref = comp.purl or (f"pkg:generic/{comp.name}@{ver}" if ver else f"pkg:generic/{comp.name}")
+        ver = component_release_version(comp)
+        purl = component_package_url(comp)
+        bom_ref = purl or (f"pkg:generic/{comp.name}@{ver}" if ver else f"pkg:generic/{comp.name}")
 
         cdx_comp: dict[str, Any] = {
             "bom-ref": bom_ref,
@@ -315,8 +317,8 @@ class CycloneDXGenerator:
                 cdx_comp["group"] = parts[0]
                 cdx_comp["name"] = parts[1]
 
-        if comp.resolved_version and comp.resolved_version != "detected":
-            cdx_comp["version"] = comp.resolved_version
+        if ver:
+            cdx_comp["version"] = ver
         elif spec_version == "1.5":
             # For CycloneDX 1.5 enterprise platforms (e.g. atv-sbom-3), every component
             # must have a non-empty version so platforms do not drop unversioned components.
@@ -325,8 +327,8 @@ class CycloneDXGenerator:
         if comp.vendor:
             cdx_comp["publisher"] = comp.vendor
 
-        if comp.purl:
-            cdx_comp["purl"] = comp.purl
+        if purl:
+            cdx_comp["purl"] = purl
 
         if comp.cpe:
             cdx_comp["cpe"] = comp.cpe

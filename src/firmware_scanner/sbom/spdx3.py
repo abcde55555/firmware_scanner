@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from ..extraction.models import Component
+from .version_semantics import component_package_url, component_release_version
 from firmware_scanner import __version__
 
 
@@ -130,13 +131,15 @@ class SPDX3Generator:
                 "primaryPurpose": self._map_primary_purpose(comp.component_type),
             }
 
-            if comp.resolved_version and comp.resolved_version != "detected":
-                pkg_elem["software_packageVersion"] = comp.resolved_version
+            release_version = component_release_version(comp)
+            if release_version:
+                pkg_elem["software_packageVersion"] = release_version
 
             if comp.vendor:
                 pkg_elem["suppliedBy"] = comp.vendor
-            if comp.purl:
-                pkg_elem["software_packageUrl"] = comp.purl
+            purl = component_package_url(comp)
+            if purl:
+                pkg_elem["software_packageUrl"] = purl
             if comp.cpe:
                 pkg_elem["externalIdentifier"] = [
                     {
