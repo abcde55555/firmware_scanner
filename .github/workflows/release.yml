@@ -166,11 +166,42 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          cat > release-body.md <<EOF
+          ## Firmware Scanner ${RELEASE_TAG}
+
+          Static-first firmware SBOM, component recovery, and vulnerability analysis.
+
+          ### Downloads
+
+          - Python wheel and source distribution
+          - Standalone Linux x86-64 executable
+          - Standalone Windows x86-64 executable
+          - Standalone macOS ARM64 executable
+          - \`SHA256SUMS\` and \`release-manifest.json\`
+
+          Verify downloaded assets:
+
+          \`\`\`bash
+          sha256sum -c SHA256SUMS
+          \`\`\`
+
+          ### Notes
+
+          - Standalone builds contain the core analyzer and built-in rule packs.
+          - Optional radare2 and Ghidra Python integrations are available from
+            the wheel or source installation.
+          - macOS builds are ad hoc signed but not notarized.
+          - Windows builds are not Authenticode signed.
+
+          See the [changelog](https://github.com/abcde55555/firmware_scanner/blob/main/CHANGELOG.md)
+          and [release guide](https://github.com/abcde55555/firmware_scanner/blob/main/docs/RELEASING.md).
+          EOF
           if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" release-assets/* --clobber
+            gh release edit "${RELEASE_TAG}" --notes-file release-body.md
           else
             gh release create "${RELEASE_TAG}" release-assets/* \
               --verify-tag \
-              --generate-notes \
+              --notes-file release-body.md \
               --title "Firmware Scanner ${RELEASE_TAG}"
           fi
