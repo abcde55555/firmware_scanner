@@ -4,11 +4,13 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-dist/
-dist-wheels*/
-*.egg-info/
+
+# Packaging
 .eggs/
+*.egg-info/
+/build/
+/dist/
+/dist-wheels*/
 
 # Virtual environments
 .venv/
@@ -16,75 +18,49 @@ venv/
 env/
 ENV/
 
-# Test / coverage
-.pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
-.ruff_cache/
-
-# Generated outputs
-unpacked/
-reports/
-output/
-work/
-*.log
-
-# IDE / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Local Claude/project agent state
-.claude/
-
-# Local configuration
-.env
-.env.*
-emba分析/
-fmdemo/
-
-# Test outputs
-*.analysis.json
-test_*.json
-test_*.html
-sbom.json
-sbom.html
-camera_test.*
-
-# Logs
-logs/*.json
-logs/scans/2026*.json
-
-# Cache
-.rtos-analyzer/
-__pycache__/
-*.py[cod]
-*$py.class
+# Tests and coverage
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-htmlcov/
 .coverage
 coverage.xml
+htmlcov/
 
-# Build
-dist/
-build/
-*.egg-info/
+# Local scan inputs, outputs, logs, and evidence
+/.rtos-analyzer/
+/emba分析/
+/fmdemo/
+/logs/
+/output/
+/reports/
+/unpacked/
+/work/
+*.log
 
-# IDE
-.vscode/
+# Generated scan artifacts at the repository root
+/*.analysis.json
+/camera_test.*
+/sbom.*
+/test_*.html
+/test_*.json
+/vlun.*
+/vuln.*
+
+# Generated test artifacts
+/tests/batch_results/
+/tests/final_results*/
+/tests/samples/output*/
+/tests/v2_results/
+
+# Local configuration and project-agent state
+.claude/
+.env
+.env.*
+
+# IDE and OS files
 .idea/
-*.swp
+.vscode/
 *.swo
-
-# Virtual environments
-.venv/
-venv/
-env/
-
-# OS files
+*.swp
 .DS_Store
 Thumbs.db

@@ -96,7 +96,7 @@ system 的三条未匹配记录是：旧 `webview` 与 `AndroidMediaShell` 占�
 
 实验尝试把 `FT_New_Library` 的版本字段初始化与 `FT_Library_Version` 读取配对。[FreeType 上游源码](https://raw.githubusercontent.com/freetype/freetype/VER-2-13-3/src/base/ftobjs.c)。合成编译样例及错误控制通过，但对 system 镜像内四个实际 `libft2.so` 均未识别出版本。四个文件确实存在、已通过只读 ext4 实际读取，不把宿主 `/system` 路径测试的四次 skip 算成实测。
 
-该模块保留在 `experiments/version_coverage/freetype_version.py`，没有接入 `BinaryInventory`。Cronet 的实际 getter 存在间接调度，当前有限证明路径也没有获得新的精确版本；未以 SONAME 中的数字作为替代。
+该实验副本已移除；经过后续收紧和验证的实现位于 `src/firmware_scanner/extraction/freetype_version.py`，由 `BinaryInventory` 调用。Cronet 的实际 getter 存在间接调度，当前有限证明路径也没有获得新的精确版本；未以 SONAME 中的数字作为替代。
 
 ## 验证与剩余工作
 
