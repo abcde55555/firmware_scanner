@@ -8,12 +8,19 @@ _SOURCE_REVISION_STATES = {
     "estimated-source-revision",
     "estimated-aosp-source-revision",
 }
+_UNKNOWN_RELEASE_VERSIONS = {
+    "",
+    "conflict",
+    "detected",
+    "detected (version unknown)",
+    "unknown",
+}
 
 
 def component_release_version(component: Component) -> str:
     """Return a release-like version suitable for standardized SBOM fields."""
     version = component.resolved_version.strip()
-    if not version or version == "detected" or version.startswith("git:"):
+    if version.casefold() in _UNKNOWN_RELEASE_VERSIONS or version.startswith("git:"):
         return ""
     state = next(
         (

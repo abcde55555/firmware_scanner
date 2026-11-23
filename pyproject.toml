@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "firmware-scanner"
-version = "0.37.2"
+version = "0.38.0"
 description = "Firmware security analysis, recursive unpacking, component extraction, and SBOM generation"
 readme = "README.md"
 requires-python = ">=3.10"

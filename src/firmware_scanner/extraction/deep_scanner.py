@@ -2,14 +2,14 @@
 
 import logging
 import re
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Iterator, Callable
 
 from ..core.context import AnalysisContext
 from ..data import load_component_signatures, load_version_patterns
-from ..extraction.models import Component, VersionConfidence, ExtractionMethod
 from ..extraction.emba_rules import scan_binary_with_rules
+from ..extraction.models import Component, ExtractionMethod, VersionConfidence
 from ..utils.binary import find_strings
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ class ComponentHit:
     matched_pattern: str
     section_name: str = ""
     nearby_strings: list[str] = field(default_factory=list)
+    from_version_pattern: bool = False
 
 
 PROXIMITY_WINDOW = 512  # bytes around a component hit to search for version
@@ -164,6 +165,12 @@ class DeepScanner:
         text = data.decode("ascii", errors="ignore")
         for entry in self._db.get_all_version_patterns():
             for match in re.finditer(entry.pattern, text):
+                line_start = text.rfind("\n", 0, match.start()) + 1
+                line_end = text.find("\n", match.end())
+                if line_end < 0:
+                    line_end = len(text)
+                if self._is_untrusted_version_context(text[line_start:line_end]):
+                    continue
                 hits.append(ComponentHit(
                     name=entry.name,
                     vendor=entry.vendor,
@@ -172,6 +179,7 @@ class DeepScanner:
                     matched_pattern=match.group(0),
                     section_name=section_name,
                     nearby_strings=[match.group(0)],
+                    from_version_pattern=True,
                 ))
 
         return hits
@@ -205,10 +213,10 @@ class DeepScanner:
         components: list[Component] = []
         for key, group in groups.items():
             # Check if any hit came from a version pattern (high confidence, one is enough)
-            has_version_hit = any(h.nearby_strings and h.matched_pattern == h.nearby_strings[0] for h in group)
+            has_version_hit = any(h.from_version_pattern for h in group)
             if not has_version_hit:
                 # For pure signature hits, require at least 2 distinct patterns
-                unique_patterns = set(h.matched_pattern for h in group)
+                unique_patterns = {h.matched_pattern for h in group}
                 if len(unique_patterns) < 2:
                     continue
             comp = self._merge_hits(group, context)
@@ -231,13 +239,13 @@ class DeepScanner:
         version = self._extract_version_from_context(base.name, all_nearby, context.raw_data)
 
         # Calculate confidence based on number of hits and methods
-        unique_sections = set(h.section_name for h in hits)
+        unique_sections = {h.section_name for h in hits}
         confidence = min(0.4 + len(hits) * 0.05 + len(unique_sections) * 0.1, 0.95)
         if version:
             confidence = min(confidence + 0.15, 0.95)
 
         evidence_parts = []
-        unique_patterns = set(h.matched_pattern for h in hits)
+        unique_patterns = {h.matched_pattern for h in hits}
         evidence_parts.append(f"Matched: {', '.join(list(unique_patterns)[:3])}")
         evidence_parts.append(f"Hits: {len(hits)} across {len(unique_sections)} sections")
 
@@ -281,6 +289,8 @@ class DeepScanner:
         version_re = re.compile(r"(\d+\.\d+(?:\.\d+)?(?:[-_.]\w+)?)")
 
         for s in strings:
+            if self._is_untrusted_version_context(s):
+                continue
             # Direct version match in the string
             if comp_name.lower() in s.lower():
                 match = version_re.search(s)
@@ -291,12 +301,39 @@ class DeepScanner:
 
         # Second pass: look for standalone version patterns
         for s in strings:
+            if self._is_untrusted_version_context(s):
+                continue
             if re.match(r"^[Vv]?\d+\.\d+\.\d+", s):
                 v = version_re.search(s).group(1)
                 if self._is_plausible_version(v):
                     return v
 
         return ""
+
+    @staticmethod
+    def _is_untrusted_version_context(value: str) -> bool:
+        """Reject HTTP headers whose versions describe a peer or user agent."""
+        return bool(
+            re.match(
+                r"^\s*(?:user-agent|server|via|x-powered-by)\s*:",
+                value,
+                re.IGNORECASE,
+            )
+        )
+
+    @classmethod
+    def _first_trusted_match(
+        cls, pattern: str, text: str, flags: int = 0
+    ) -> re.Match[str] | None:
+        """Return the first regex match that is not in a peer-identification header."""
+        for match in re.finditer(pattern, text, flags):
+            line_start = text.rfind("\n", 0, match.start()) + 1
+            line_end = text.find("\n", match.end())
+            if line_end < 0:
+                line_end = len(text)
+            if not cls._is_untrusted_version_context(text[line_start:line_end]):
+                return match
+        return None
 
     def _search_global_version(self, comp_name: str, data: bytes) -> str:
         """Search entire firmware for component name + version pattern."""
@@ -308,7 +345,7 @@ class DeepScanner:
             rf"{re.escape(comp_name)}\s+version\s+(\d+\.\d+(?:\.\d+)?)",
         ]
         for pat in patterns:
-            match = re.search(pat, text, re.IGNORECASE)
+            match = self._first_trusted_match(pat, text, re.IGNORECASE)
             if match:
                 v = match.group(1)
                 if self._is_plausible_version(v):
@@ -354,9 +391,7 @@ class DeepScanner:
             if major > 999:  # Likely a date or IP
                 return False
             # Reject IEEE 802.x network protocol numbers (e.g., "802.1", "802.11")
-            if 800 <= major <= 899:
-                return False
-            return True
+            return not 800 <= major <= 899
         except ValueError:
             return False
 

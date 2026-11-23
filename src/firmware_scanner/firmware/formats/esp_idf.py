@@ -3,14 +3,40 @@
 import struct
 from pathlib import Path
 
+from ...extraction.models import FirmwareSection, UnpackResult
 from .base import FirmwareFormat
-from ...extraction.models import UnpackResult, FirmwareSection
-
 
 # ESP-IDF image header magic
 ESP_IMAGE_MAGIC = 0xE9
 ESP_IMAGE_HEADER_SIZE = 24
 ESP_SEGMENT_HEADER_SIZE = 8
+ESP_APP_DESC_MAGIC = 0xABCD5432
+ESP_APP_DESC_SIZE = 256
+
+
+def _c_string(data: bytes, offset: int, size: int) -> str:
+    """Decode one bounded NUL-terminated ESP application descriptor field."""
+    return data[offset : offset + size].split(b"\0", 1)[0].decode("utf-8", errors="replace")
+
+
+def _parse_app_descriptor(data: bytes) -> dict:
+    """Read the optional ESP-IDF application descriptor from the image."""
+    magic = struct.pack("<I", ESP_APP_DESC_MAGIC)
+    descriptor_offset = data.find(magic, 0, min(len(data), 4096))
+    if descriptor_offset < 0 or descriptor_offset + ESP_APP_DESC_SIZE > len(data):
+        return {}
+
+    descriptor = data[descriptor_offset : descriptor_offset + ESP_APP_DESC_SIZE]
+    return {
+        "file_offset": descriptor_offset,
+        "secure_version": struct.unpack_from("<I", descriptor, 4)[0],
+        "app_version": _c_string(descriptor, 0x10, 32),
+        "project_name": _c_string(descriptor, 0x30, 32),
+        "build_time": _c_string(descriptor, 0x50, 16),
+        "build_date": _c_string(descriptor, 0x60, 16),
+        "idf_version": _c_string(descriptor, 0x70, 32),
+        "elf_sha256": descriptor[0x90:0xB0].hex(),
+    }
 
 
 class ESPIDFFormat(FirmwareFormat):
@@ -71,6 +97,9 @@ class ESPIDFFormat(FirmwareFormat):
             "spi_mode": spi_mode,
             "spi_size_speed": hex(spi_size_speed),
         }
+        app_descriptor = _parse_app_descriptor(data)
+        if app_descriptor:
+            metadata["esp_app_desc"] = app_descriptor
 
         return UnpackResult(
             sections=sections,

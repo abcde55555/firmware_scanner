@@ -1,11 +1,10 @@
 """Binary signature/fingerprint-based component detection."""
 
-import hashlib
 import json
 from pathlib import Path
 
 from ...core.context import AnalysisContext
-from ..models import Component, VersionConfidence, ExtractionMethod
+from ..models import Component, ExtractionMethod, VersionConfidence
 from .base import BaseExtractor
 
 # Known binary fingerprints: (byte_sequence, component_name, vendor, min_confidence)
@@ -14,47 +13,38 @@ BINARY_SIGNATURES = [
     (b"IdleTask\x00", "FreeRTOS", "Amazon", 0.6),
     (b"IDLE\x00\x00\x00\x00", "FreeRTOS", "Amazon", 0.5),
     (b"Tmr Svc\x00", "FreeRTOS", "Amazon", 0.7),
-
     # Zephyr
     (b"ZEPHYR_BASE", "Zephyr RTOS", "Zephyr Project", 0.8),
     (b"__device_dts_ord_", "Zephyr RTOS", "Zephyr Project", 0.7),
     (b"zephyr/kernel", "Zephyr RTOS", "Zephyr Project", 0.8),
-
     # RT-Thread
     (b"rt-thread", "RT-Thread", "RT-Thread", 0.7),
     (b"rtthread", "RT-Thread", "RT-Thread", 0.6),
     (b"\x23\x23\x23\x23", "RT-Thread", "RT-Thread", 0.3),  # RT-Thread object magic
-
     # ESP-IDF markers
     (b"esp_idf", "ESP-IDF", "Espressif", 0.7),
     (b"ESP_ERROR_CHECK", "ESP-IDF", "Espressif", 0.6),
     (b"esp_wifi_", "ESP-IDF WiFi", "Espressif", 0.7),
     (b"esp_bt_", "ESP-IDF Bluetooth", "Espressif", 0.7),
-
     # VxWorks
     (b"Wind River Systems", "VxWorks", "Wind River", 0.9),
     (b"VxWorks", "VxWorks", "Wind River", 0.8),
     (b"WDB_AGENT", "VxWorks", "Wind River", 0.7),
-
     # ThreadX
     (b"Azure RTOS", "ThreadX", "Microsoft", 0.9),
     (b"ThreadX", "ThreadX", "Microsoft", 0.8),
     (b"THREADX", "ThreadX", "Microsoft", 0.7),
-
     # NuttX
     (b"NuttX", "NuttX", "Apache", 0.8),
     (b"nsh>", "NuttX", "Apache", 0.6),
-
     # LiteOS
     (b"Huawei LiteOS", "LiteOS", "Huawei", 0.9),
     (b"LiteOS", "LiteOS", "Huawei", 0.7),
     (b"LOS_ERRNO", "LiteOS", "Huawei", 0.6),
-
     # uC/OS
     (b"Micrium", "uC/OS", "Micrium", 0.8),
     (b"uC/OS", "uC/OS", "Micrium", 0.8),
     (b"uCOS", "uC/OS", "Micrium", 0.7),
-
     # Common libraries
     (b"mbedTLS", "mbedTLS", "ARM", 0.8),
     (b"MBEDTLS_", "mbedTLS", "ARM", 0.7),
@@ -67,12 +57,10 @@ BINARY_SIGNATURES = [
     (b"cJSON", "cJSON", "DaveGamble", 0.7),
     (b"nanopb", "nanopb", "nanopb", 0.7),
     (b"protobuf-c", "protobuf-c", "protobuf-c", 0.7),
-
     # Qualcomm
     (b"QUALCOMM", "Qualcomm BSP", "Qualcomm", 0.8),
     (b"QC_IMAGE_VERSION_STRING", "Qualcomm BSP", "Qualcomm", 0.9),
     (b"QCOM", "Qualcomm BSP", "Qualcomm", 0.6),
-
     # MediaTek
     (b"MediaTek", "MediaTek BSP", "MediaTek", 0.8),
     (b"MTK_FW", "MediaTek BSP", "MediaTek", 0.7),
@@ -135,11 +123,19 @@ class BinarySignatureExtractor(BaseExtractor):
 
     def _infer_type(self, name: str) -> str:
         os_names = {
-            "FreeRTOS", "Zephyr RTOS", "RT-Thread", "VxWorks",
-            "ThreadX", "NuttX", "LiteOS", "uC/OS",
+            "FreeRTOS",
+            "Zephyr RTOS",
+            "RT-Thread",
+            "VxWorks",
+            "ThreadX",
+            "NuttX",
+            "LiteOS",
+            "uC/OS",
         }
         if name in os_names:
             return "operating-system"
+        if name == "ESP-IDF":
+            return "framework"
         if "BSP" in name:
             return "firmware"
         return "library"
@@ -152,9 +148,16 @@ class BinarySignatureExtractor(BaseExtractor):
             try:
                 data = json.loads(json_file.read_text())
                 for entry in data.get("signatures", []):
-                    sig_bytes = bytes.fromhex(entry["hex"]) if "hex" in entry else entry["ascii"].encode()
-                    self._extra_signatures.append(
-                        (sig_bytes, entry["name"], entry.get("vendor", ""), entry.get("confidence", 0.7))
+                    sig_bytes = (
+                        bytes.fromhex(entry["hex"]) if "hex" in entry else entry["ascii"].encode()
                     )
-            except Exception:
+                    self._extra_signatures.append(
+                        (
+                            sig_bytes,
+                            entry["name"],
+                            entry.get("vendor", ""),
+                            entry.get("confidence", 0.7),
+                        )
+                    )
+            except (OSError, ValueError, TypeError, KeyError):
                 continue

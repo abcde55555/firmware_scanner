@@ -1,9 +1,5 @@
 """Tests for ArchDetector."""
 
-import struct
-
-import pytest
-
 from firmware_scanner.arch.detector import ArchDetector
 from firmware_scanner.arch.models import ArchInfo, CPUFamily, Endianness, FileType
 
@@ -61,3 +57,28 @@ class TestArchDetector:
         data = b"MZ" + b"\x00" * 100
         result = detector._guess_file_type(data)
         assert result == FileType.PE
+
+    def test_esp_image_magic_takes_precedence_over_generic_instruction_probe(
+        self, monkeypatch
+    ):
+        """A validated ESP image header should not be overridden by a generic misdecode."""
+        detector = ArchDetector()
+        data = b"\xe9\x06\x02\x10" + b"\x00" * 1020
+        monkeypatch.setattr(
+            "firmware_scanner.arch.detector.detect_from_instruction_probe",
+            lambda _data, _offset: ArchInfo(
+                cpu_family=CPUFamily.ARM,
+                endianness=Endianness.LITTLE,
+                file_type=FileType.RAW_BINARY,
+                word_size=32,
+                specific_model="ARM LE",
+                confidence=0.99,
+            ),
+        )
+
+        result = detector.detect(data)
+
+        assert result.cpu_family == CPUFamily.XTENSA
+        assert result.endianness == Endianness.LITTLE
+        assert result.file_type == FileType.ESP_IMAGE
+        assert result.specific_model == "ESP32"

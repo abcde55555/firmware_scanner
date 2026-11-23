@@ -4,9 +4,9 @@ import logging
 
 from ..arch.models import ArchInfo, CPUFamily, Endianness, FileType
 from .strategies.elf_headers import detect_from_elf_header
-from .strategies.magic_bytes import detect_from_magic_bytes
-from .strategies.instruction_probe import detect_from_instruction_probe
 from .strategies.entropy import find_code_regions
+from .strategies.instruction_probe import detect_from_instruction_probe
+from .strategies.magic_bytes import detect_from_magic_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,17 @@ class ArchDetector:
                 confidence=0.0,
             )
 
-        # Pick highest confidence
+        # Validated structural headers are authoritative. A generic instruction
+        # probe can decode other architectures' bytes as plausible instructions.
+        structural = [
+            candidate
+            for candidate in candidates
+            if candidate.file_type in (FileType.ELF, FileType.ESP_IMAGE)
+        ]
+        if structural:
+            return structural[0]
+
+        # Pick highest confidence for heuristic-only candidates.
         candidates.sort(key=lambda x: x.confidence, reverse=True)
         best = candidates[0]
 

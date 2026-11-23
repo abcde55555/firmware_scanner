@@ -119,12 +119,8 @@ def test_source_revision_is_not_serialized_as_a_release_version():
     assert "version" not in cdx_component
     assert "git:" not in cdx_component["bom-ref"]
     properties = {item["name"]: item["value"] for item in cdx_component["properties"]}
-    assert properties["firmware:source:revision"] == (
-        "7ef2e61de22de800fec8a734bc4019a26448e8b1"
-    )
-    assert properties["firmware:version:resolution-state"] == (
-        "estimated-source-revision"
-    )
+    assert properties["firmware:source:revision"] == ("7ef2e61de22de800fec8a734bc4019a26448e8b1")
+    assert properties["firmware:version:resolution-state"] == ("estimated-source-revision")
 
     bom_15 = generator.generate(
         components=[component],
@@ -146,6 +142,32 @@ def test_source_revision_is_not_serialized_as_a_release_version():
     )
     assert "software_packageVersion" not in package
     assert package["software_packageUrl"] == component.purl
+
+
+def test_detected_unknown_state_is_not_serialized_as_a_release_version():
+    component = Component(
+        name="FreeRTOS",
+        resolved_version="detected (version unknown)",
+        purl="pkg:generic/FreeRTOS",
+    )
+    generator = CycloneDXGenerator()
+
+    bom_16 = generator.generate(
+        components=[component],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+        spec_version="1.6",
+    )
+    assert "version" not in bom_16["components"][0]
+    assert bom_16["components"][0]["bom-ref"] == "pkg:generic/FreeRTOS"
+
+    bom_15 = generator.generate(
+        components=[component],
+        firmware_path="firmware.img",
+        firmware_hash_sha256="a" * 64,
+        spec_version="1.5",
+    )
+    assert bom_15["components"][0]["version"] == "unknown"
 
 
 def test_cyclonedx_dependencies_only_emit_unambiguous_declared_needed_edges():

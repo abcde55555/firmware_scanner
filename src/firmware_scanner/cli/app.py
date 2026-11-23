@@ -1808,6 +1808,27 @@ def _store_android_build_info(context: AnalysisContext, result) -> None:
 
 def _deduplicate_components(components: list) -> list:
     """Final deduplication and filtering pass."""
+    def merge_evidence(existing, incoming):
+        existing.versions.extend(v for v in incoming.versions if v not in existing.versions)
+        existing.properties.extend(p for p in incoming.properties if p not in existing.properties)
+        existing.licenses = sorted(set(existing.licenses) | set(incoming.licenses))
+        if incoming.resolved_version and (
+            not existing.resolved_version
+            or "unknown" in existing.resolved_version
+            or existing.resolved_version.startswith("detected")
+        ):
+            existing.resolved_version = incoming.resolved_version
+        if incoming.purl and not existing.purl:
+            existing.purl = incoming.purl
+        if incoming.cpe and not existing.cpe:
+            existing.cpe = incoming.cpe
+        if incoming.vendor and not existing.vendor:
+            existing.vendor = incoming.vendor
+
+    def has_resolved_version(component) -> bool:
+        version = component.resolved_version.lower()
+        return bool(version and not version.startswith("detected") and "unknown" not in version)
+
     seen: dict[tuple, any] = {}
     for comp in components:
         key = (_component_dedup_key(comp.name), comp.resolved_version,
@@ -1815,26 +1836,51 @@ def _deduplicate_components(components: list) -> list:
         if key not in seen:
             seen[key] = comp
         else:
-            existing = seen[key]
-            existing.versions.extend(v for v in comp.versions if v not in existing.versions)
-            existing.properties.extend(p for p in comp.properties if p not in existing.properties)
-            existing.licenses = sorted(set(existing.licenses) | set(comp.licenses))
-            if comp.resolved_version and (
-                not existing.resolved_version
-                or "unknown" in existing.resolved_version
-                or existing.resolved_version.startswith("detected")
-            ):
-                existing.resolved_version = comp.resolved_version
-            if comp.purl and not existing.purl:
-                existing.purl = comp.purl
-            if comp.vendor and not existing.vendor:
-                existing.vendor = comp.vendor
+            merge_evidence(seen[key], comp)
+
+    # Merge unresolved identity claims into a single resolved build/package claim.
+    # Keep separate rows when multiple concrete versions are genuinely present.
+    identity_rows: dict[tuple, list[tuple[tuple, any]]] = {}
+    for key, comp in seen.items():
+        identity = (key[0], key[2], key[3])
+        identity_rows.setdefault(identity, []).append((key, comp))
+
+    reduced = {}
+    for rows in identity_rows.values():
+        concrete = [(key, comp) for key, comp in rows if has_resolved_version(comp)]
+        unresolved = [(key, comp) for key, comp in rows if not has_resolved_version(comp)]
+
+        targets = {}
+        for key, comp in concrete:
+            targets[key] = comp
+
+        if not targets:
+            key, comp = rows[0]
+            targets[key] = comp
+            for _, incoming in rows[1:]:
+                merge_evidence(comp, incoming)
+            unresolved = []
+        elif len(targets) == 1:
+            target = next(iter(targets.values()))
+            for _, comp in unresolved:
+                merge_evidence(target, comp)
+            unresolved = []
+        else:
+            target = max(
+                targets.values(),
+                key=lambda comp: max((v.confidence for v in comp.versions), default=0),
+            )
+            for _, comp in unresolved:
+                merge_evidence(target, comp)
+            unresolved = []
+
+        reduced.update(targets)
 
     # Filter out low-confidence components with no vendor and short names (likely false positives)
     filtered = {}
-    for key, comp in seen.items():
+    for key, comp in reduced.items():
         max_conf = max((v.confidence for v in comp.versions), default=0)
-        methods = set(v.method.value for v in comp.versions)
+        methods = {v.method.value for v in comp.versions}
         # Keep if: has vendor, or high confidence, or detected by multiple methods
         if comp.vendor or max_conf >= 0.4 or len(methods) >= 2:
             filtered[key] = comp

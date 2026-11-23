@@ -33,13 +33,13 @@
     "pattern": "ESP-IDF\\s+[Vv]?(\\d+\\.\\d+(?:\\.\\d+)?)",
     "name": "ESP-IDF",
     "vendor": "Espressif",
-    "component_type": "operating-system"
+    "component_type": "framework"
   },
   {
     "pattern": "esp-idf/v(\\d+\\.\\d+(?:\\.\\d+)?)",
     "name": "ESP-IDF",
     "vendor": "Espressif",
-    "component_type": "operating-system"
+    "component_type": "framework"
   },
   {
     "pattern": "VxWorks\\s+(\\d+\\.\\d+(?:\\.\\d+)?)",

@@ -191,6 +191,33 @@ def test_cli_dedup_preserves_distinct_versions_and_merges_locations():
     }
 
 
+def test_cli_dedup_merges_unknown_identity_with_build_version():
+    from firmware_scanner.cli.app import _deduplicate_components
+
+    comps = [
+        Component(
+            name="ESP-IDF",
+            vendor="Espressif",
+            component_type="framework",
+            resolved_version="detected (version unknown)",
+            versions=[VersionConfidence(version="detected", confidence=0.9)],
+        ),
+        Component(
+            name="ESP-IDF",
+            vendor="Espressif",
+            component_type="framework",
+            resolved_version="v5.4",
+            versions=[VersionConfidence(version="v5.4", confidence=0.99)],
+        ),
+    ]
+
+    result = _deduplicate_components(comps)
+
+    assert len(result) == 1
+    assert result[0].resolved_version == "v5.4"
+    assert {claim.version for claim in result[0].versions} == {"detected", "v5.4"}
+
+
 def test_cli_dedup_merges_license_evidence_for_duplicate_components():
     from firmware_scanner.cli.app import _deduplicate_components
 

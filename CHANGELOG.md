@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.38.0] - 2026-11-23
+
+### Added
+- Decode the ESP-IDF application descriptor to recover project, application,
+  framework, build, secure-boot counter and embedded ELF digest metadata
+- Recover ESP-IDF component identities from linked core and example source
+  paths while keeping bundled upstream project versions explicitly unknown
+  unless independent release evidence is present
+- Recognize FreeRTOS, lwIP, mbedTLS, Newlib, HTTP Parser, wpa_supplicant and
+  ESP-IDF WiFi identities in compact ESP image scans
+- Advance the packaged rule lock to `builtin-2026.11.23.1`
+
+### Fixed
+- Prefer validated ELF and ESP image structure over generic instruction probes
+  when reporting architecture
+- Reject HTTP peer-identification headers as local component version evidence
+- Merge duplicate unresolved identity claims into resolved build/package
+  evidence without collapsing distinct concrete versions
+
+### Validation
+- The provided ESP-IDF black-box image improves from 8 to 31 components and
+  from 1 to 24 concrete component versions
+- The resulting SBOM contains 29 case/separator-normalized matches against the
+  authoritative dependency closure, plus the application root corresponding
+  to its official `component-main`
+
 ## [0.37.2] - 2026-11-21
 
 ### Fixed

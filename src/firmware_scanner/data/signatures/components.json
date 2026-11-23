@@ -201,19 +201,19 @@
     "pattern": "esp_idf",
     "name": "ESP-IDF",
     "vendor": "Espressif",
-    "component_type": "operating-system"
+    "component_type": "framework"
   },
   {
     "pattern": "esp_wifi_init",
     "name": "ESP-IDF",
     "vendor": "Espressif",
-    "component_type": "operating-system"
+    "component_type": "framework"
   },
   {
     "pattern": "esp_event_loop",
     "name": "ESP-IDF",
     "vendor": "Espressif",
-    "component_type": "operating-system"
+    "component_type": "framework"
   },
   {
     "pattern": "mbedtls_ssl_init",
